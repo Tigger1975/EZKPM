@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -81,5 +82,79 @@ namespace EZKPM.Server.PDP.Controllers
 
             return Ok(responseDto);
         }
+
+        /// <summary>
+        /// Nimmt Audit-Logs entgegen (Pflicht für Payment-Assets, FA 22) und validiert die Hash-Chain (FA 4.2).
+        /// </summary>
+        [HttpPost("assets/{id}/audit")]
+        public async Task<IActionResult> AppendAuditLog(Guid id, [FromBody] AuditLogRequestDto request)
+        {
+            var userSid = User.FindFirstValue(ClaimTypes.PrimarySid) ?? User.FindFirstValue("sid");
+            if (string.IsNullOrEmpty(userSid)) return Unauthorized();
+
+            var hasAccess = await _db.AssetAcls.AnyAsync(a => a.AssetId == id && a.AdSid == userSid);
+            if (!hasAccess) return Forbid();
+
+            // 1. Letzten Log-Eintrag für dieses Asset holen, um die Kette zu prüfen
+            var latestLog = await _db.AuditLogs
+                .Where(l => l.AssetId == id)
+                .OrderByDescending(l => l.Timestamp)
+                .FirstOrDefaultAsync();
+
+            // Genesis-Block Fallback: Wenn noch kein Log existiert, erwarten wir ein leeres 32-Byte Array
+            byte[] expectedPreviousHash = latestLog != null ? latestLog.CurrentEntryHash : new byte[32];
+            byte[] providedPrevHash = Convert.FromBase64String(request.PreviousEntryHash);
+
+            if (!expectedPreviousHash.SequenceEqual(providedPrevHash))
+            {
+                // Security-Event: Jemand versucht die Chronologie zu fälschen oder ein Log-Eintrag fehlt
+                return BadRequest(new { Error = "Hash-Chain validation failed. Previous hash mismatch (FA 4.2)." });
+            }
+
+            // 2. Hash-Verifikation: CurrentEntryHash = SHA256(PreviousEntryHash + EncryptedLogBlob)
+            // Der Server prüft die Mathematik, auch wenn er den Klartext des Blobs nicht kennt.
+            byte[] logBlob = Convert.FromBase64String(request.EncryptedLogBlob);
+            byte[] providedCurrentHash = Convert.FromBase64String(request.CurrentEntryHash);
+
+            using var sha256 = SHA256.Create();
+            byte[] buffer = new byte[expectedPreviousHash.Length + logBlob.Length];
+            Buffer.BlockCopy(expectedPreviousHash, 0, buffer, 0, expectedPreviousHash.Length);
+            Buffer.BlockCopy(logBlob, 0, buffer, expectedPreviousHash.Length, logBlob.Length);
+
+            byte[] computedCurrentHash = sha256.ComputeHash(buffer);
+
+            if (!computedCurrentHash.SequenceEqual(providedCurrentHash))
+            {
+                return BadRequest(new { Error = "Hash-Chain validation failed. Current hash is mathematically invalid." });
+            }
+
+            // 3. Chain-Eintrag persistieren
+            var logEntry = new AuditLog
+            {
+                AssetId = id,
+                ActorSid = userSid,
+                EncryptedLogBlob = logBlob,
+                Nonce = Convert.FromBase64String(request.Nonce),
+                PreviousEntryHash = expectedPreviousHash,
+                CurrentEntryHash = computedCurrentHash,
+                Timestamp = DateTime.UtcNow
+            };
+
+            _db.AuditLogs.Add(logEntry);
+            await _db.SaveChangesAsync();
+
+            return Ok();
+        }
+    }
+
+    /// <summary>
+    /// Data Transfer Object für eingehende Audit-Logs.
+    /// </summary>
+    public class AuditLogRequestDto
+    {
+        public string EncryptedLogBlob { get; set; } // Base64
+        public string Nonce { get; set; } // Base64
+        public string PreviousEntryHash { get; set; } // Base64
+        public string CurrentEntryHash { get; set; } // Base64
     }
 }
