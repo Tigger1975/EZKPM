@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "EZK-PM Enterprise Autofill",
+  "version": "1.0.0",
+  "description": "Zero-Knowledge Autofill Bridge (FA 21 & FA 22)",
+  "permissions": [
+    "nativeMessaging",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [ "<all_urls>" ],
+      "js": [ "content.js" ],
+      "run_at": "document_idle"
+    }
+  ]
+}
