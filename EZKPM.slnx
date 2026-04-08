@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/docs/">
+    <File Path="AI_Context_Prompt.md" />
+    <File Path="Pflichtenheft_v1.2.md" />
+  </Folder>
   <Project Path="EZKPM.Client.Core/EZKPM.Client.Core.csproj" />
   <Project Path="EZKPM.Client.Desktop/EZKPM.Client.Desktop.csproj" />
   <Project Path="EZKPM.Client.Tests/EZKPM.Client.Tests.csproj" />
