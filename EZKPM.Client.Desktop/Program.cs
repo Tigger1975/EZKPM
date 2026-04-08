@@ -1,82 +1,169 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Threading;
 using EZKPM.Client.Core.Interop;
+using EZKPM.Client.Desktop.Views;
 
 namespace EZKPM.Client.Desktop
 {
     internal class Program
     {
-        // Initialization code. Don't use any Avalonia, third-party APIs or any
-        // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
-        // yet and stuff might break.
+        private static string LogFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "ezkpm_debug.txt");
+        private static readonly string LockFileName = "ezkpm_build.lock";
+        private static readonly string LockFileDir = Path.GetTempPath();
+        private static FileSystemWatcher _killSwitchWatcher;
+
+        public static void LogDebug(string message)
+        {
+            try { File.AppendAllText(LogFilePath, $"[{DateTime.UtcNow:O}] {message}\n"); } catch { }
+        }
+
         [STAThread]
         public static async Task Main(string[] args)
         {
-            // 1. Weiche für Native Messaging (FA 21 / FA 22 Bridge)
-            // Chrome/Edge startet den Host immer mit einem Argument, das die Extension-Origin enthält.
+            InitializeKillSwitch();
+
+            LogDebug($"App started. Arguments: {string.Join(" ", args)}");
+
             if (args.Any(a => a.StartsWith("chrome-extension://") || a.StartsWith("ms-browser-extension://")))
             {
-                // Headless-Modus: Kein UI laden, nur die sichere I/O-Pipe betreiben
-                await RunNativeMessagingHostAsync();
+                LogDebug("Extension mode detected. Starting Avalonia headless...");
+                try
+                {
+                    var builder = BuildAvaloniaApp();
+                    var lifetime = new Avalonia.Controls.ApplicationLifetimes.ClassicDesktopStyleApplicationLifetime
+                    {
+                        ShutdownMode = Avalonia.Controls.ShutdownMode.OnExplicitShutdown
+                    };
+                    builder.SetupWithLifetime(lifetime);
+
+                    LogDebug("Avalonia initialized. Starting Native Messaging listener...");
+                    _ = Task.Run(async () => await RunNativeMessagingHostAsync(lifetime));
+
+                    lifetime.Start(args);
+                }
+                catch (Exception ex)
+                {
+                    LogDebug($"FATAL STARTUP ERROR: {ex}");
+                }
                 return;
             }
 
-            // 2. Normaler Start (User hat die App via Startmenü/Doppelklick geöffnet)
+            LogDebug("Normal desktop startup...");
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
 
         /// <summary>
-        /// Startet den Hintergrund-Listener für die Browser-Erweiterung.
+        /// Sidequest 2: Monitors for a build lock file. Kills the process immediately if found.
         /// </summary>
-        private static async Task RunNativeMessagingHostAsync()
+        private static void InitializeKillSwitch()
+        {
+            string fullLockPath = Path.Combine(LockFileDir, LockFileName);
+
+            // Prevent startup if file already exists
+            if (File.Exists(fullLockPath))
+            {
+                LogDebug("Build lock file found on startup. Aborting execution.");
+                Environment.Exit(0);
+            }
+
+            // Watch for file creation during runtime
+            _killSwitchWatcher = new FileSystemWatcher(LockFileDir, LockFileName)
+            {
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.CreationTime,
+                EnableRaisingEvents = true
+            };
+
+            _killSwitchWatcher.Created += (sender, e) =>
+            {
+                LogDebug("Kill switch activated by MSBuild! Shutting down gracefully for overwrite.");
+                Environment.Exit(0); // Instantly frees the .exe lock for Visual Studio
+            };
+        }
+
+        private static async Task RunNativeMessagingHostAsync(Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime lifetime)
         {
             try
             {
-                // TODO: Später binden wir hier unseren echten VaultOrchestrator per DI ein.
-                // Für den Moment nutzen wir einen Dummy, damit die Pipe steht.
-                var orchestrator = new DummyVaultOrchestrator();
+                var orchestrator = new RealDesktopVaultOrchestrator();
                 var host = new BrowserMessagingHost(orchestrator);
 
+                LogDebug("Awaiting messages from browser...");
                 await host.ListenAsync();
+                LogDebug("ListenAsync() terminated naturally (Browser disconnected).");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Anti-Forensik: Wenn die Pipe crasht, lautlos beenden. Keine Logs ins EventLog schreiben!
+                LogDebug($"LISTENER CRASH: {ex}");
                 Environment.Exit(1);
+            }
+            finally
+            {
+                Dispatcher.UIThread.Post(() => lifetime.Shutdown());
             }
         }
 
-        // Avalonia configuration, don't remove; also used by visual designer.
         public static AppBuilder BuildAvaloniaApp()
             => AppBuilder.Configure<App>()
                 .UsePlatformDetect()
-                .WithInterFont()
-                .LogToTrace();
+                .WithInterFont();
     }
 
-    /// <summary>
-    /// Temporärer Dummy-Orchestrator, bis das UI und die Krypto-Engine final verknüpft sind.
-    /// </summary>
-    internal class DummyVaultOrchestrator : IVaultOrchestrator
+    internal class RealDesktopVaultOrchestrator : IVaultOrchestrator
     {
         public Task<dynamic> CheckAssetForUrlAsync(string url)
         {
-            // Simuliert einen Treffer für die aktuelle URL (Testdaten)
-            return Task.FromResult<dynamic>(new { AssetId = Guid.NewGuid(), IsPaymentAsset = true });
+            Program.LogDebug($"Checking asset for URL: {url}");
+
+            dynamic result = new System.Dynamic.ExpandoObject();
+            result.AssetId = Guid.NewGuid();
+            result.IsPaymentAsset = true;
+
+            return Task.FromResult<dynamic>(result);
         }
 
-        public Task<bool> EnforceAuditLogInteractionAsync(Guid assetId)
+        public async Task<bool> EnforceAuditLogInteractionAsync(Guid assetId)
         {
-            // Hier würde sich später das Avalonia-Fenster für das Pflicht-Log öffnen!
-            // Da wir noch kein UI haben, simulieren wir vorerst einen Fehlschlag/Block.
-            return Task.FromResult(false);
+            Program.LogDebug("EnforceAuditLogInteractionAsync invoked! Marshaling to UI thread...");
+            var tcs = new TaskCompletionSource<bool>();
+
+            Dispatcher.UIThread.Post(async () =>
+            {
+                try
+                {
+                    Program.LogDebug("UI thread reached. Creating AuditDialog...");
+                    var dialog = new AuditDialog();
+                    Program.LogDebug("Displaying AuditDialog...");
+
+                    var result = await dialog.ShowAuditPromptAsync();
+
+                    Program.LogDebug($"Dialog closed. Result: IsAuthorized={result.IsAuthorized}");
+
+                    tcs.SetResult(result.IsAuthorized);
+                }
+                catch (Exception ex)
+                {
+                    Program.LogDebug($"UI THREAD CRASH: {ex}");
+                    tcs.SetResult(false);
+                }
+            });
+
+            return await tcs.Task;
         }
 
         public Task<dynamic> DecryptAssetAsync(Guid assetId)
         {
-            return Task.FromResult<dynamic>(new { Username = "testuser", Password = "testpassword" });
+            Program.LogDebug("Decrypting asset...");
+
+            dynamic result = new System.Dynamic.ExpandoObject();
+            result.Username = "MyCardName";
+            result.Password = "1234-5678-9012-3456";
+
+            return Task.FromResult<dynamic>(result);
         }
     }
 }

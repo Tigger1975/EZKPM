@@ -1,7 +1,7 @@
 {
   "name": "com.ironcladvault.ezkpm",
   "description": "EZK-PM Native Messaging Bridge",
-  "path": "C:\\Users\\adm-kh\\source\\repos\\EZKPM\\EZKPM.Client.Desktop\\bin\\Debug\\net8.0\\EZKPM.Client.Desktop.exe",
+  "path": "C:\\Users\\adm-kh\\source\\repos\\EZKPM\\EZKPM.Client.Desktop\\bin\\Debug\\net10.0\\EZKPM.Client.Desktop.exe",
   "type": "stdio",
   "allowed_origins": [
     "chrome-extension://ofiilabemldhhdggobjdbdfelbmpmklf/"

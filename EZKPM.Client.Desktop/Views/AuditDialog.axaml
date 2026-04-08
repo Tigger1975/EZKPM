@@ -1,0 +1,51 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:i18n="clr-namespace:EZKPM.Client.Desktop.Services"
+        x:Class="EZKPM.Client.Desktop.Views.AuditDialog"
+        Title="{Binding [AuditDialog_Title], Source={x:Static i18n:Localizer.Instance}}"
+        Width="550" Height="340"
+        WindowStartupLocation="CenterScreen"
+        CanResize="False"
+        Topmost="True"
+        Padding="25">
+
+	<!-- Topmost="True" ist kritisch, damit der Dialog über dem Browser erscheint -->
+	<!-- Größeres Padding (25) für einen moderneren Look -->
+	<StackPanel Spacing="20">
+		<TextBlock Text="{Binding [AuditDialog_Header], Source={x:Static i18n:Localizer.Instance}}"
+                   FontSize="22"
+                   FontWeight="Bold"
+                   Foreground="#D32F2F"/>
+
+		<TextBlock Text="{Binding [AuditDialog_Description], Source={x:Static i18n:Localizer.Instance}}"
+                   TextWrapping="Wrap"
+                   FontSize="14"
+                   Margin="0,0,0,15"/>
+
+		<!-- Eingabefelder für das Audit-Log -->
+		<TextBox Name="AmountTextBox"
+                 Watermark="{Binding [AuditDialog_AmountWatermark], Source={x:Static i18n:Localizer.Instance}}"
+                 FontSize="14"
+                 Padding="8"/>
+
+		<TextBox Name="OrderIdTextBox"
+                 Watermark="{Binding [AuditDialog_OrderIdWatermark], Source={x:Static i18n:Localizer.Instance}}"
+                 FontSize="14"
+                 Padding="8"/>
+
+		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="15" Margin="0, 20, 0, 0">
+			<Button Name="CancelButton"
+                    Content="{Binding [AuditDialog_BtnCancel], Source={x:Static i18n:Localizer.Instance}}"
+                    Click="CancelButton_Click"
+                    Padding="15,8" />
+
+			<Button Name="AuthorizeButton"
+                    Content="{Binding [AuditDialog_BtnAuthorize], Source={x:Static i18n:Localizer.Instance}}"
+                    Click="AuthorizeButton_Click"
+                    Background="#2E7D32"
+                    Foreground="White"
+                    FontWeight="Bold"
+                    Padding="15,8" />
+		</StackPanel>
+	</StackPanel>
+</Window>
