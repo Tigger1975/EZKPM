@@ -62,21 +62,22 @@
                     <TextBlock Text="Enterprise Vault" FontSize="12" Foreground="#94A3B8"/>
                 </StackPanel>
                 
-                <ListBox x:Name="AssetListBox" Grid.Row="1" Background="Transparent" BorderThickness="0" 
-                         SelectionChanged="AssetListBox_SelectionChanged">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate DataType="contracts:VaultAssetPayload">
-                            <Border CornerRadius="6" Padding="12,8" Margin="0,2">
-                                <StackPanel>
-                                    <TextBlock Text="{Binding Title}" FontWeight="Medium" Foreground="White" FontSize="14"/>
-                                    <TextBlock Text="{Binding AssetType}" FontSize="11" Foreground="#94A3B8" Margin="0,4,0,0"/>
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                <TreeView x:Name="AssetTreeView" Grid.Row="1" Background="Transparent" 
+                          SelectionChanged="AssetTreeView_SelectionChanged">
+                    <TreeView.ItemTemplate>
+                        <TreeDataTemplate ItemsSource="{Binding Children}">
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4">
+                                <TextBlock Text="{Binding Icon}" FontSize="14"/>
+                                <TextBlock Text="{Binding Title}" FontWeight="Medium" Foreground="White" FontSize="14" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </TreeDataTemplate>
+                    </TreeView.ItemTemplate>
+                </TreeView>
                 
-                <Button Grid.Row="2" Classes="success" Content="+ New Asset" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,20,0,0" Click="NewAssetButton_Click"/>
+                <Grid Grid.Row="2" ColumnDefinitions="*, *" Margin="0,20,0,0">
+                    <Button Grid.Column="0" Classes="success" Content="+ Asset" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,5,0" Click="NewAssetButton_Click"/>
+                    <Button Grid.Column="1" Classes="outline" Content="+ Folder" Foreground="White" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="5,0,0,0" Click="NewFolderButton_Click"/>
+                </Grid>
             </Grid>
         </Border>
 
@@ -91,24 +92,37 @@
                         <Button Grid.Column="2" Classes="outline" Content="📄 Duplicate" Click="DuplicateButton_Click" VerticalAlignment="Center"/>
                     </Grid>
 
-                    <!-- Title & Type -->
-                    <Grid ColumnDefinitions="*, 20, 200">
+                    <!-- Title, Type & Parent Folder -->
+                    <Grid ColumnDefinitions="*, 20, 150, 20, 200">
                         <StackPanel Grid.Column="0">
-                            <TextBlock Classes="label" Text="Asset Title"/>
+                            <TextBlock Classes="label" Text="Title"/>
                             <TextBox x:Name="TitleTextBox" Watermark="e.g. My Bank Account" />
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Classes="label" Text="Asset Type"/>
-                            <ComboBox x:Name="AssetTypeComboBox" SelectedIndex="0" HorizontalAlignment="Stretch" CornerRadius="6">
+                            <ComboBox x:Name="AssetTypeComboBox" SelectedIndex="0" HorizontalAlignment="Stretch" CornerRadius="6" SelectionChanged="AssetTypeComboBox_SelectionChanged">
                                 <ComboBoxItem>Login</ComboBoxItem>
                                 <ComboBoxItem>Payment</ComboBoxItem>
                                 <ComboBoxItem>SecureNote</ComboBoxItem>
+                                <ComboBoxItem>Folder</ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <TextBlock Classes="label" Text="Parent Folder"/>
+                            <ComboBox x:Name="ParentFolderComboBox" HorizontalAlignment="Stretch" CornerRadius="6">
+                                <!-- Items will be populated dynamically -->
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Title}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
                             </ComboBox>
                         </StackPanel>
                     </Grid>
 
-                    <!-- Credentials -->
-                    <Border Background="White" CornerRadius="8" Padding="25" BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,10">
+                    <!-- Credentials (Hidden for Folders) -->
+                    <StackPanel x:Name="CredentialsPanel" Spacing="15">
+                        <Border Background="White" CornerRadius="8" Padding="25" BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,10">
                         <StackPanel Spacing="15">
                             <TextBlock Classes="label" Text="Username / Email"/>
                             <Grid ColumnDefinitions="*, Auto">
@@ -169,6 +183,7 @@
                             </Border>
                         </StackPanel>
                     </Expander>
+                    </StackPanel>
 
                     <!-- Extra margin at the bottom ensures the button is not flush against the scroll limit -->
                     <Button Classes="primary" Content="Save to Server" HorizontalAlignment="Right" Click="SaveButton_Click" Margin="0,20,0,40" MinWidth="150" HorizontalContentAlignment="Center"/>

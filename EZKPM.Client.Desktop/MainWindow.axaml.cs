@@ -2,6 +2,8 @@ using System;
 using System.Collections.ObjectModel;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Linq;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Input.Platform;
@@ -16,6 +18,7 @@ public partial class MainWindow : Window
     private readonly VaultApiClient _apiClient;
     private readonly VaultCryptoService _cryptoService;
     private readonly ObservableCollection<VaultAssetPayload> _decryptedAssets = new();
+    private readonly ObservableCollection<VaultTreeNode> _treeNodes = new();
     private Guid? _currentEditingAssetId = null;
 
     public MainWindow()
@@ -26,7 +29,7 @@ public partial class MainWindow : Window
         _apiClient = new VaultApiClient(httpClient);
         _cryptoService = new VaultCryptoService(new HybridPqcKeyWrapper());
 
-        AssetListBox.ItemsSource = _decryptedAssets;
+        AssetTreeView.ItemsSource = _treeNodes;
         
         // Auto-load assets on startup
         _ = LoadAssetsAsync();
@@ -52,6 +55,8 @@ public partial class MainWindow : Window
                     Console.WriteLine($"Decryption failed for asset {dto.AssetId}: {ex.Message}");
                 }
             }
+            
+            BuildTree();
         }
         catch (Exception ex)
         {
@@ -60,10 +65,34 @@ public partial class MainWindow : Window
         }
     }
 
-    private void AssetListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void BuildTree()
     {
-        if (AssetListBox.SelectedItem is VaultAssetPayload payload)
+        _treeNodes.Clear();
+        var nodes = _decryptedAssets.ToDictionary(a => a.TransientAssetId.GetValueOrDefault(), a => new VaultTreeNode { Payload = a });
+
+        foreach (var node in nodes.Values)
         {
+            if (node.Payload.ParentFolderId.HasValue && nodes.TryGetValue(node.Payload.ParentFolderId.Value, out var parent))
+            {
+                parent.Children.Add(node);
+            }
+            else
+            {
+                _treeNodes.Add(node);
+            }
+        }
+        
+        // Populate ParentFolderComboBox
+        var folders = _decryptedAssets.Where(a => a.AssetType == "Folder").ToList();
+        folders.Insert(0, new VaultAssetPayload { Title = "-- Root --", TransientAssetId = null });
+        ParentFolderComboBox.ItemsSource = folders;
+    }
+
+    private void AssetTreeView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (AssetTreeView.SelectedItem is VaultTreeNode node)
+        {
+            var payload = node.Payload;
             _currentEditingAssetId = payload.TransientAssetId;
             EditorPanel.IsVisible = true;
             TitleTextBox.Text = payload.Title;
@@ -74,7 +103,10 @@ public partial class MainWindow : Window
 
             if (payload.AssetType == "Login") AssetTypeComboBox.SelectedIndex = 0;
             else if (payload.AssetType == "Payment") AssetTypeComboBox.SelectedIndex = 1;
-            else AssetTypeComboBox.SelectedIndex = 2;
+            else if (payload.AssetType == "SecureNote") AssetTypeComboBox.SelectedIndex = 2;
+            else AssetTypeComboBox.SelectedIndex = 3;
+
+            ParentFolderComboBox.SelectedItem = (ParentFolderComboBox.ItemsSource as IEnumerable<VaultAssetPayload>)?.FirstOrDefault(f => f.TransientAssetId == payload.ParentFolderId);
 
             // Password Settings
             GenLengthControl.Value = payload.PasswordSettings.Length;
@@ -97,10 +129,29 @@ public partial class MainWindow : Window
         }
     }
 
+    private void AssetTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (CredentialsPanel != null)
+        {
+            CredentialsPanel.IsVisible = AssetTypeComboBox.SelectedIndex != 3; // Hide if "Folder"
+        }
+    }
+
+    private void NewFolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        ResetEditor();
+        AssetTypeComboBox.SelectedIndex = 3; // Folder
+    }
+
     private void NewAssetButton_Click(object sender, RoutedEventArgs e)
     {
+        ResetEditor();
+    }
+
+    private void ResetEditor()
+    {
         _currentEditingAssetId = null;
-        AssetListBox.SelectedItem = null;
+        if (AssetTreeView != null) AssetTreeView.SelectedItem = null;
         EditorPanel.IsVisible = true;
         TitleTextBox.Text = "";
         UsernameTextBox.Text = "";
@@ -108,6 +159,7 @@ public partial class MainWindow : Window
         UrlTextBox.Text = "";
         NotesTextBox.Text = "";
         AssetTypeComboBox.SelectedIndex = 0;
+        if (ParentFolderComboBox.Items.Count > 0) ParentFolderComboBox.SelectedIndex = 0;
         StatusTextBlock.Text = "";
         
         // Defaults
@@ -170,7 +222,7 @@ public partial class MainWindow : Window
         if (_currentEditingAssetId != null)
         {
             _currentEditingAssetId = null;
-            AssetListBox.SelectedItem = null;
+            if (AssetTreeView != null) AssetTreeView.SelectedItem = null;
             TitleTextBox.Text += " (Kopie)";
             StatusTextBlock.Text = "Asset als Kopie vorbereitet. Klicke auf 'Save to Server' um es neu anzulegen.";
             StatusTextBlock.Foreground = Avalonia.Media.Brushes.Orange;
@@ -214,6 +266,7 @@ public partial class MainWindow : Window
             var payload = new VaultAssetPayload
             {
                 TransientAssetId = _currentEditingAssetId,
+                ParentFolderId = (ParentFolderComboBox.SelectedItem as VaultAssetPayload)?.TransientAssetId,
                 Title = TitleTextBox.Text ?? "Untitled",
                 AssetType = (AssetTypeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Login",
                 Username = UsernameTextBox.Text ?? "",
