@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:contracts="clr-namespace:EZKPM.Shared.Contracts;assembly=EZKPM.Shared.Contracts"
+        xmlns:local="clr-namespace:EZKPM.Client.Desktop"
         Width="1200" Height="800"
         WindowStartupLocation="CenterScreen"
         FontFamily="Inter, sans-serif"
@@ -63,10 +64,15 @@
                 </StackPanel>
                 
                 <TreeView x:Name="AssetTreeView" Grid.Row="1" Background="Transparent" 
-                          SelectionChanged="AssetTreeView_SelectionChanged">
+                          SelectionChanged="AssetTreeView_SelectionChanged"
+                          DragDrop.AllowDrop="True"
+                          DragDrop.DragOver="AssetTreeView_DragOver"
+                          DragDrop.Drop="AssetTreeView_Drop">
                     <TreeView.ItemTemplate>
-                        <TreeDataTemplate ItemsSource="{Binding Children}">
-                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4">
+                        <TreeDataTemplate DataType="local:VaultTreeNode" ItemsSource="{Binding Children}">
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4" Background="Transparent"
+                                        PointerPressed="TreeNode_PointerPressed"
+                                        PointerMoved="TreeNode_PointerMoved">
                                 <TextBlock Text="{Binding Icon}" FontSize="18" VerticalAlignment="Center"/>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="{Binding Title}" FontWeight="Medium" Foreground="White" FontSize="14" />
@@ -118,7 +124,7 @@
                             <ComboBox x:Name="ParentFolderComboBox" HorizontalAlignment="Stretch" CornerRadius="6">
                                 <!-- Items will be populated dynamically -->
                                 <ComboBox.ItemTemplate>
-                                    <DataTemplate>
+                                    <DataTemplate DataType="contracts:VaultAssetPayload">
                                         <TextBlock Text="{Binding Title}" />
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>

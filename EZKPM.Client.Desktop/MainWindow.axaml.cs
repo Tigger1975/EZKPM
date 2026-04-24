@@ -6,6 +6,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Input;
 using Avalonia.Input.Platform;
 using EZKPM.Client.Core.Cryptography;
 using EZKPM.Client.Core.Services;
@@ -322,6 +323,79 @@ public partial class MainWindow : Window
         {
             StatusTextBlock.Text = $"Save Error: {ex.Message}";
             StatusTextBlock.Foreground = Avalonia.Media.Brushes.Red;
+        }
+    }
+
+    private Point _dragStartPoint;
+    private bool _isDragging;
+
+    private void TreeNode_PointerPressed(object sender, PointerPressedEventArgs e)
+    {
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            _dragStartPoint = e.GetPosition(null);
+            _isDragging = false;
+        }
+    }
+
+    private async void TreeNode_PointerMoved(object sender, PointerEventArgs e)
+    {
+        if (!_isDragging && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            var point = e.GetPosition(null);
+            if (Math.Abs(point.X - _dragStartPoint.X) > 3 || Math.Abs(point.Y - _dragStartPoint.Y) > 3)
+            {
+                if (sender is Control control && control.DataContext is VaultTreeNode node)
+                {
+                    _isDragging = true;
+                    var dragData = new DataObject();
+                    dragData.Set("DraggedNode", node);
+                    
+                    await DragDrop.DoDragDrop(e, dragData, DragDropEffects.Move);
+                    _isDragging = false;
+                }
+            }
+        }
+    }
+
+    private void AssetTreeView_DragOver(object sender, DragEventArgs e)
+    {
+        if (e.Data.Contains("DraggedNode") && e.Source is Control control && control.DataContext is VaultTreeNode targetNode)
+        {
+            var draggedNode = e.Data.Get("DraggedNode") as VaultTreeNode;
+            if (draggedNode != null && targetNode.IsFolder && draggedNode != targetNode)
+            {
+                e.DragEffects = DragDropEffects.Move;
+                return;
+            }
+        }
+        e.DragEffects = DragDropEffects.None;
+    }
+
+    private async void AssetTreeView_Drop(object sender, DragEventArgs e)
+    {
+        if (e.Data.Contains("DraggedNode") && e.Source is Control control && control.DataContext is VaultTreeNode targetNode)
+        {
+            var draggedNode = e.Data.Get("DraggedNode") as VaultTreeNode;
+            if (draggedNode != null && targetNode.IsFolder && draggedNode != targetNode)
+            {
+                draggedNode.Payload.ParentFolderId = targetNode.Payload.TransientAssetId;
+
+                try
+                {
+                    var requestDto = _cryptoService.EncryptAsset(draggedNode.Payload);
+                    await _apiClient.UpdateAssetAsync(draggedNode.Payload.TransientAssetId.Value, requestDto);
+                    
+                    await LoadAssetsAsync();
+                    StatusTextBlock.Text = $"'{draggedNode.Title}' in '{targetNode.Title}' verschoben!";
+                    StatusTextBlock.Foreground = Avalonia.Media.Brushes.Green;
+                }
+                catch (Exception ex)
+                {
+                    StatusTextBlock.Text = $"Fehler beim Verschieben: {ex.Message}";
+                    StatusTextBlock.Foreground = Avalonia.Media.Brushes.Red;
+                }
+            }
         }
     }
 }
