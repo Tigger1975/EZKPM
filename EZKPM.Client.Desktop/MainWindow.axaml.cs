@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Input.Platform;
 using EZKPM.Client.Core.Cryptography;
 using EZKPM.Client.Core.Services;
 using EZKPM.Shared.Contracts;

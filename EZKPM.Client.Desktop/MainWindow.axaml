@@ -2,103 +2,178 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:contracts="clr-namespace:EZKPM.Shared.Contracts;assembly=EZKPM.Shared.Contracts"
         Width="1200" Height="800"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Inter, sans-serif"
         x:Class="EZKPM.Client.Desktop.MainWindow"
-        Title="EZKPM Vault Manager">
-    <Grid ColumnDefinitions="300, *">
-        <!-- Sidebar: Asset List -->
-        <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="0,0,1,0" Padding="10">
-            <Grid RowDefinitions="Auto, *, Auto">
-                <TextBlock Text="My Vault" FontWeight="Bold" FontSize="20" Margin="0,0,0,10"/>
-                <ListBox x:Name="AssetListBox" Grid.Row="1" SelectionChanged="AssetListBox_SelectionChanged">
+        Title="EZKPM Vault Manager"
+        Background="#F5F7FA">
+    
+    <Window.Styles>
+        <!-- Sleek TextBoxes -->
+        <Style Selector="TextBox">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="BorderBrush" Value="#E0E6ED"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Background" Value="White"/>
+        </Style>
+        <Style Selector="TextBox:focus">
+            <Setter Property="BorderBrush" Value="#3B82F6"/>
+        </Style>
+        <!-- Elegant Buttons -->
+        <Style Selector="Button">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="Button.primary:pointerover">
+            <Setter Property="Background" Value="#2563EB"/>
+        </Style>
+        <Style Selector="Button.success">
+            <Setter Property="Background" Value="#10B981"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="Button.outline">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="#4B5563"/>
+        </Style>
+        <!-- Labels -->
+        <Style Selector="TextBlock.label">
+            <Setter Property="Foreground" Value="#6B7280"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid ColumnDefinitions="320, *">
+        <!-- Sidebar: Asset List (Dark Theme) -->
+        <Border Grid.Column="0" Background="#1E293B" BorderThickness="0,0,1,0" BorderBrush="#0F172A">
+            <Grid RowDefinitions="Auto, *, Auto" Margin="20">
+                <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                    <TextBlock Text="EZKPM" FontWeight="Black" FontSize="24" Foreground="White" LetterSpacing="1"/>
+                    <TextBlock Text="Enterprise Vault" FontSize="12" Foreground="#94A3B8"/>
+                </StackPanel>
+                
+                <ListBox x:Name="AssetListBox" Grid.Row="1" Background="Transparent" BorderThickness="0" 
+                         SelectionChanged="AssetListBox_SelectionChanged">
                     <ListBox.ItemTemplate>
                         <DataTemplate DataType="contracts:VaultAssetPayload">
-                            <StackPanel Margin="0,5">
-                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding AssetType}" FontSize="12" Foreground="Gray" />
-                            </StackPanel>
+                            <Border CornerRadius="6" Padding="12,8" Margin="0,2">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Title}" FontWeight="Medium" Foreground="White" FontSize="14"/>
+                                    <TextBlock Text="{Binding AssetType}" FontSize="11" Foreground="#94A3B8" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-                <Button Grid.Row="2" Content="+ New Asset" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,10,0,0" Click="NewAssetButton_Click" Background="#28a745" Foreground="White"/>
+                
+                <Button Grid.Row="2" Classes="success" Content="+ New Asset" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,20,0,0" Click="NewAssetButton_Click"/>
             </Grid>
         </Border>
 
         <!-- Main Area: Editor -->
         <Grid Grid.Column="1" RowDefinitions="*, Auto">
-            <ScrollViewer Grid.Row="0" Padding="20">
-                <StackPanel Spacing="15" x:Name="EditorPanel" IsVisible="False">
-                    <TextBlock Text="Edit Asset" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
+            <ScrollViewer Grid.Row="0">
+                <StackPanel Spacing="15" x:Name="EditorPanel" IsVisible="False" Margin="40,30,40,40" MaxWidth="800" HorizontalAlignment="Left">
+                    <TextBlock Text="Asset Details" FontSize="28" FontWeight="Light" Foreground="#111827" Margin="0,0,0,20"/>
 
-                    <TextBlock Text="Title" FontWeight="SemiBold"/>
-                    <TextBox x:Name="TitleTextBox" />
-
-                    <TextBlock Text="Asset Type" FontWeight="SemiBold"/>
-                    <ComboBox x:Name="AssetTypeComboBox" SelectedIndex="0" HorizontalAlignment="Stretch">
-                        <ComboBoxItem>Login</ComboBoxItem>
-                        <ComboBoxItem>Payment</ComboBoxItem>
-                        <ComboBoxItem>SecureNote</ComboBoxItem>
-                    </ComboBox>
-
-                    <TextBlock Text="Username / Email" FontWeight="SemiBold"/>
-                    <Grid ColumnDefinitions="*, Auto">
-                        <TextBox x:Name="UsernameTextBox" Grid.Column="0" />
-                        <Button Grid.Column="1" Content="Copy" Margin="10,0,0,0" Click="CopyUsernameButton_Click"/>
+                    <!-- Title & Type -->
+                    <Grid ColumnDefinitions="*, 20, 200">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Classes="label" Text="Asset Title"/>
+                            <TextBox x:Name="TitleTextBox" Watermark="e.g. My Bank Account" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Classes="label" Text="Asset Type"/>
+                            <ComboBox x:Name="AssetTypeComboBox" SelectedIndex="0" HorizontalAlignment="Stretch" CornerRadius="6">
+                                <ComboBoxItem>Login</ComboBoxItem>
+                                <ComboBoxItem>Payment</ComboBoxItem>
+                                <ComboBoxItem>SecureNote</ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
                     </Grid>
 
-                    <TextBlock Text="Password" FontWeight="SemiBold"/>
-                    <Grid ColumnDefinitions="*, Auto, Auto">
-                        <TextBox x:Name="PasswordTextBox" Grid.Column="0" PasswordChar="*" />
-                        <Button Grid.Column="1" Content="Copy" Margin="10,0,0,0" Click="CopyPasswordButton_Click"/>
-                        <Button Grid.Column="2" Content="Generate" Margin="5,0,0,0" Click="GeneratePasswordButton_Click"/>
-                    </Grid>
-                    <CheckBox x:Name="ShowPasswordCheckBox" Content="Show Password" IsCheckedChanged="ShowPasswordCheckBox_CheckedChanged"/>
-                    
-                    <Expander Header="Password Generator Settings" HorizontalAlignment="Stretch">
-                        <StackPanel Spacing="5" Margin="5">
+                    <!-- Credentials -->
+                    <Border Background="White" CornerRadius="8" Padding="25" BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,10">
+                        <StackPanel Spacing="15">
+                            <TextBlock Classes="label" Text="Username / Email"/>
                             <Grid ColumnDefinitions="*, Auto">
-                                <TextBlock Text="Length" VerticalAlignment="Center"/>
-                                <NumericUpDown x:Name="GenLengthControl" Grid.Column="1" Value="20" Minimum="8" Maximum="128" Width="100"/>
+                                <TextBox x:Name="UsernameTextBox" Grid.Column="0" Watermark="user@example.com"/>
+                                <Button Grid.Column="1" Classes="outline" Content="Copy" Margin="10,0,0,0" Click="CopyUsernameButton_Click"/>
                             </Grid>
-                            <CheckBox x:Name="GenUpperCheck" Content="Uppercase (A-Z)" IsChecked="True"/>
-                            <CheckBox x:Name="GenLowerCheck" Content="Lowercase (a-z)" IsChecked="True"/>
-                            <CheckBox x:Name="GenNumberCheck" Content="Numbers (0-9)" IsChecked="True"/>
-                            <CheckBox x:Name="GenSymbolCheck" Content="Symbols (!@#$)" IsChecked="True"/>
+
+                            <TextBlock Classes="label" Text="Password"/>
+                            <Grid ColumnDefinitions="*, Auto, Auto">
+                                <TextBox x:Name="PasswordTextBox" Grid.Column="0" PasswordChar="•" Watermark="••••••••" />
+                                <Button Grid.Column="1" Classes="outline" Content="Copy" Margin="10,0,0,0" Click="CopyPasswordButton_Click"/>
+                                <Button Grid.Column="2" Classes="outline" Content="Generate" Margin="10,0,0,0" Click="GeneratePasswordButton_Click"/>
+                            </Grid>
+                            <CheckBox x:Name="ShowPasswordCheckBox" Content="Show Password" IsCheckedChanged="ShowPasswordCheckBox_CheckedChanged" Foreground="#4B5563"/>
+                        </StackPanel>
+                    </Border>
+                    
+                    <Expander Header="Password Generator Settings" HorizontalAlignment="Stretch" CornerRadius="8" Background="White" BorderBrush="#E5E7EB">
+                        <StackPanel Spacing="10" Margin="10">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <TextBlock Text="Length" VerticalAlignment="Center" Foreground="#4B5563"/>
+                                <NumericUpDown x:Name="GenLengthControl" Grid.Column="1" Value="20" Minimum="8" Maximum="128" Width="120" CornerRadius="4"/>
+                            </Grid>
+                            <WrapPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <CheckBox x:Name="GenUpperCheck" Content="Uppercase (A-Z)" IsChecked="True" Margin="0,0,20,0" Foreground="#4B5563"/>
+                                <CheckBox x:Name="GenLowerCheck" Content="Lowercase (a-z)" IsChecked="True" Margin="0,0,20,0" Foreground="#4B5563"/>
+                                <CheckBox x:Name="GenNumberCheck" Content="Numbers (0-9)" IsChecked="True" Margin="0,0,20,0" Foreground="#4B5563"/>
+                                <CheckBox x:Name="GenSymbolCheck" Content="Symbols (!@#$)" IsChecked="True" Foreground="#4B5563"/>
+                            </WrapPanel>
                         </StackPanel>
                     </Expander>
 
-                    <TextBlock Text="URL" FontWeight="SemiBold"/>
-                    <TextBox x:Name="UrlTextBox" />
+                    <TextBlock Classes="label" Text="Login URL"/>
+                    <TextBox x:Name="UrlTextBox" Watermark="https://..." />
 
-                    <TextBlock Text="Notes" FontWeight="SemiBold"/>
-                    <TextBox x:Name="NotesTextBox" AcceptsReturn="True" Height="80"/>
+                    <TextBlock Classes="label" Text="Secure Notes"/>
+                    <TextBox x:Name="NotesTextBox" AcceptsReturn="True" MinHeight="100" Watermark="Additional information..." />
 
-                    <Expander Header="Login Automation Settings" HorizontalAlignment="Stretch">
-                        <StackPanel Spacing="10" Margin="5">
-                            <TextBlock Text="Login Method" FontWeight="SemiBold"/>
-                            <ComboBox x:Name="LoginMethodComboBox" SelectedIndex="0" HorizontalAlignment="Stretch">
+                    <Expander Header="Login Automation Settings (Browser Extension)" HorizontalAlignment="Stretch" CornerRadius="8" Background="White" BorderBrush="#E5E7EB">
+                        <StackPanel Spacing="15" Margin="10">
+                            <TextBlock Classes="label" Text="Login Method"/>
+                            <ComboBox x:Name="LoginMethodComboBox" SelectedIndex="0" HorizontalAlignment="Stretch" CornerRadius="6">
                                 <ComboBoxItem>AutoLearn</ComboBoxItem>
                                 <ComboBoxItem>OneStep (Username &amp; Password)</ComboBoxItem>
                                 <ComboBoxItem>TwoStep (Username -> Next -> Password)</ComboBoxItem>
                                 <ComboBoxItem>BasicAuth</ComboBoxItem>
                             </ComboBox>
-                            <CheckBox x:Name="AutoLearnEnabledCheck" Content="Enable AutoLearn Mode (Observe DOM)" IsChecked="True"/>
+                            <CheckBox x:Name="AutoLearnEnabledCheck" Content="Enable AutoLearn Mode (Observe DOM)" IsChecked="True" Foreground="#4B5563"/>
                             
-                            <TextBlock Text="Learned DOM Selectors:" FontWeight="SemiBold" Margin="0,10,0,0"/>
-                            <TextBox x:Name="DomUserTextBox" Watermark="Username Field Selector" />
-                            <TextBox x:Name="DomPassTextBox" Watermark="Password Field Selector" />
-                            <TextBox x:Name="DomNextTextBox" Watermark="Next Button Selector" />
-                            <TextBox x:Name="DomSubmitTextBox" Watermark="Submit Button Selector" />
+                            <Border BorderThickness="0,1,0,0" BorderBrush="#E5E7EB" Margin="0,10,0,5" Padding="0,15,0,0">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="Learned DOM Selectors" FontWeight="SemiBold" Foreground="#374151"/>
+                                    <TextBox x:Name="DomUserTextBox" Watermark="Username Field Selector" />
+                                    <TextBox x:Name="DomPassTextBox" Watermark="Password Field Selector" />
+                                    <TextBox x:Name="DomNextTextBox" Watermark="Next Button Selector" />
+                                    <TextBox x:Name="DomSubmitTextBox" Watermark="Submit Button Selector" />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </Expander>
 
-                    <Button Content="Save to Server" HorizontalAlignment="Right" Click="SaveButton_Click" Background="#0078D7" Foreground="White" Padding="20,10"/>
+                    <!-- Extra margin at the bottom ensures the button is not flush against the scroll limit -->
+                    <Button Classes="primary" Content="Save to Server" HorizontalAlignment="Right" Click="SaveButton_Click" Margin="0,20,0,40" MinWidth="150" HorizontalContentAlignment="Center"/>
                 </StackPanel>
             </ScrollViewer>
 
             <!-- Status Message pinned to bottom -->
-            <TextBox Grid.Row="1" x:Name="StatusTextBlock" 
-                     IsReadOnly="True" BorderThickness="0" Background="Transparent" 
-                     TextWrapping="Wrap" Margin="20,10,20,10" MinHeight="40" />
+            <Border Grid.Row="1" Background="White" BorderThickness="0,1,0,0" BorderBrush="#E5E7EB" Padding="20,10">
+                <TextBlock x:Name="StatusTextBlock" Text="" Foreground="#4B5563" FontSize="13" TextWrapping="Wrap" />
+            </Border>
         </Grid>
     </Grid>
 </Window>
