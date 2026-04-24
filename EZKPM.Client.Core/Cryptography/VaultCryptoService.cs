@@ -100,28 +100,24 @@ namespace EZKPM.Client.Core.Cryptography
             };
         }
 
-        public string GeneratePassword(int length = 20, bool useSpecialChars = true)
+        public string GeneratePassword(PasswordGeneratorConfig config = null)
         {
-            const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // No I, O
-            const string lower = "abcdefghijkmnopqrstuvwxyz"; // No l
-            const string digits = "23456789"; // No 0, 1
-            const string specials = "!@#$%^&*()-_=+[]{}";
+            if (config == null) config = new PasswordGeneratorConfig();
 
-            string pool = upper + lower + digits;
-            if (useSpecialChars) pool += specials;
+            string pool = "";
+            if (config.UseUppercase) pool += "ABCDEFGHJKLMNPQRSTUVWXYZ"; // No I, O
+            if (config.UseLowercase) pool += "abcdefghijkmnopqrstuvwxyz"; // No l
+            if (config.UseNumbers) pool += "23456789"; // No 0, 1
+            if (config.UseSymbols) pool += "!@#$%^&*()-_=+[]{}";
 
-            var chars = new char[length];
-            for (int i = 0; i < length; i++)
+            if (pool.Length == 0) pool = "abcdefghijkmnopqrstuvwxyz23456789";
+
+            var chars = new char[config.Length];
+            for (int i = 0; i < config.Length; i++)
             {
                 chars[i] = pool[RandomNumberGenerator.GetInt32(pool.Length)];
             }
             
-            // Ensure at least one of each required type (simple approach)
-            chars[0] = upper[RandomNumberGenerator.GetInt32(upper.Length)];
-            chars[1] = lower[RandomNumberGenerator.GetInt32(lower.Length)];
-            chars[2] = digits[RandomNumberGenerator.GetInt32(digits.Length)];
-            if (useSpecialChars) chars[3] = specials[RandomNumberGenerator.GetInt32(specials.Length)];
-
             // Shuffle
             for (int i = chars.Length - 1; i > 0; i--)
             {

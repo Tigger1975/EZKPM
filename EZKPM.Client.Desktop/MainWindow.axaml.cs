@@ -72,6 +72,25 @@ public partial class MainWindow : Window
             if (payload.AssetType == "Login") AssetTypeComboBox.SelectedIndex = 0;
             else if (payload.AssetType == "Payment") AssetTypeComboBox.SelectedIndex = 1;
             else AssetTypeComboBox.SelectedIndex = 2;
+
+            // Password Settings
+            GenLengthControl.Value = payload.PasswordSettings.Length;
+            GenUpperCheck.IsChecked = payload.PasswordSettings.UseUppercase;
+            GenLowerCheck.IsChecked = payload.PasswordSettings.UseLowercase;
+            GenNumberCheck.IsChecked = payload.PasswordSettings.UseNumbers;
+            GenSymbolCheck.IsChecked = payload.PasswordSettings.UseSymbols;
+
+            // Login Flow Settings
+            if (payload.LoginFlow.Method == "AutoLearn") LoginMethodComboBox.SelectedIndex = 0;
+            else if (payload.LoginFlow.Method == "OneStep") LoginMethodComboBox.SelectedIndex = 1;
+            else if (payload.LoginFlow.Method == "TwoStep") LoginMethodComboBox.SelectedIndex = 2;
+            else LoginMethodComboBox.SelectedIndex = 3;
+
+            AutoLearnEnabledCheck.IsChecked = payload.LoginFlow.AutoLearnEnabled;
+            DomUserTextBox.Text = payload.LoginFlow.UsernameSelector;
+            DomPassTextBox.Text = payload.LoginFlow.PasswordSelector;
+            DomNextTextBox.Text = payload.LoginFlow.NextButtonSelector;
+            DomSubmitTextBox.Text = payload.LoginFlow.SubmitButtonSelector;
         }
     }
 
@@ -86,11 +105,33 @@ public partial class MainWindow : Window
         NotesTextBox.Text = "";
         AssetTypeComboBox.SelectedIndex = 0;
         StatusTextBlock.Text = "";
+        
+        // Defaults
+        GenLengthControl.Value = 20;
+        GenUpperCheck.IsChecked = true;
+        GenLowerCheck.IsChecked = true;
+        GenNumberCheck.IsChecked = true;
+        GenSymbolCheck.IsChecked = true;
+
+        LoginMethodComboBox.SelectedIndex = 0;
+        AutoLearnEnabledCheck.IsChecked = true;
+        DomUserTextBox.Text = "";
+        DomPassTextBox.Text = "";
+        DomNextTextBox.Text = "";
+        DomSubmitTextBox.Text = "";
     }
 
     private void GeneratePasswordButton_Click(object sender, RoutedEventArgs e)
     {
-        PasswordTextBox.Text = _cryptoService.GeneratePassword(20, true);
+        var config = new PasswordGeneratorConfig
+        {
+            Length = (int)GenLengthControl.Value.GetValueOrDefault(20),
+            UseUppercase = GenUpperCheck.IsChecked == true,
+            UseLowercase = GenLowerCheck.IsChecked == true,
+            UseNumbers = GenNumberCheck.IsChecked == true,
+            UseSymbols = GenSymbolCheck.IsChecked == true
+        };
+        PasswordTextBox.Text = _cryptoService.GeneratePassword(config);
     }
 
     private void ShowPasswordCheckBox_CheckedChanged(object sender, RoutedEventArgs e)
@@ -109,6 +150,11 @@ public partial class MainWindow : Window
     {
         try
         {
+            string loginMethodStr = "AutoLearn";
+            if (LoginMethodComboBox.SelectedIndex == 1) loginMethodStr = "OneStep";
+            else if (LoginMethodComboBox.SelectedIndex == 2) loginMethodStr = "TwoStep";
+            else if (LoginMethodComboBox.SelectedIndex == 3) loginMethodStr = "BasicAuth";
+
             var payload = new VaultAssetPayload
             {
                 Title = TitleTextBox.Text ?? "Untitled",
@@ -116,7 +162,26 @@ public partial class MainWindow : Window
                 Username = UsernameTextBox.Text ?? "",
                 Password = PasswordTextBox.Text ?? "",
                 Url = UrlTextBox.Text ?? "",
-                Notes = NotesTextBox.Text ?? ""
+                Notes = NotesTextBox.Text ?? "",
+
+                PasswordSettings = new PasswordGeneratorConfig
+                {
+                    Length = (int)GenLengthControl.Value.GetValueOrDefault(20),
+                    UseUppercase = GenUpperCheck.IsChecked == true,
+                    UseLowercase = GenLowerCheck.IsChecked == true,
+                    UseNumbers = GenNumberCheck.IsChecked == true,
+                    UseSymbols = GenSymbolCheck.IsChecked == true
+                },
+
+                LoginFlow = new LoginFlowConfig
+                {
+                    Method = loginMethodStr,
+                    AutoLearnEnabled = AutoLearnEnabledCheck.IsChecked == true,
+                    UsernameSelector = DomUserTextBox.Text ?? "",
+                    PasswordSelector = DomPassTextBox.Text ?? "",
+                    NextButtonSelector = DomNextTextBox.Text ?? "",
+                    SubmitButtonSelector = DomSubmitTextBox.Text ?? ""
+                }
             };
 
             // 1. Encrypt Payload locally

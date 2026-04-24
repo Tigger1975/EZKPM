@@ -33,10 +33,8 @@ namespace EZKPM.Client.Core.Services
         {
             var response = await _httpClient.PostAsJsonAsync("/api/v1/vault/assets", request);
             response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<System.Dynamic.ExpandoObject>();
-            // Parse Guid from dynamic result (Newtonsoft vs System.Text.Json difference, safely use string conversion)
-            var dict = (System.Collections.Generic.IDictionary<string, object>)result;
-            return Guid.Parse(dict["AssetId"].ToString());
+            var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            return result.GetProperty("assetId").GetGuid();
         }
 
         public async Task<bool> AppendAuditLogAsync(Guid assetId, AuditLogRequestDto logRequest)
