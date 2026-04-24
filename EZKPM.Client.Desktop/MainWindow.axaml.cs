@@ -104,7 +104,10 @@ public partial class MainWindow : Window
             if (payload.AssetType == "Login") AssetTypeComboBox.SelectedIndex = 0;
             else if (payload.AssetType == "Payment") AssetTypeComboBox.SelectedIndex = 1;
             else if (payload.AssetType == "SecureNote") AssetTypeComboBox.SelectedIndex = 2;
-            else AssetTypeComboBox.SelectedIndex = 3;
+            else if (payload.AssetType == "SSH Key") AssetTypeComboBox.SelectedIndex = 3;
+            else if (payload.AssetType == "SSL Key") AssetTypeComboBox.SelectedIndex = 4;
+            else if (payload.AssetType == "API Key") AssetTypeComboBox.SelectedIndex = 5;
+            else AssetTypeComboBox.SelectedIndex = 6;
 
             ParentFolderComboBox.SelectedItem = (ParentFolderComboBox.ItemsSource as IEnumerable<VaultAssetPayload>)?.FirstOrDefault(f => f.TransientAssetId == payload.ParentFolderId);
 
@@ -133,14 +136,14 @@ public partial class MainWindow : Window
     {
         if (CredentialsPanel != null)
         {
-            CredentialsPanel.IsVisible = AssetTypeComboBox.SelectedIndex != 3; // Hide if "Folder"
+            CredentialsPanel.IsVisible = AssetTypeComboBox.SelectedIndex != 6; // Hide if "Folder"
         }
     }
 
     private void NewFolderButton_Click(object sender, RoutedEventArgs e)
     {
         ResetEditor();
-        AssetTypeComboBox.SelectedIndex = 3; // Folder
+        AssetTypeComboBox.SelectedIndex = 6; // Folder
     }
 
     private void NewAssetButton_Click(object sender, RoutedEventArgs e)

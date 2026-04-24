@@ -67,8 +67,11 @@
                     <TreeView.ItemTemplate>
                         <TreeDataTemplate ItemsSource="{Binding Children}">
                             <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4">
-                                <TextBlock Text="{Binding Icon}" FontSize="14"/>
-                                <TextBlock Text="{Binding Title}" FontWeight="Medium" Foreground="White" FontSize="14" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Icon}" FontSize="18" VerticalAlignment="Center"/>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Title}" FontWeight="Medium" Foreground="White" FontSize="14" />
+                                    <TextBlock Text="{Binding Url}" FontSize="11" Foreground="#94A3B8" IsVisible="{Binding HasUrl}" Margin="0,2,0,0"/>
+                                </StackPanel>
                             </StackPanel>
                         </TreeDataTemplate>
                     </TreeView.ItemTemplate>
@@ -104,6 +107,9 @@
                                 <ComboBoxItem>Login</ComboBoxItem>
                                 <ComboBoxItem>Payment</ComboBoxItem>
                                 <ComboBoxItem>SecureNote</ComboBoxItem>
+                                <ComboBoxItem>SSH Key</ComboBoxItem>
+                                <ComboBoxItem>SSL Key</ComboBoxItem>
+                                <ComboBoxItem>API Key</ComboBoxItem>
                                 <ComboBoxItem>Folder</ComboBoxItem>
                             </ComboBox>
                         </StackPanel>
