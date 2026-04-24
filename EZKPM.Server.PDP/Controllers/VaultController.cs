@@ -64,11 +64,18 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> CreateAsset([FromBody] CreateAssetRequestDto request)
         {
             var userSid = GetUserSid();
+            byte[] metaHash = Convert.FromBase64String(request.MetadataHash ?? "AA==");
+
+            bool exists = await _db.VaultAssets.AnyAsync(a => a.MetadataHash == metaHash && a.Acls.Any(acl => acl.AdSid == userSid));
+            if (exists && metaHash.Length > 2)
+            {
+                return Conflict(new { Error = "Ein Eintrag mit diesem Anmeldenamen und dieser URL existiert bereits in deinem Vault." });
+            }
 
             var newAsset = new VaultAsset
             {
                 Id = Guid.NewGuid(),
-                MetadataHash = Convert.FromBase64String(request.MetadataHash ?? "AA=="),
+                MetadataHash = metaHash,
                 CipherBlob = Convert.FromBase64String(request.CipherBlob),
                 Nonce = Convert.FromBase64String(request.Nonce),
                 ExpiresAt = request.ExpiresAt
@@ -93,6 +100,14 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> UpdateAsset(Guid id, [FromBody] CreateAssetRequestDto request)
         {
             var userSid = GetUserSid();
+            
+            byte[] metaHash = Convert.FromBase64String(request.MetadataHash ?? "AA==");
+            bool exists = await _db.VaultAssets.AnyAsync(a => a.MetadataHash == metaHash && a.Acls.Any(acl => acl.AdSid == userSid) && a.Id != id);
+            if (exists && metaHash.Length > 2)
+            {
+                return Conflict(new { Error = "Ein Eintrag mit diesem Anmeldenamen und dieser URL existiert bereits in deinem Vault." });
+            }
+
             var asset = await _db.VaultAssets
                 .Include(a => a.Acls.Where(acl => acl.AdSid == userSid))
                 .FirstOrDefaultAsync(a => a.Id == id);
@@ -101,7 +116,12 @@ namespace EZKPM.Server.PDP.Controllers
 
             asset.CipherBlob = Convert.FromBase64String(request.CipherBlob);
             asset.Nonce = Convert.FromBase64String(request.Nonce);
-            asset.MetadataHash = Convert.FromBase64String(request.MetadataHash ?? "AA==");
+            asset.MetadataHash = metaHash;
+            
+            // WICHTIG: Da der Client den Blob mit einem NEUEN Asset-Key verschlüsselt hat,
+            // müssen wir auch den neuen gewrappten Key für den Owner speichern!
+            var acl = asset.Acls.First();
+            acl.EncryptedKeyShare = Convert.FromBase64String(request.EncryptedKeyShare);
             
             await _db.SaveChangesAsync();
             return Ok();

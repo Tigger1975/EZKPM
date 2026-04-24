@@ -32,6 +32,11 @@ namespace EZKPM.Client.Core.Services
         public async Task<Guid> CreateAssetAsync(CreateAssetRequestDto request)
         {
             var response = await _httpClient.PostAsJsonAsync("/api/v1/vault/assets", request);
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var err = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                throw new Exception(err.GetProperty("error").GetString());
+            }
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
             return result.GetProperty("assetId").GetGuid();
@@ -40,6 +45,11 @@ namespace EZKPM.Client.Core.Services
         public async Task UpdateAssetAsync(Guid id, CreateAssetRequestDto request)
         {
             var response = await _httpClient.PutAsJsonAsync($"/api/v1/vault/assets/{id}", request);
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                var err = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                throw new Exception(err.GetProperty("error").GetString());
+            }
             response.EnsureSuccessStatusCode();
         }
 

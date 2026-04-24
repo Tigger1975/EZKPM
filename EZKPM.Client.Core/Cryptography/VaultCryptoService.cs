@@ -90,11 +90,16 @@ namespace EZKPM.Client.Core.Cryptography
             byte[] dummyPubKeyK = new byte[32];
             byte[] wrappedKey = _keyWrapper.WrapAssetKey(assetKey, dummyPubKeyX, dummyPubKeyK);
 
+            // 4. Compute Metadata Hash (for Server uniqueness checks)
+            using var sha256 = SHA256.Create();
+            string metadataString = $"{payload.Url}|{payload.Username}".ToLowerInvariant();
+            byte[] metadataHash = sha256.ComputeHash(Encoding.UTF8.GetBytes(metadataString));
+
             CryptographicOperations.ZeroMemory(plaintext);
 
             return new CreateAssetRequestDto
             {
-                MetadataHash = "AA==", // Dummy hash for now
+                MetadataHash = Convert.ToBase64String(metadataHash),
                 CipherBlob = Convert.ToBase64String(cipherBlob),
                 Nonce = Convert.ToBase64String(nonce),
                 ExpiresAt = DateTime.UtcNow.AddDays(365), // FA 30
