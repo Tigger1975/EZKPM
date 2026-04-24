@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Input;
@@ -20,8 +21,8 @@ public partial class MainWindow : Window
     private readonly VaultCryptoService _cryptoService;
     private readonly ObservableCollection<VaultAssetPayload> _decryptedAssets = new();
     private readonly ObservableCollection<VaultTreeNode> _treeNodes = new();
-    private Guid? _currentEditingAssetId = null;
-
+    private readonly HashSet<Guid> _expandedFolderIds = new();
+    
     public MainWindow()
     {
         InitializeComponent();
@@ -31,7 +32,6 @@ public partial class MainWindow : Window
         _cryptoService = new VaultCryptoService(new HybridPqcKeyWrapper());
 
         AssetTreeView.ItemsSource = _treeNodes;
-        
         // Auto-load assets on startup
         _ = LoadAssetsAsync();
     }
@@ -61,19 +61,36 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            StatusTextBlock.Text = $"Load Error: {ex.Message}";
-            StatusTextBlock.Foreground = Avalonia.Media.Brushes.Red;
+            ShowStatus($"Load Error: {ex.Message}", isError: true);
         }
     }
 
     private void BuildTree()
     {
-        _treeNodes.Clear();
-        var nodes = _decryptedAssets.ToDictionary(a => a.TransientAssetId.GetValueOrDefault(), a => new VaultTreeNode { Payload = a });
-
-        foreach (var node in nodes.Values)
+        // Save expanded state before clearing
+        _expandedFolderIds.Clear();
+        void Traverse(IEnumerable<VaultTreeNode> nodes)
         {
-            if (node.Payload.ParentFolderId.HasValue && nodes.TryGetValue(node.Payload.ParentFolderId.Value, out var parent))
+            foreach (var n in nodes)
+            {
+                if (n.IsExpanded && n.Payload.TransientAssetId.HasValue)
+                    _expandedFolderIds.Add(n.Payload.TransientAssetId.Value);
+                Traverse(n.Children);
+            }
+        }
+        Traverse(_treeNodes);
+
+        _treeNodes.Clear();
+        var nodesMap = _decryptedAssets.Where(a => a.AssetType == "Folder").ToDictionary(a => a.TransientAssetId.GetValueOrDefault(), a => new VaultTreeNode { Payload = a });
+
+        foreach (var node in nodesMap.Values)
+        {
+            if (node.Payload.TransientAssetId.HasValue && _expandedFolderIds.Contains(node.Payload.TransientAssetId.Value))
+            {
+                node.IsExpanded = true;
+            }
+
+            if (node.Payload.ParentFolderId.HasValue && nodesMap.TryGetValue(node.Payload.ParentFolderId.Value, out var parent))
             {
                 parent.Children.Add(node);
             }
@@ -83,251 +100,126 @@ public partial class MainWindow : Window
             }
         }
         
-        // Populate ParentFolderComboBox
-        var folders = _decryptedAssets.Where(a => a.AssetType == "Folder").ToList();
-        folders.Insert(0, new VaultAssetPayload { Title = "-- Root --", TransientAssetId = null });
-        ParentFolderComboBox.ItemsSource = folders;
+        // Update DataGrid with root assets initially
+        // Update DataGrid with root assets initially
+        UpdateDataGrid();
+        
+        
     }
 
     private void AssetTreeView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (AssetTreeView.SelectedItem is VaultTreeNode node)
         {
-            var payload = node.Payload;
-            _currentEditingAssetId = payload.TransientAssetId;
-            EditorPanel.IsVisible = true;
-            TitleTextBox.Text = payload.Title;
-            UsernameTextBox.Text = payload.Username;
-            PasswordTextBox.Text = payload.Password;
-            UrlTextBox.Text = payload.Url;
-            NotesTextBox.Text = payload.Notes;
-
-            if (payload.AssetType == "Login") AssetTypeComboBox.SelectedIndex = 0;
-            else if (payload.AssetType == "Payment") AssetTypeComboBox.SelectedIndex = 1;
-            else if (payload.AssetType == "SecureNote") AssetTypeComboBox.SelectedIndex = 2;
-            else if (payload.AssetType == "SSH Key") AssetTypeComboBox.SelectedIndex = 3;
-            else if (payload.AssetType == "SSL Key") AssetTypeComboBox.SelectedIndex = 4;
-            else if (payload.AssetType == "API Key") AssetTypeComboBox.SelectedIndex = 5;
-            else AssetTypeComboBox.SelectedIndex = 6;
-
-            ParentFolderComboBox.SelectedItem = (ParentFolderComboBox.ItemsSource as IEnumerable<VaultAssetPayload>)?.FirstOrDefault(f => f.TransientAssetId == payload.ParentFolderId);
-
-            // Password Settings
-            GenLengthControl.Value = payload.PasswordSettings.Length;
-            GenUpperCheck.IsChecked = payload.PasswordSettings.UseUppercase;
-            GenLowerCheck.IsChecked = payload.PasswordSettings.UseLowercase;
-            GenNumberCheck.IsChecked = payload.PasswordSettings.UseNumbers;
-            GenSymbolCheck.IsChecked = payload.PasswordSettings.UseSymbols;
-
-            // Login Flow Settings
-            if (payload.LoginFlow.Method == "AutoLearn") LoginMethodComboBox.SelectedIndex = 0;
-            else if (payload.LoginFlow.Method == "OneStep") LoginMethodComboBox.SelectedIndex = 1;
-            else if (payload.LoginFlow.Method == "TwoStep") LoginMethodComboBox.SelectedIndex = 2;
-            else LoginMethodComboBox.SelectedIndex = 3;
-
-            AutoLearnEnabledCheck.IsChecked = payload.LoginFlow.AutoLearnEnabled;
-            DomUserTextBox.Text = payload.LoginFlow.UsernameSelector;
-            DomPassTextBox.Text = payload.LoginFlow.PasswordSelector;
-            DomNextTextBox.Text = payload.LoginFlow.NextButtonSelector;
-            DomSubmitTextBox.Text = payload.LoginFlow.SubmitButtonSelector;
+            MainTabControl.SelectedIndex = 0;
         }
+        UpdateDataGrid();
     }
 
-    private void AssetTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void UpdateDataGrid()
     {
-        if (CredentialsPanel != null)
+        if (AssetsDataGrid == null) return;
+        
+        Guid? parentId = null;
+        if (AssetTreeView?.SelectedItem is VaultTreeNode node)
         {
-            CredentialsPanel.IsVisible = AssetTypeComboBox.SelectedIndex != 6; // Hide if "Folder"
+            parentId = node.Payload.TransientAssetId;
+        }
+
+        var searchTextBox = this.FindControl<Avalonia.Controls.TextBox>("SearchTextBox");
+        var typeFilterComboBox = this.FindControl<Avalonia.Controls.ComboBox>("TypeFilterComboBox");
+
+        string searchText = searchTextBox?.Text?.ToLower() ?? "";
+        string selectedType = (typeFilterComboBox?.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() ?? "Alle Typen";
+
+        var filtered = _decryptedAssets.Where(a => a.AssetType != "Folder" && a.ParentFolderId == parentId);
+
+        if (selectedType != "Alle Typen")
+        {
+            filtered = filtered.Where(a => a.AssetType == selectedType);
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            filtered = filtered.Where(a => 
+                (a.Title != null && a.Title.ToLower().Contains(searchText)) ||
+                (a.DetailedDescription != null && a.DetailedDescription.ToLower().Contains(searchText)) ||
+                (a.Url != null && a.Url.ToLower().Contains(searchText))
+            );
+        }
+
+        AssetsDataGrid.ItemsSource = filtered.ToList();
+    }
+
+    private void SearchTextBox_TextChanged(object sender, Avalonia.Controls.TextChangedEventArgs e)
+    {
+        UpdateDataGrid();
+    }
+
+    private void TypeFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        UpdateDataGrid();
+    }
+
+    private async void DeleteSelectedAssets_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (AssetsDataGrid?.SelectedItems == null) return;
+        
+        var selected = AssetsDataGrid.SelectedItems.Cast<VaultAssetPayload>().ToList();
+        if (selected.Count == 0) return;
+        
+        foreach (var asset in selected)
+        {
+            if (asset.TransientAssetId.HasValue)
+            {
+                try {
+                    await _apiClient.DeleteAssetAsync(asset.TransientAssetId.Value);
+                } catch (Exception ex) {
+                    ShowStatus($"Fehler beim Löschen: {ex.Message}", isError: true);
+                }
+            }
+        }
+        await LoadAssetsAsync();
+    }
+
+        private void AssetsDataGrid_DoubleTapped(object sender, Avalonia.Input.TappedEventArgs e)
+    {
+        if (sender is DataGrid grid && grid.SelectedItem is VaultAssetPayload payload)
+        {
+            var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList());
+            editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
+            editor.Show();
         }
     }
 
-    private void NewFolderButton_Click(object sender, RoutedEventArgs e)
-    {
-        ResetEditor();
-        AssetTypeComboBox.SelectedIndex = 6; // Folder
-    }
 
+
+    private void NewFolderButton_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var selectedNode = AssetTreeView?.SelectedItem as VaultTreeNode;
+        var payload = new VaultAssetPayload() { AssetType = "Folder" };
+        if (selectedNode != null && selectedNode.Payload.AssetType == "Folder") {
+            payload.ParentFolderId = selectedNode.Payload.TransientAssetId;
+        }
+        var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList());
+        editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
+        editor.Show();
+    }
     private void NewAssetButton_Click(object sender, RoutedEventArgs e)
     {
-        ResetEditor();
-    }
-
-    private void ResetEditor()
-    {
-        _currentEditingAssetId = null;
-        if (AssetTreeView != null) AssetTreeView.SelectedItem = null;
-        EditorPanel.IsVisible = true;
-        TitleTextBox.Text = "";
-        UsernameTextBox.Text = "";
-        PasswordTextBox.Text = "";
-        UrlTextBox.Text = "";
-        NotesTextBox.Text = "";
-        AssetTypeComboBox.SelectedIndex = 0;
-        if (ParentFolderComboBox.Items.Count > 0) ParentFolderComboBox.SelectedIndex = 0;
-        StatusTextBlock.Text = "";
-        
-        // Defaults
-        GenLengthControl.Value = 20;
-        GenUpperCheck.IsChecked = true;
-        GenLowerCheck.IsChecked = true;
-        GenNumberCheck.IsChecked = true;
-        GenSymbolCheck.IsChecked = true;
-
-        LoginMethodComboBox.SelectedIndex = 0;
-        AutoLearnEnabledCheck.IsChecked = true;
-        DomUserTextBox.Text = "";
-        DomPassTextBox.Text = "";
-        DomNextTextBox.Text = "";
-        DomSubmitTextBox.Text = "";
-    }
-
-    private async void CopyUsernameButton_Click(object sender, RoutedEventArgs e)
-    {
-        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
-        if (clipboard != null)
-        {
-            await clipboard.SetTextAsync(UsernameTextBox.Text ?? "");
-            StatusTextBlock.Text = "Username in die Zwischenablage kopiert!";
-            StatusTextBlock.Foreground = Avalonia.Media.Brushes.Green;
+        var selectedNode = AssetTreeView?.SelectedItem as VaultTreeNode;
+        var payload = new VaultAssetPayload();
+        if (selectedNode != null && selectedNode.Payload.AssetType == "Folder") {
+            payload.ParentFolderId = selectedNode.Payload.TransientAssetId;
         }
+        var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList());
+        editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
+        editor.Show();
     }
-
-    private async void CopyPasswordButton_Click(object sender, RoutedEventArgs e)
-    {
-        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
-        if (clipboard != null)
-        {
-            await clipboard.SetTextAsync(PasswordTextBox.Text ?? "");
-            StatusTextBlock.Text = "Passwort in die Zwischenablage kopiert!";
-            StatusTextBlock.Foreground = Avalonia.Media.Brushes.Green;
-        }
-    }
-
-    private async void CopyAllDetailsButton_Click(object sender, RoutedEventArgs e)
-    {
-        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
-        if (clipboard != null)
-        {
-            var text = $"Title: {TitleTextBox.Text}\n" +
-                       $"Type: {(AssetTypeComboBox.SelectedItem as ComboBoxItem)?.Content}\n" +
-                       $"URL: {UrlTextBox.Text}\n" +
-                       $"Username: {UsernameTextBox.Text}\n" +
-                       $"Password: {PasswordTextBox.Text}\n" +
-                       $"Notes: {NotesTextBox.Text}";
-            
-            await clipboard.SetTextAsync(text.Trim());
-            StatusTextBlock.Text = "Gesamte Asset-Details in die Zwischenablage kopiert!";
-            StatusTextBlock.Foreground = Avalonia.Media.Brushes.Green;
-        }
-    }
-
-    private void DuplicateButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_currentEditingAssetId != null)
-        {
-            _currentEditingAssetId = null;
-            if (AssetTreeView != null) AssetTreeView.SelectedItem = null;
-            TitleTextBox.Text += " (Kopie)";
-            StatusTextBlock.Text = "Asset als Kopie vorbereitet. Klicke auf 'Save to Server' um es neu anzulegen.";
-            StatusTextBlock.Foreground = Avalonia.Media.Brushes.Orange;
-        }
-    }
-
-    private void GeneratePasswordButton_Click(object sender, RoutedEventArgs e)
-    {
-        var config = new PasswordGeneratorConfig
-        {
-            Length = (int)GenLengthControl.Value.GetValueOrDefault(20),
-            UseUppercase = GenUpperCheck.IsChecked == true,
-            UseLowercase = GenLowerCheck.IsChecked == true,
-            UseNumbers = GenNumberCheck.IsChecked == true,
-            UseSymbols = GenSymbolCheck.IsChecked == true
-        };
-        PasswordTextBox.Text = _cryptoService.GeneratePassword(config);
-    }
-
-    private void ShowPasswordCheckBox_CheckedChanged(object sender, RoutedEventArgs e)
-    {
-        if (ShowPasswordCheckBox.IsChecked == true)
-        {
-            PasswordTextBox.PasswordChar = '\0'; // Show text
-        }
-        else
-        {
-            PasswordTextBox.PasswordChar = '*'; // Hide text
-        }
-    }
-
-    private async void SaveButton_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            string loginMethodStr = "AutoLearn";
-            if (LoginMethodComboBox.SelectedIndex == 1) loginMethodStr = "OneStep";
-            else if (LoginMethodComboBox.SelectedIndex == 2) loginMethodStr = "TwoStep";
-            else if (LoginMethodComboBox.SelectedIndex == 3) loginMethodStr = "BasicAuth";
-
-            var payload = new VaultAssetPayload
-            {
-                TransientAssetId = _currentEditingAssetId,
-                ParentFolderId = (ParentFolderComboBox.SelectedItem as VaultAssetPayload)?.TransientAssetId,
-                Title = TitleTextBox.Text ?? "Untitled",
-                AssetType = (AssetTypeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Login",
-                Username = UsernameTextBox.Text ?? "",
-                Password = PasswordTextBox.Text ?? "",
-                Url = UrlTextBox.Text ?? "",
-                Notes = NotesTextBox.Text ?? "",
-
-                PasswordSettings = new PasswordGeneratorConfig
-                {
-                    Length = (int)GenLengthControl.Value.GetValueOrDefault(20),
-                    UseUppercase = GenUpperCheck.IsChecked == true,
-                    UseLowercase = GenLowerCheck.IsChecked == true,
-                    UseNumbers = GenNumberCheck.IsChecked == true,
-                    UseSymbols = GenSymbolCheck.IsChecked == true
-                },
-
-                LoginFlow = new LoginFlowConfig
-                {
-                    Method = loginMethodStr,
-                    AutoLearnEnabled = AutoLearnEnabledCheck.IsChecked == true,
-                    UsernameSelector = DomUserTextBox.Text ?? "",
-                    PasswordSelector = DomPassTextBox.Text ?? "",
-                    NextButtonSelector = DomNextTextBox.Text ?? "",
-                    SubmitButtonSelector = DomSubmitTextBox.Text ?? ""
-                }
-            };
-
-            // 1. Encrypt Payload locally
-            var requestDto = _cryptoService.EncryptAsset(payload);
-
-            // 2. Send to Server (Update or Create)
-            if (_currentEditingAssetId.HasValue)
-            {
-                await _apiClient.UpdateAssetAsync(_currentEditingAssetId.Value, requestDto);
-                StatusTextBlock.Text = "Updated successfully!";
-            }
-            else
-            {
-                Guid newId = await _apiClient.CreateAssetAsync(requestDto);
-                _currentEditingAssetId = newId;
-                StatusTextBlock.Text = "Saved successfully!";
-            }
-            
-            StatusTextBlock.Foreground = Avalonia.Media.Brushes.Green;
-
-            // 3. Reload list
-            await LoadAssetsAsync();
-        }
-        catch (Exception ex)
-        {
-            StatusTextBlock.Text = $"Save Error: {ex.Message}";
-            StatusTextBlock.Foreground = Avalonia.Media.Brushes.Red;
-        }
-    }
-
     private Point _dragStartPoint;
     private bool _isDragging;
+    private PointerPressedEventArgs? _dragStartEventArgs;
+    private static VaultTreeNode? s_draggedNode;
 
     private void TreeNode_PointerPressed(object sender, PointerPressedEventArgs e)
     {
@@ -335,12 +227,13 @@ public partial class MainWindow : Window
         {
             _dragStartPoint = e.GetPosition(null);
             _isDragging = false;
+            _dragStartEventArgs = e;
         }
     }
 
     private async void TreeNode_PointerMoved(object sender, PointerEventArgs e)
     {
-        if (!_isDragging && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        if (!_isDragging && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed && _dragStartEventArgs != null)
         {
             var point = e.GetPosition(null);
             if (Math.Abs(point.X - _dragStartPoint.X) > 3 || Math.Abs(point.Y - _dragStartPoint.Y) > 3)
@@ -348,11 +241,16 @@ public partial class MainWindow : Window
                 if (sender is Control control && control.DataContext is VaultTreeNode node)
                 {
                     _isDragging = true;
-                    var dragData = new DataObject();
-                    dragData.Set("DraggedNode", node);
+                    s_draggedNode = node;
                     
-                    await DragDrop.DoDragDrop(e, dragData, DragDropEffects.Move);
+                    var dragData = new DataTransfer();
+                    dragData.Add(DataTransferItem.CreateText("vault-node"));
+                    
+                    await DragDrop.DoDragDropAsync(_dragStartEventArgs, dragData, DragDropEffects.Move);
+                    
+                    s_draggedNode = null;
                     _isDragging = false;
+                    _dragStartEventArgs = null;
                 }
             }
         }
@@ -360,10 +258,9 @@ public partial class MainWindow : Window
 
     private void AssetTreeView_DragOver(object sender, DragEventArgs e)
     {
-        if (e.Data.Contains("DraggedNode") && e.Source is Control control && control.DataContext is VaultTreeNode targetNode)
+        if (s_draggedNode != null && e.Source is Control control && control.DataContext is VaultTreeNode targetNode)
         {
-            var draggedNode = e.Data.Get("DraggedNode") as VaultTreeNode;
-            if (draggedNode != null && targetNode.IsFolder && draggedNode != targetNode)
+            if (targetNode.IsFolder && s_draggedNode != targetNode)
             {
                 e.DragEffects = DragDropEffects.Move;
                 return;
@@ -374,11 +271,13 @@ public partial class MainWindow : Window
 
     private async void AssetTreeView_Drop(object sender, DragEventArgs e)
     {
-        if (e.Data.Contains("DraggedNode") && e.Source is Control control && control.DataContext is VaultTreeNode targetNode)
+        if (s_draggedNode != null && e.Source is Control control && control.DataContext is VaultTreeNode targetNode)
         {
-            var draggedNode = e.Data.Get("DraggedNode") as VaultTreeNode;
-            if (draggedNode != null && targetNode.IsFolder && draggedNode != targetNode)
+            if (targetNode.IsFolder && s_draggedNode != targetNode)
             {
+                var draggedNode = s_draggedNode;
+                s_draggedNode = null;
+                
                 draggedNode.Payload.ParentFolderId = targetNode.Payload.TransientAssetId;
 
                 try
@@ -387,15 +286,33 @@ public partial class MainWindow : Window
                     await _apiClient.UpdateAssetAsync(draggedNode.Payload.TransientAssetId.Value, requestDto);
                     
                     await LoadAssetsAsync();
-                    StatusTextBlock.Text = $"'{draggedNode.Title}' in '{targetNode.Title}' verschoben!";
-                    StatusTextBlock.Foreground = Avalonia.Media.Brushes.Green;
+                    ShowStatus($"'{draggedNode.Title}' in '{targetNode.Title}' verschoben!");
                 }
                 catch (Exception ex)
                 {
-                    StatusTextBlock.Text = $"Fehler beim Verschieben: {ex.Message}";
-                    StatusTextBlock.Foreground = Avalonia.Media.Brushes.Red;
+                    ShowStatus($"Fehler beim Verschieben: {ex.Message}", isError: true);
                 }
             }
         }
     }
+
+    private void ShowStatus(string message, bool isError = false, bool isWarning = false)
+    {
+        StatusTextBlock.Text = message;
+        if (isError) StatusTextBlock.Foreground = Avalonia.Media.Brushes.Red;
+        else if (isWarning) StatusTextBlock.Foreground = Avalonia.Media.Brushes.Orange;
+        else StatusTextBlock.Foreground = Avalonia.Media.Brushes.Green;
+
+        if (string.IsNullOrEmpty(message)) return;
+
+        try
+        {
+            var logFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ezkpm_app.log");
+            var level = isError ? "ERROR" : (isWarning ? "WARN" : "INFO");
+            var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level}] {message}\n";
+            System.IO.File.AppendAllText(logFile, logEntry);
+        }
+        catch { }
+    }
+
 }

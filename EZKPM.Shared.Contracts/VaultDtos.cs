@@ -21,6 +21,16 @@ namespace EZKPM.Shared.Contracts
         
         // The owner's initial encrypted key share
         public string EncryptedKeyShare { get; set; }
+        
+        public List<AclEntryDto> Acls { get; set; } = new();
+    }
+
+    public class AclEntryDto
+    {
+        public string AdSid { get; set; } = "";
+        public string DisplayName { get; set; } = "";
+        public int PermissionLevel { get; set; } // 1=Execute, 2=Read, 3=Owner
+        public string EncryptedKeyShare { get; set; } = "";
     }
 
     public class AuditLogRequestDto
@@ -52,6 +62,20 @@ namespace EZKPM.Shared.Contracts
         public string SubmitButtonSelector { get; set; }
     }
 
+    public class CustomField
+    {
+        public string Name { get; set; }
+        public string Value { get; set; }
+        public string Description { get; set; }
+        public bool IsSecret { get; set; }
+    }
+
+    public class VaultAttachment
+    {
+        public string FileName { get; set; }
+        public byte[] FileData { get; set; }
+    }
+
     /// <summary>
     /// Das Klartext-Objekt, das der Client (PEP) lokal ver- und entschlüsselt.
     /// Der Server (PDP) sieht diese Daten NIEMALS im Klartext, sondern nur als CipherBlob.
@@ -69,6 +93,31 @@ namespace EZKPM.Shared.Contracts
         public string Password { get; set; }
         public string Url { get; set; }
         public string Notes { get; set; }
+        public string DetailedDescription { get; set; } // Genauere Beschreibung
+        public string TotpSecret { get; set; } // Base32 Secret für Authenticator
+
+        public int PasswordValidityDays { get; set; } = 365; // Max 1 Jahr
+
+        // Payment fields
+        public string PaymentSubType { get; set; } = "Card"; // "Card" or "Service"
+        public string CardHolder { get; set; }
+        public string CardExpiry { get; set; }
+        public string CardCvc { get; set; }
+
+        // File upload fields for SSH, SSL, Passkeys, Certificates
+        public string FileUploadName { get; set; }
+        public byte[] FileUploadData { get; set; }
+
+        public string FileUploadName2 { get; set; }
+        public byte[] FileUploadData2 { get; set; }
+
+        public System.Collections.Generic.List<CustomField> CustomFields { get; set; } = new();
+        
+        // Attached Files / Binaries
+        public List<VaultAttachment> Attachments { get; set; } = new();
+        
+        // Access Control List (For UI Display)
+        public List<AclEntryDto> Acls { get; set; } = new();
 
         public PasswordGeneratorConfig PasswordSettings { get; set; } = new PasswordGeneratorConfig();
         public LoginFlowConfig LoginFlow { get; set; } = new LoginFlowConfig();

@@ -7,6 +7,7 @@ public class VaultTreeNode
 {
     public VaultAssetPayload Payload { get; set; }
     public ObservableCollection<VaultTreeNode> Children { get; set; } = new();
+    public bool IsExpanded { get; set; }
 
     public string Title => Payload.Title;
     public string Url => Payload.Url;
@@ -21,10 +22,12 @@ public class VaultTreeNode
             {
                 "Folder" => "📁",
                 "Login" => "🔑",
+                "Passkey" => "🛡️",
                 "Payment" => "💳",
                 "SSH Key" => "🖥️",
                 "SSL Key" => "🔒",
                 "API Key" => "🔌",
+                "Authenticator" => "⏱️",
                 _ => "📄" // SecureNote
             };
         }

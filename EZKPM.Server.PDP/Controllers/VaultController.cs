@@ -66,11 +66,8 @@ namespace EZKPM.Server.PDP.Controllers
             var userSid = GetUserSid();
             byte[] metaHash = Convert.FromBase64String(request.MetadataHash ?? "AA==");
 
-            bool exists = await _db.VaultAssets.AnyAsync(a => a.MetadataHash == metaHash && a.Acls.Any(acl => acl.AdSid == userSid));
-            if (exists && metaHash.Length > 2)
-            {
-                return Conflict(new { Error = "Ein Eintrag mit diesem Anmeldenamen und dieser URL existiert bereits in deinem Vault." });
-            }
+            // Uniqueness check removed: Users can have multiple folders (empty URL/User) 
+            // or multiple accounts with the same username on the same domain.
 
             var newAsset = new VaultAsset
             {
@@ -102,11 +99,8 @@ namespace EZKPM.Server.PDP.Controllers
             var userSid = GetUserSid();
             
             byte[] metaHash = Convert.FromBase64String(request.MetadataHash ?? "AA==");
-            bool exists = await _db.VaultAssets.AnyAsync(a => a.MetadataHash == metaHash && a.Acls.Any(acl => acl.AdSid == userSid) && a.Id != id);
-            if (exists && metaHash.Length > 2)
-            {
-                return Conflict(new { Error = "Ein Eintrag mit diesem Anmeldenamen und dieser URL existiert bereits in deinem Vault." });
-            }
+            // Uniqueness check removed: Users can have multiple folders (empty URL/User) 
+            // or multiple accounts with the same username on the same domain.
 
             var asset = await _db.VaultAssets
                 .Include(a => a.Acls.Where(acl => acl.AdSid == userSid))
@@ -123,6 +117,23 @@ namespace EZKPM.Server.PDP.Controllers
             var acl = asset.Acls.First();
             acl.EncryptedKeyShare = Convert.FromBase64String(request.EncryptedKeyShare);
             
+            await _db.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpDelete("assets/{id}")]
+        public async Task<IActionResult> DeleteAsset(Guid id)
+        {
+            var userSid = GetUserSid();
+            
+            var asset = await _db.VaultAssets
+                .Include(a => a.Acls.Where(acl => acl.AdSid == userSid))
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (asset == null) return NotFound();
+            if (!asset.Acls.Any() || asset.Acls.First().PermissionLevel < 3) return Forbid(); // Only owner can delete
+
+            _db.VaultAssets.Remove(asset);
             await _db.SaveChangesAsync();
             return Ok();
         }

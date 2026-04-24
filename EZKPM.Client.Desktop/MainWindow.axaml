@@ -8,24 +8,31 @@
         x:Class="EZKPM.Client.Desktop.MainWindow"
         Title="EZKPM Vault Manager"
         Background="#F5F7FA">
+    <Window.Resources>
+        <local:AssetTypeToIconConverter x:Key="IconConverter" />
+        <local:StringTruncateConverter x:Key="TruncateConverter" />
+    </Window.Resources>
     
     <Window.Styles>
         <!-- Sleek TextBoxes -->
         <Style Selector="TextBox">
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="BorderBrush" Value="#E0E6ED"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="Background" Value="White"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Background" Value="#FAFAFA"/>
+            <Setter Property="FontSize" Value="13"/>
         </Style>
         <Style Selector="TextBox:focus">
             <Setter Property="BorderBrush" Value="#3B82F6"/>
+            <Setter Property="Background" Value="White"/>
         </Style>
         <!-- Elegant Buttons -->
         <Style Selector="Button">
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,6"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
         </Style>
         <Style Selector="Button.primary">
             <Setter Property="Background" Value="#3B82F6"/>
@@ -40,23 +47,33 @@
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
+        <Style Selector="Button.success:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#059669"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
         <Style Selector="Button.outline">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderBrush" Value="#D1D5DB"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Foreground" Value="#4B5563"/>
         </Style>
+        <Style Selector="Button.outline:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#F3F4F6"/>
+            <Setter Property="Foreground" Value="#111827"/>
+        </Style>
         <!-- Labels -->
         <Style Selector="TextBlock.label">
             <Setter Property="Foreground" Value="#6B7280"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
     </Window.Styles>
 
     <Grid ColumnDefinitions="320, *">
         <!-- Sidebar: Asset List (Dark Theme) -->
-        <Border Grid.Column="0" Background="#1E293B" BorderThickness="0,0,1,0" BorderBrush="#0F172A">
+        <ThemeVariantScope Grid.Column="0" RequestedThemeVariant="Dark">
+        <Border Background="#1E293B" BorderThickness="0,0,1,0" BorderBrush="#0F172A">
             <Grid RowDefinitions="Auto, *, Auto" Margin="20">
                 <StackPanel Grid.Row="0" Margin="0,0,0,20">
                     <TextBlock Text="EZKPM" FontWeight="Black" FontSize="24" Foreground="White" LetterSpacing="1"/>
@@ -68,12 +85,24 @@
                           DragDrop.AllowDrop="True"
                           DragDrop.DragOver="AssetTreeView_DragOver"
                           DragDrop.Drop="AssetTreeView_Drop">
+                    <TreeView.Styles>
+                        <Style Selector="TreeViewItem" x:DataType="local:VaultTreeNode">
+                            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                        </Style>
+                        <!-- Custom selected/hover colors for the dark blue background -->
+                        <Style Selector="TreeViewItem /template/ Border#PART_LayoutRoot:pointerover">
+                            <Setter Property="Background" Value="#374151" />
+                        </Style>
+                        <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+                            <Setter Property="Background" Value="#4B5563" />
+                        </Style>
+                    </TreeView.Styles>
                     <TreeView.ItemTemplate>
                         <TreeDataTemplate DataType="local:VaultTreeNode" ItemsSource="{Binding Children}">
                             <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4" Background="Transparent"
                                         PointerPressed="TreeNode_PointerPressed"
                                         PointerMoved="TreeNode_PointerMoved">
-                                <TextBlock Text="{Binding Icon}" FontSize="18" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Icon}" FontSize="18" VerticalAlignment="Center" Foreground="#FACC15"/>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="{Binding Title}" FontWeight="Medium" Foreground="White" FontSize="14" />
                                     <TextBlock Text="{Binding Url}" FontSize="11" Foreground="#94A3B8" IsVisible="{Binding HasUrl}" Margin="0,2,0,0"/>
@@ -85,126 +114,71 @@
                 
                 <Grid Grid.Row="2" ColumnDefinitions="*, *" Margin="0,20,0,0">
                     <Button Grid.Column="0" Classes="success" Content="+ Asset" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,5,0" Click="NewAssetButton_Click"/>
-                    <Button Grid.Column="1" Classes="outline" Content="+ Folder" Foreground="White" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="5,0,0,0" Click="NewFolderButton_Click"/>
+                    <Button Grid.Column="1" Classes="outline" Content="+ Folder" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="5,0,0,0" Click="NewFolderButton_Click"/>
                 </Grid>
             </Grid>
         </Border>
+        </ThemeVariantScope>
 
-        <!-- Main Area: Editor -->
+        <!-- Main Area -->
         <Grid Grid.Column="1" RowDefinitions="*, Auto">
-            <ScrollViewer Grid.Row="0">
-                <StackPanel Spacing="15" x:Name="EditorPanel" IsVisible="False" Margin="40,30,40,40" MaxWidth="800" HorizontalAlignment="Left">
-                    
-                    <Grid ColumnDefinitions="*, Auto, Auto" Margin="0,0,0,20">
-                        <TextBlock Grid.Column="0" Text="Asset Details" FontSize="28" FontWeight="Light" Foreground="#111827" VerticalAlignment="Center"/>
-                        <Button Grid.Column="1" Classes="outline" Content="📋 Copy Details" Click="CopyAllDetailsButton_Click" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <Button Grid.Column="2" Classes="outline" Content="📄 Duplicate" Click="DuplicateButton_Click" VerticalAlignment="Center"/>
+            <TabControl Grid.Row="0" x:Name="MainTabControl" Margin="10">
+                <TabItem Header="🗂️ Assets" x:Name="AssetListTab">
+                    <Grid RowDefinitions="Auto, *">
+                        <!-- Toolbar -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10" Spacing="10">
+                            <TextBox x:Name="SearchTextBox" PlaceholderText="Suchen..." Width="250" TextChanged="SearchTextBox_TextChanged" />
+                            <ComboBox x:Name="TypeFilterComboBox" Width="150" SelectedIndex="0" SelectionChanged="TypeFilterComboBox_SelectionChanged">
+                                <ComboBoxItem Content="Alle Typen" />
+                                <ComboBoxItem Content="Login" />
+                                <ComboBoxItem Content="Passkey" />
+                                <ComboBoxItem Content="Payment" />
+                                <ComboBoxItem Content="SecureNote" />
+                                <ComboBoxItem Content="SSH Key" />
+                                <ComboBoxItem Content="SSL Key" />
+                                <ComboBoxItem Content="API Key" />
+                                <ComboBoxItem Content="Authenticator" />
+                            </ComboBox>
+                            <Button Content="🗑️ Löschen" Classes="outline" Click="DeleteSelectedAssets_Click" Foreground="#EF4444" BorderBrush="#EF4444" />
+                        </StackPanel>
+
+                        <DataGrid Grid.Row="1" x:Name="AssetsDataGrid" x:DataType="contracts:VaultAssetPayload" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All" BorderThickness="1" BorderBrush="#E5E7EB" DoubleTapped="AssetsDataGrid_DoubleTapped" Background="White" SelectionMode="Extended" CanUserSortColumns="True">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="Typ" Width="60" SortMemberPath="AssetType">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="contracts:VaultAssetPayload">
+                                            <TextBlock Text="{Binding AssetType, Converter={StaticResource IconConverter}}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTextColumn Header="Name" Binding="{Binding Title}" Width="2*" />
+
+                                <DataGridTemplateColumn Header="Beschreibung" Width="3*" SortMemberPath="DetailedDescription">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="contracts:VaultAssetPayload">
+                                            <TextBlock Text="{Binding DetailedDescription}" TextWrapping="Wrap" MaxLines="3" TextTrimming="CharacterEllipsis" Margin="5" VerticalAlignment="Center" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn Header="URL" Width="2*" SortMemberPath="Url">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="contracts:VaultAssetPayload">
+                                            <TextBlock Text="{Binding Url, Converter={StaticResource TruncateConverter}}" VerticalAlignment="Center" Margin="5" Foreground="#3B82F6" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </Grid>
+                </TabItem>
 
-                    <!-- Title, Type & Parent Folder -->
-                    <Grid ColumnDefinitions="*, 20, 150, 20, 200">
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Classes="label" Text="Title"/>
-                            <TextBox x:Name="TitleTextBox" Watermark="e.g. My Bank Account" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Classes="label" Text="Asset Type"/>
-                            <ComboBox x:Name="AssetTypeComboBox" SelectedIndex="0" HorizontalAlignment="Stretch" CornerRadius="6" SelectionChanged="AssetTypeComboBox_SelectionChanged">
-                                <ComboBoxItem>Login</ComboBoxItem>
-                                <ComboBoxItem>Payment</ComboBoxItem>
-                                <ComboBoxItem>SecureNote</ComboBoxItem>
-                                <ComboBoxItem>SSH Key</ComboBoxItem>
-                                <ComboBoxItem>SSL Key</ComboBoxItem>
-                                <ComboBoxItem>API Key</ComboBoxItem>
-                                <ComboBoxItem>Folder</ComboBoxItem>
-                            </ComboBox>
-                        </StackPanel>
-                        <StackPanel Grid.Column="4">
-                            <TextBlock Classes="label" Text="Parent Folder"/>
-                            <ComboBox x:Name="ParentFolderComboBox" HorizontalAlignment="Stretch" CornerRadius="6">
-                                <!-- Items will be populated dynamically -->
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate DataType="contracts:VaultAssetPayload">
-                                        <TextBlock Text="{Binding Title}" />
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Credentials (Hidden for Folders) -->
-                    <StackPanel x:Name="CredentialsPanel" Spacing="15">
-                        <Border Background="White" CornerRadius="8" Padding="25" BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,10">
-                        <StackPanel Spacing="15">
-                            <TextBlock Classes="label" Text="Username / Email"/>
-                            <Grid ColumnDefinitions="*, Auto">
-                                <TextBox x:Name="UsernameTextBox" Grid.Column="0" Watermark="user@example.com"/>
-                                <Button Grid.Column="1" Classes="outline" Content="Copy" Margin="10,0,0,0" Click="CopyUsernameButton_Click"/>
-                            </Grid>
-
-                            <TextBlock Classes="label" Text="Password"/>
-                            <Grid ColumnDefinitions="*, Auto, Auto">
-                                <TextBox x:Name="PasswordTextBox" Grid.Column="0" PasswordChar="•" Watermark="••••••••" />
-                                <Button Grid.Column="1" Classes="outline" Content="Copy" Margin="10,0,0,0" Click="CopyPasswordButton_Click"/>
-                                <Button Grid.Column="2" Classes="outline" Content="Generate" Margin="10,0,0,0" Click="GeneratePasswordButton_Click"/>
-                            </Grid>
-                            <CheckBox x:Name="ShowPasswordCheckBox" Content="Show Password" IsCheckedChanged="ShowPasswordCheckBox_CheckedChanged" Foreground="#4B5563"/>
-                        </StackPanel>
-                    </Border>
-                    
-                    <Expander Header="Password Generator Settings" HorizontalAlignment="Stretch" CornerRadius="8" Background="White" BorderBrush="#E5E7EB">
-                        <StackPanel Spacing="10" Margin="10">
-                            <Grid ColumnDefinitions="*, Auto">
-                                <TextBlock Text="Length" VerticalAlignment="Center" Foreground="#4B5563"/>
-                                <NumericUpDown x:Name="GenLengthControl" Grid.Column="1" Value="20" Minimum="8" Maximum="128" Width="120" CornerRadius="4"/>
-                            </Grid>
-                            <WrapPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                <CheckBox x:Name="GenUpperCheck" Content="Uppercase (A-Z)" IsChecked="True" Margin="0,0,20,0" Foreground="#4B5563"/>
-                                <CheckBox x:Name="GenLowerCheck" Content="Lowercase (a-z)" IsChecked="True" Margin="0,0,20,0" Foreground="#4B5563"/>
-                                <CheckBox x:Name="GenNumberCheck" Content="Numbers (0-9)" IsChecked="True" Margin="0,0,20,0" Foreground="#4B5563"/>
-                                <CheckBox x:Name="GenSymbolCheck" Content="Symbols (!@#$)" IsChecked="True" Foreground="#4B5563"/>
-                            </WrapPanel>
-                        </StackPanel>
-                    </Expander>
-
-                    <TextBlock Classes="label" Text="Login URL"/>
-                    <TextBox x:Name="UrlTextBox" Watermark="https://..." />
-
-                    <TextBlock Classes="label" Text="Secure Notes"/>
-                    <TextBox x:Name="NotesTextBox" AcceptsReturn="True" MinHeight="100" Watermark="Additional information..." />
-
-                    <Expander Header="Login Automation Settings (Browser Extension)" HorizontalAlignment="Stretch" CornerRadius="8" Background="White" BorderBrush="#E5E7EB">
-                        <StackPanel Spacing="15" Margin="10">
-                            <TextBlock Classes="label" Text="Login Method"/>
-                            <ComboBox x:Name="LoginMethodComboBox" SelectedIndex="0" HorizontalAlignment="Stretch" CornerRadius="6">
-                                <ComboBoxItem>AutoLearn</ComboBoxItem>
-                                <ComboBoxItem>OneStep (Username &amp; Password)</ComboBoxItem>
-                                <ComboBoxItem>TwoStep (Username -> Next -> Password)</ComboBoxItem>
-                                <ComboBoxItem>BasicAuth</ComboBoxItem>
-                            </ComboBox>
-                            <CheckBox x:Name="AutoLearnEnabledCheck" Content="Enable AutoLearn Mode (Observe DOM)" IsChecked="True" Foreground="#4B5563"/>
-                            
-                            <Border BorderThickness="0,1,0,0" BorderBrush="#E5E7EB" Margin="0,10,0,5" Padding="0,15,0,0">
-                                <StackPanel Spacing="10">
-                                    <TextBlock Text="Learned DOM Selectors" FontWeight="SemiBold" Foreground="#374151"/>
-                                    <TextBox x:Name="DomUserTextBox" Watermark="Username Field Selector" />
-                                    <TextBox x:Name="DomPassTextBox" Watermark="Password Field Selector" />
-                                    <TextBox x:Name="DomNextTextBox" Watermark="Next Button Selector" />
-                                    <TextBox x:Name="DomSubmitTextBox" Watermark="Submit Button Selector" />
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </Expander>
-                    </StackPanel>
-
-                    <!-- Extra margin at the bottom ensures the button is not flush against the scroll limit -->
-                    <Button Classes="primary" Content="Save to Server" HorizontalAlignment="Right" Click="SaveButton_Click" Margin="0,20,0,40" MinWidth="150" HorizontalContentAlignment="Center"/>
-                </StackPanel>
-            </ScrollViewer>
+            </TabControl>
 
             <!-- Status Message pinned to bottom -->
             <Border Grid.Row="1" Background="White" BorderThickness="0,1,0,0" BorderBrush="#E5E7EB" Padding="20,10">
-                <TextBlock x:Name="StatusTextBlock" Text="" Foreground="#4B5563" FontSize="13" TextWrapping="Wrap" />
+                <SelectableTextBlock x:Name="StatusTextBlock" Text="" Foreground="#4B5563" FontSize="13" TextWrapping="Wrap" />
             </Border>
         </Grid>
     </Grid>

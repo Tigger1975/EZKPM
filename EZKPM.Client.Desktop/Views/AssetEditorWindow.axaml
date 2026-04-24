@@ -1,0 +1,316 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:contracts="clr-namespace:EZKPM.Shared.Contracts;assembly=EZKPM.Shared.Contracts"
+        xmlns:local="clr-namespace:EZKPM.Client.Desktop.Views"
+        x:Class="EZKPM.Client.Desktop.Views.AssetEditorWindow"
+        Title="Asset Editor" Width="900" Height="750"
+        FontFamily="Inter, sans-serif, Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji, Segoe UI Symbol"
+        Background="White" WindowStartupLocation="CenterOwner">
+    <Window.Styles>
+        <Style Selector="TextBox">
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Background" Value="#FAFAFA"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <Style Selector="TextBox:focus">
+            <Setter Property="BorderBrush" Value="#3B82F6"/>
+            <Setter Property="Background" Value="White"/>
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="Button.primary:pointerover">
+            <Setter Property="Background" Value="#2563EB"/>
+        </Style>
+        <Style Selector="Button.outline">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="#4B5563"/>
+        </Style>
+        <Style Selector="Button.outline:pointerover">
+            <Setter Property="Background" Value="#F3F4F6"/>
+        </Style>
+        <Style Selector="TextBlock.label">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#374151"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+    </Window.Styles>
+    <ScrollViewer x:Name="EditorScrollViewer">
+                            <StackPanel Spacing="12" x:Name="EditorPanel" IsVisible="True" Margin="40,20,40,40" MaxWidth="800" HorizontalAlignment="Left">
+                                
+                                <Grid ColumnDefinitions="*, Auto, Auto, Auto, Auto" Margin="0,0,0,20">
+                                    <TextBlock Grid.Column="0" Text="Asset Details" FontSize="28" FontWeight="Light" Foreground="#111827" VerticalAlignment="Center"/>
+                                    <Button Grid.Column="1" Classes="outline" Content="🗗" ToolTip.Tip="Pop Out Editor" Click="PopOutButton_Click" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <Button Grid.Column="2" Classes="outline" Content="📄" ToolTip.Tip="Duplicate Asset" Click="DuplicateButton_Click" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <Button Grid.Column="3" Classes="primary" Content="💾 ➕" ToolTip.Tip="Save and New" Click="SaveAndNewButton_Click" VerticalAlignment="Center" MinWidth="50" HorizontalContentAlignment="Center" Margin="0,0,10,0"/>
+                                    <Button Grid.Column="4" Classes="primary" Content="💾 ❌" ToolTip.Tip="Save and Close" Click="SaveAndCloseButton_Click" VerticalAlignment="Center" MinWidth="50" HorizontalContentAlignment="Center"/>
+                                </Grid>
+
+                    <!-- Title, Type & Parent Folder -->
+                    <Grid ColumnDefinitions="*, 20, 150, 20, 200">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Classes="label" Text="Title"/>
+                            <TextBox x:Name="TitleTextBox" PlaceholderText="e.g. My Bank Account" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Classes="label" Text="Asset Type"/>
+                            <ComboBox x:Name="AssetTypeComboBox" SelectedIndex="0" HorizontalAlignment="Stretch" CornerRadius="6" SelectionChanged="AssetTypeComboBox_SelectionChanged">
+                                <ComboBoxItem>Login</ComboBoxItem>
+                                <ComboBoxItem>Passkey</ComboBoxItem>
+                                <ComboBoxItem>Payment</ComboBoxItem>
+                                <ComboBoxItem>SecureNote</ComboBoxItem>
+                                <ComboBoxItem>SSH Key</ComboBoxItem>
+                                <ComboBoxItem>SSL Key</ComboBoxItem>
+                                <ComboBoxItem>API Key</ComboBoxItem>
+                                <ComboBoxItem>Authenticator</ComboBoxItem>
+                                <ComboBoxItem>Folder</ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <TextBlock Classes="label" Text="Parent Folder"/>
+                            <ComboBox x:Name="ParentFolderComboBox" HorizontalAlignment="Stretch" CornerRadius="6">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="local:FolderSelectionItem">
+                                        <TextBlock Text="{Binding DisplayTitle}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Credentials (Hidden for Folders) -->
+                    <StackPanel x:Name="CredentialsPanel" Spacing="12">
+                        <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,10" BoxShadow="0 2 4 0 #0A000000">
+                        <StackPanel Spacing="12">
+                            <TextBlock Classes="label" Text="Username / Email"/>
+                            <Grid ColumnDefinitions="*, Auto">
+                                <TextBox x:Name="UsernameTextBox" Grid.Column="0" PlaceholderText="user@example.com"/>
+                                <Button Grid.Column="1" Classes="outline" Content="📋" ToolTip.Tip="Copy" Margin="10,0,0,0" Click="CopyUsernameButton_Click"/>
+                            </Grid>
+
+                            <TextBlock x:Name="PasswordLabel" Classes="label" Text="Password"/>
+                            <Grid ColumnDefinitions="*, Auto, Auto">
+                                <TextBox x:Name="PasswordTextBox" Grid.Column="0" PasswordChar="•" PlaceholderText="••••••••" />
+                                <Button Grid.Column="1" Classes="outline" Content="📋" ToolTip.Tip="Copy" Margin="10,0,0,0" Click="CopyPasswordButton_Click"/>
+                                <Button Grid.Column="2" Classes="outline" Content="🎲" ToolTip.Tip="Generate" Margin="10,0,0,0" Click="GeneratePasswordButton_Click"/>
+                            </Grid>
+                            <CheckBox x:Name="ShowPasswordCheckBox" Content="Show Password" IsCheckedChanged="ShowPasswordCheckBox_CheckedChanged" Foreground="#4B5563"/>
+                            
+                            <!-- Payment Specific Fields -->
+                            <StackPanel x:Name="PaymentPanel" IsVisible="True" Spacing="12">
+                                <TextBlock Classes="label" Text="Payment Method"/>
+                                <ComboBox x:Name="PaymentSubTypeComboBox" SelectedIndex="0" HorizontalAlignment="Stretch" CornerRadius="4" SelectionChanged="PaymentSubTypeComboBox_SelectionChanged">
+                                    <ComboBoxItem>Credit / Debit Card</ComboBoxItem>
+                                    <ComboBoxItem>Payment Service (e.g. PayPal)</ComboBoxItem>
+                                </ComboBox>
+
+                                <StackPanel x:Name="CardDetailsPanel" Spacing="12">
+                                    <TextBlock Classes="label" Text="Card Holder / Account Name"/>
+                                    <TextBox x:Name="CardHolderTextBox" PlaceholderText="Max Mustermann"/>
+                                    
+                                    <Grid ColumnDefinitions="*, 15, *">
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Classes="label" Text="Expiry (MM/YY)"/>
+                                            <TextBox x:Name="CardExpiryTextBox" PlaceholderText="12/26"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Classes="label" Text="CVC / PIN"/>
+                                            <TextBox x:Name="CardCvcTextBox" PlaceholderText="123" PasswordChar="•"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- File Upload Specific Fields (SSH, SSL, Passkey Containers) -->
+                            <StackPanel x:Name="FileUploadPanel" IsVisible="True" Spacing="12">
+                                <TextBlock Classes="label" Text="Primary File (Certificate / Key / Container)"/>
+                                <Grid ColumnDefinitions="*, Auto, Auto, Auto">
+                                    <TextBox x:Name="FileNameTextBox" Grid.Column="0" IsReadOnly="True" PlaceholderText="No file selected..." />
+                                    <Button Grid.Column="1" Classes="outline" Content="📂" ToolTip.Tip="Browse..." Margin="10,0,0,0" Click="BrowseFileButton_Click"/>
+                                    <Button Grid.Column="2" Classes="outline" Content="🗑️" ToolTip.Tip="Clear" Margin="10,0,0,0" Click="ClearFileButton_Click"/>
+                                    <Button x:Name="DownloadFileButton" Grid.Column="3" Classes="outline" Content="📥" ToolTip.Tip="Download" Margin="10,0,0,0" Click="DownloadFileButton_Click" IsVisible="True"/>
+                                </Grid>
+                                
+                                <TextBlock Classes="label" Text="Secondary File (e.g. Public Key / Cert)"/>
+                                <Grid ColumnDefinitions="*, Auto, Auto, Auto">
+                                    <TextBox x:Name="FileName2TextBox" Grid.Column="0" IsReadOnly="True" PlaceholderText="No file selected..." />
+                                    <Button Grid.Column="1" Classes="outline" Content="📂" ToolTip.Tip="Browse..." Margin="10,0,0,0" Click="BrowseFile2Button_Click"/>
+                                    <Button Grid.Column="2" Classes="outline" Content="🗑️" ToolTip.Tip="Clear" Margin="10,0,0,0" Click="ClearFile2Button_Click"/>
+                                    <Button x:Name="DownloadFile2Button" Grid.Column="3" Classes="outline" Content="📥" ToolTip.Tip="Download" Margin="10,0,0,0" Click="DownloadFile2Button_Click" IsVisible="True"/>
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    
+                    <Expander Header="Password Generator Settings" HorizontalAlignment="Stretch" CornerRadius="8" Background="White" BorderBrush="#E5E7EB">
+                        <StackPanel Spacing="10" Margin="10">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <TextBlock Text="Length" VerticalAlignment="Center" Foreground="#4B5563"/>
+                                <NumericUpDown x:Name="GenLengthControl" Grid.Column="1" Value="20" Minimum="8" Maximum="128" Width="120" CornerRadius="4"/>
+                            </Grid>
+                            <WrapPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <CheckBox x:Name="GenUpperCheck" Content="Uppercase (A-Z)" IsChecked="True" Margin="0,0,20,0" Foreground="#4B5563"/>
+                                <CheckBox x:Name="GenLowerCheck" Content="Lowercase (a-z)" IsChecked="True" Margin="0,0,20,0" Foreground="#4B5563"/>
+                                <CheckBox x:Name="GenNumberCheck" Content="Numbers (0-9)" IsChecked="True" Margin="0,0,20,0" Foreground="#4B5563"/>
+                                <CheckBox x:Name="GenSymbolCheck" Content="Symbols (!@#$)" IsChecked="True" Foreground="#4B5563"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Expander>
+
+                    <!-- Authenticator Fields -->
+                    <StackPanel x:Name="AuthenticatorPanel" Spacing="12" IsVisible="False">
+                        <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,10" BoxShadow="0 2 4 0 #0A000000">
+                            <StackPanel Spacing="12">
+                                <TextBlock Classes="label" Text="TOTP Secret Key (Base32)"/>
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBox x:Name="TotpSecretTextBox" Grid.Column="0" PasswordChar="•" PlaceholderText="JBSWY3DPEHPK3PXP"/>
+                                    <Button Grid.Column="1" Classes="outline" Content="📋" ToolTip.Tip="Copy" Margin="10,0,0,0" Click="CopyTotpSecretButton_Click"/>
+                                </Grid>
+                                <CheckBox x:Name="ShowTotpSecretCheckBox" Content="Show Secret" IsCheckedChanged="ShowTotpSecretCheckBox_CheckedChanged" Foreground="#4B5563"/>
+                                
+                                <!-- Display generated code for convenience -->
+                                <Border Background="#F3F4F6" CornerRadius="4" Padding="15" Margin="0,10,0,0">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
+                                        <TextBlock Text="Current Code:" VerticalAlignment="Center" Foreground="#4B5563"/>
+                                        <TextBlock x:Name="TotpCurrentCodeTextBlock" Text="------" FontSize="24" FontWeight="Bold" Foreground="#2563EB" VerticalAlignment="Center" FontFamily="Consolas, Monospace"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <TabControl Margin="0,20,0,0">
+                        <TabItem Header="General &amp; Notes">
+                            <StackPanel Spacing="10" Margin="10">
+                                <TextBlock Classes="label" Text="Login URL"/>
+                                <TextBox x:Name="UrlTextBox" PlaceholderText="https://..." />
+                                
+                                <TextBlock Classes="label" Text="Secure Notes"/>
+                                <TextBox x:Name="NotesTextBox" AcceptsReturn="True" MinHeight="80" PlaceholderText="Additional information..." />
+                                
+                                <TextBlock Classes="label" Text="Detailed Description"/>
+                                <TextBox x:Name="DetailedDescriptionTextBox" AcceptsReturn="True" MinHeight="80" PlaceholderText="Genauere Beschreibung..." />
+                            </StackPanel>
+                        </TabItem>
+                        <TabItem Header="Custom Variables">
+                            <StackPanel Spacing="10" Margin="10">
+                                <TextBlock Text="Spezifiziere Variablen für die Webseiten-Automatisierung. Ist der Wert leer, wirst du bei Verwendung gefragt." Foreground="#6B7280"/>
+                                
+                                <Grid ColumnDefinitions="2*, 3*, 4*, 50" Margin="0,10,0,5">
+                                    <TextBlock Grid.Column="0" Text="Name" FontWeight="SemiBold" Foreground="#374151"/>
+                                    <TextBlock Grid.Column="1" Text="Wert" FontWeight="SemiBold" Foreground="#374151"/>
+                                    <TextBlock Grid.Column="2" Text="Beschreibung" FontWeight="SemiBold" Foreground="#374151"/>
+                                </Grid>
+                                
+                                <ListBox x:Name="CustomFieldsListBox" MinHeight="150" Background="Transparent" BorderThickness="0">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="contracts:CustomField">
+                                            <Grid ColumnDefinitions="2*, 3*, 4*, 50" Margin="0,2">
+                                                <TextBox Grid.Column="0" Text="{Binding Name}" Margin="0,0,5,0" />
+                                                <TextBox Grid.Column="1" Text="{Binding Value}" Margin="0,0,5,0" PlaceholderText="(User Prompt)" />
+                                                <TextBox Grid.Column="2" Text="{Binding Description}" Margin="0,0,5,0" />
+                                                <Button Grid.Column="3" Content="❌" Foreground="Red" Classes="outline" HorizontalAlignment="Center" Click="RemoveCustomFieldButton_Click"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                
+                                <Button Classes="outline" Content="➕" ToolTip.Tip="Add Variable" Click="AddCustomFieldButton_Click" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </TabItem>
+                        <TabItem Header="Berechtigungen">
+                            <StackPanel Spacing="10" Margin="10">
+                                <TextBlock Text="Verwalte Benutzer, die Zugriff auf dieses Asset/diesen Ordner haben." Foreground="#6B7280"/>
+                                <Grid ColumnDefinitions="*, Auto, 130, Auto" Margin="0,10,0,5">
+                                    <TextBlock Grid.Column="0" Text="Benutzer / SID" FontWeight="SemiBold" Foreground="#374151"/>
+                                    <TextBlock Grid.Column="2" Text="Rolle" FontWeight="SemiBold" Foreground="#374151"/>
+                                </Grid>
+                                
+                                <ListBox x:Name="AclsListBox" MinHeight="150" Background="Transparent" BorderThickness="0">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="contracts:AclEntryDto">
+                                            <Grid ColumnDefinitions="*, Auto, 130, Auto" Margin="0,2">
+                                                <AutoCompleteBox Grid.Column="0" Text="{Binding AdSid}" Margin="0,0,5,0" Watermark="SID oder Username..." MinimumPrefixLength="2" Populating="AdSidAutoCompleteBox_Populating" />
+                                                <Button Grid.Column="1" Content="🔍" Classes="outline" Padding="8,4" Margin="0,0,10,0" Click="OpenAdPickerButton_Click" ToolTip.Tip="AD Benutzer/Gruppen suchen"/>
+                                                <ComboBox Grid.Column="2" SelectedIndex="{Binding PermissionLevel}" Margin="0,0,10,0" HorizontalAlignment="Stretch">
+                                                    <ComboBoxItem Content="Keine Rechte (0)" />
+                                                    <ComboBoxItem Content="Execute (1)" />
+                                                    <ComboBoxItem Content="Read (2)" />
+                                                    <ComboBoxItem Content="Owner (3)" />
+                                                </ComboBox>
+                                                <Button Grid.Column="2" Content="❌" Foreground="Red" Classes="outline" HorizontalAlignment="Center" Click="RemoveAclButton_Click"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                
+                                <Button Classes="outline" Content="➕" ToolTip.Tip="Benutzer/Gruppe hinzufügen" Click="AddAclButton_Click" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </TabItem>
+                        <TabItem Header="Attachments">
+                            <StackPanel Spacing="10" Margin="10">
+                                <Button Classes="outline" Content="📎" ToolTip.Tip="Add File(s)..." Click="AddAttachmentButton_Click" HorizontalAlignment="Left"/>
+                                <ListBox x:Name="AttachmentsListBox" MinHeight="120" Background="#F9FAFB" CornerRadius="6">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="contracts:VaultAttachment">
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <TextBlock Text="📄" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding FileName}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Button Classes="outline" Content="📥" ToolTip.Tip="Download Selected" Click="DownloadAttachmentButton_Click"/>
+                                    <Button Classes="outline" Content="🗑️" ToolTip.Tip="Remove Selected" Click="RemoveAttachmentButton_Click" Foreground="Red"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </TabItem>
+                        <TabItem Header="Settings &amp; Expiry">
+                            <StackPanel Spacing="12" Margin="10">
+                                <TextBlock Classes="label" Text="Password Validity (Days, max 365)"/>
+                                <NumericUpDown x:Name="ValidityDaysControl" Value="365" Minimum="1" Maximum="365" Width="150" HorizontalAlignment="Left" CornerRadius="4"/>
+                                
+                                <Expander Header="Login Automation Settings (Browser Extension)" HorizontalAlignment="Stretch" CornerRadius="4" Background="White" BorderBrush="#E5E7EB">
+                                    <StackPanel Spacing="12" Margin="10">
+                                        <TextBlock Classes="label" Text="Login Method"/>
+                                        <ComboBox x:Name="LoginMethodComboBox" SelectedIndex="0" HorizontalAlignment="Stretch" CornerRadius="4">
+                                            <ComboBoxItem>AutoLearn</ComboBoxItem>
+                                            <ComboBoxItem>OneStep (Username &amp; Password)</ComboBoxItem>
+                                            <ComboBoxItem>TwoStep (Username -> Next -> Password)</ComboBoxItem>
+                                            <ComboBoxItem>BasicAuth</ComboBoxItem>
+                                        </ComboBox>
+                                        <CheckBox x:Name="AutoLearnEnabledCheck" Content="Enable AutoLearn Mode (Observe DOM)" IsChecked="True" Foreground="#4B5563"/>
+                                        
+                                        <Border BorderThickness="0,1,0,0" BorderBrush="#E5E7EB" Margin="0,10,0,5" Padding="0,15,0,0">
+                                            <StackPanel Spacing="10">
+                                                <TextBlock Text="Learned DOM Selectors" FontWeight="SemiBold" Foreground="#374151"/>
+                                                <TextBox x:Name="DomUserTextBox" PlaceholderText="Username Field Selector" />
+                                                <TextBox x:Name="DomPassTextBox" PlaceholderText="Password Field Selector" />
+                                                <TextBox x:Name="DomNextTextBox" PlaceholderText="Next Button Selector" />
+                                                <TextBox x:Name="DomSubmitTextBox" PlaceholderText="Submit Button Selector" />
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Expander>
+                            </StackPanel>
+                        </TabItem>
+                    </TabControl>
+                    </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+</Window>

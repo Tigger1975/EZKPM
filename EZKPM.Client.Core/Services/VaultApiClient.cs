@@ -53,6 +53,12 @@ namespace EZKPM.Client.Core.Services
             response.EnsureSuccessStatusCode();
         }
 
+        public async Task DeleteAssetAsync(Guid id)
+        {
+            var response = await _httpClient.DeleteAsync($"/api/v1/vault/assets/{id}");
+            response.EnsureSuccessStatusCode();
+        }
+
         public async Task<bool> AppendAuditLogAsync(Guid assetId, AuditLogRequestDto logRequest)
         {
             var response = await _httpClient.PostAsJsonAsync($"/api/v1/vault/assets/{assetId}/audit", logRequest);

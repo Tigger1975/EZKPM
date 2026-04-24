@@ -45,7 +45,7 @@ namespace EZKPM.Client.Core.Cryptography
 
             byte[] plaintext = new byte[ciphertextLength];
 
-            using (var aesGcm = new AesGcm(assetKey.Span))
+            using (var aesGcm = new AesGcm(assetKey.Span, 16))
             {
                 aesGcm.Decrypt(nonce, ciphertext, tag, plaintext);
             }
@@ -75,7 +75,7 @@ namespace EZKPM.Client.Core.Cryptography
             byte[] ciphertext = new byte[plaintext.Length];
             byte[] tag = new byte[16];
 
-            using (var aesGcm = new AesGcm(assetKey.Span))
+            using (var aesGcm = new AesGcm(assetKey.Span, 16))
             {
                 aesGcm.Encrypt(nonce, plaintext, ciphertext, tag);
             }
@@ -102,7 +102,7 @@ namespace EZKPM.Client.Core.Cryptography
                 MetadataHash = Convert.ToBase64String(metadataHash),
                 CipherBlob = Convert.ToBase64String(cipherBlob),
                 Nonce = Convert.ToBase64String(nonce),
-                ExpiresAt = DateTime.UtcNow.AddDays(365), // FA 30
+                ExpiresAt = DateTime.UtcNow.AddDays(payload.PasswordValidityDays > 0 && payload.PasswordValidityDays <= 365 ? payload.PasswordValidityDays : 365), // FA 30
                 EncryptedKeyShare = Convert.ToBase64String(wrappedKey)
             };
         }
@@ -147,7 +147,7 @@ namespace EZKPM.Client.Core.Cryptography
             byte[] ciphertext = new byte[logBytes.Length];
             byte[] tag = new byte[16];
 
-            using (var aesGcm = new AesGcm(logKey))
+            using (var aesGcm = new AesGcm(logKey, 16))
             {
                 aesGcm.Encrypt(nonce, logBytes, ciphertext, tag);
             }

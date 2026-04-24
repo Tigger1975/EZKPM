@@ -55,7 +55,7 @@ namespace EZKPM.Client.Core.Cryptography
             byte[] encryptedAssetKey = new byte[AesKeySize];
             byte[] tag = new byte[GcmTagSize];
 
-            using (var aesGcm = new AesGcm(kek))
+            using (var aesGcm = new AesGcm(kek, 16))
             {
                 // Wir wrappen den Asset-Key, der sicher in SecureMemory liegt
                 aesGcm.Encrypt(nonce, assetKey.Span, encryptedAssetKey, tag);
@@ -102,7 +102,7 @@ namespace EZKPM.Client.Core.Cryptography
 
             // 5. Asset-Key auspacken
             byte[] decryptedAssetKey = new byte[AesKeySize];
-            using (var aesGcm = new AesGcm(kek))
+            using (var aesGcm = new AesGcm(kek, 16))
             {
                 aesGcm.Decrypt(nonce, encryptedAssetKey, tag, decryptedAssetKey);
             }

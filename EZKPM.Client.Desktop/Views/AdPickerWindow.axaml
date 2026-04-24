@@ -1,0 +1,39 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:services="clr-namespace:EZKPM.Client.Desktop.Services"
+        x:Class="EZKPM.Client.Desktop.Views.AdPickerWindow"
+        Title="Active Directory Picker" Width="500" Height="450"
+        WindowStartupLocation="CenterOwner" Background="White">
+    <Grid RowDefinitions="Auto, *, Auto" Margin="20">
+        <!-- Search Bar -->
+        <StackPanel Grid.Row="0" Spacing="10" Margin="0,0,0,15">
+            <TextBlock Text="Suchen (Name oder SID):" FontWeight="SemiBold" Foreground="#374151" />
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBox x:Name="SearchTextBox" Grid.Column="0" Watermark="Tippen zum Suchen..." KeyDown="SearchTextBox_KeyDown"/>
+                <Button Grid.Column="1" Content="Suchen" Margin="10,0,0,0" Click="SearchButton_Click"/>
+            </Grid>
+        </StackPanel>
+
+        <!-- Results List -->
+        <ListBox x:Name="ResultsListBox" Grid.Row="1" Background="#F9FAFB" CornerRadius="6" DoubleTapped="ResultsListBox_DoubleTapped">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="services:AdPrincipal">
+                    <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4">
+                        <TextBlock Text="👤" IsVisible="{Binding Type, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='User'}" VerticalAlignment="Center"/>
+                        <TextBlock Text="👥" IsVisible="{Binding Type, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Group'}" VerticalAlignment="Center"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding Sid}" FontSize="11" Foreground="#6B7280" />
+                        </StackPanel>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,15,0,0">
+            <Button Content="Abbrechen" Classes="outline" Click="CancelButton_Click"/>
+            <Button Content="Auswählen" Classes="success" Click="SelectButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

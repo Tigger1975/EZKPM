@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -104,7 +104,7 @@ namespace EZKPM.Client.Core.Security
             // In einer perfekten Implementierung würden wir auch dies sofort nach Nutzung in SecureMemory kapseln.
             var plainText = new byte[cipherTextLength];
 
-            using (var aesGcm = new AesGcm(key.Span))
+            using (var aesGcm = new AesGcm(key.Span, 16))
             {
                 aesGcm.Decrypt(nonce, cipherText, tag, plainText);
             }
@@ -129,7 +129,7 @@ namespace EZKPM.Client.Core.Security
             var cipherText = new byte[plainBytes.Length];
             var tag = new byte[TagSizeInBytes];
 
-            using (var aesGcm = new AesGcm(key.Span))
+            using (var aesGcm = new AesGcm(key.Span, 16))
             {
                 aesGcm.Encrypt(nonce, plainBytes, cipherText, tag);
             }
