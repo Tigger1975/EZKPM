@@ -84,7 +84,12 @@
         <Grid Grid.Column="1" RowDefinitions="*, Auto">
             <ScrollViewer Grid.Row="0">
                 <StackPanel Spacing="15" x:Name="EditorPanel" IsVisible="False" Margin="40,30,40,40" MaxWidth="800" HorizontalAlignment="Left">
-                    <TextBlock Text="Asset Details" FontSize="28" FontWeight="Light" Foreground="#111827" Margin="0,0,0,20"/>
+                    
+                    <Grid ColumnDefinitions="*, Auto, Auto" Margin="0,0,0,20">
+                        <TextBlock Grid.Column="0" Text="Asset Details" FontSize="28" FontWeight="Light" Foreground="#111827" VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" Classes="outline" Content="📋 Copy Details" Click="CopyAllDetailsButton_Click" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <Button Grid.Column="2" Classes="outline" Content="📄 Duplicate" Click="DuplicateButton_Click" VerticalAlignment="Center"/>
+                    </Grid>
 
                     <!-- Title & Type -->
                     <Grid ColumnDefinitions="*, 20, 200">

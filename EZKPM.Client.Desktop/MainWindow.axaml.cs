@@ -147,6 +147,36 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void CopyAllDetailsButton_Click(object sender, RoutedEventArgs e)
+    {
+        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard != null)
+        {
+            var text = $"Title: {TitleTextBox.Text}\n" +
+                       $"Type: {(AssetTypeComboBox.SelectedItem as ComboBoxItem)?.Content}\n" +
+                       $"URL: {UrlTextBox.Text}\n" +
+                       $"Username: {UsernameTextBox.Text}\n" +
+                       $"Password: {PasswordTextBox.Text}\n" +
+                       $"Notes: {NotesTextBox.Text}";
+            
+            await clipboard.SetTextAsync(text.Trim());
+            StatusTextBlock.Text = "Gesamte Asset-Details in die Zwischenablage kopiert!";
+            StatusTextBlock.Foreground = Avalonia.Media.Brushes.Green;
+        }
+    }
+
+    private void DuplicateButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentEditingAssetId != null)
+        {
+            _currentEditingAssetId = null;
+            AssetListBox.SelectedItem = null;
+            TitleTextBox.Text += " (Kopie)";
+            StatusTextBlock.Text = "Asset als Kopie vorbereitet. Klicke auf 'Save to Server' um es neu anzulegen.";
+            StatusTextBlock.Foreground = Avalonia.Media.Brushes.Orange;
+        }
+    }
+
     private void GeneratePasswordButton_Click(object sender, RoutedEventArgs e)
     {
         var config = new PasswordGeneratorConfig
