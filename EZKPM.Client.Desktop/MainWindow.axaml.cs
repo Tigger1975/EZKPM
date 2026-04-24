@@ -15,6 +15,7 @@ public partial class MainWindow : Window
     private readonly VaultApiClient _apiClient;
     private readonly VaultCryptoService _cryptoService;
     private readonly ObservableCollection<VaultAssetPayload> _decryptedAssets = new();
+    private Guid? _currentEditingAssetId = null;
 
     public MainWindow()
     {
@@ -42,7 +43,7 @@ public partial class MainWindow : Window
                 try
                 {
                     var payload = _cryptoService.DecryptAsset(dto);
-                    _decryptedAssets.Add(payload);
+                    if (payload != null) _decryptedAssets.Add(payload);
                 }
                 catch (Exception ex)
                 {
@@ -62,6 +63,7 @@ public partial class MainWindow : Window
     {
         if (AssetListBox.SelectedItem is VaultAssetPayload payload)
         {
+            _currentEditingAssetId = payload.TransientAssetId;
             EditorPanel.IsVisible = true;
             TitleTextBox.Text = payload.Title;
             UsernameTextBox.Text = payload.Username;
@@ -96,6 +98,7 @@ public partial class MainWindow : Window
 
     private void NewAssetButton_Click(object sender, RoutedEventArgs e)
     {
+        _currentEditingAssetId = null;
         AssetListBox.SelectedItem = null;
         EditorPanel.IsVisible = true;
         TitleTextBox.Text = "";
@@ -157,6 +160,7 @@ public partial class MainWindow : Window
 
             var payload = new VaultAssetPayload
             {
+                TransientAssetId = _currentEditingAssetId,
                 Title = TitleTextBox.Text ?? "Untitled",
                 AssetType = (AssetTypeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Login",
                 Username = UsernameTextBox.Text ?? "",
@@ -187,10 +191,19 @@ public partial class MainWindow : Window
             // 1. Encrypt Payload locally
             var requestDto = _cryptoService.EncryptAsset(payload);
 
-            // 2. Send to Server
-            Guid newId = await _apiClient.CreateAssetAsync(requestDto);
-
-            StatusTextBlock.Text = "Saved successfully!";
+            // 2. Send to Server (Update or Create)
+            if (_currentEditingAssetId.HasValue)
+            {
+                await _apiClient.UpdateAssetAsync(_currentEditingAssetId.Value, requestDto);
+                StatusTextBlock.Text = "Updated successfully!";
+            }
+            else
+            {
+                Guid newId = await _apiClient.CreateAssetAsync(requestDto);
+                _currentEditingAssetId = newId;
+                StatusTextBlock.Text = "Saved successfully!";
+            }
+            
             StatusTextBlock.Foreground = Avalonia.Media.Brushes.Green;
 
             // 3. Reload list

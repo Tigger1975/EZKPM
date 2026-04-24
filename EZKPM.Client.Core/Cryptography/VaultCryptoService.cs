@@ -53,7 +53,9 @@ namespace EZKPM.Client.Core.Cryptography
             string json = Encoding.UTF8.GetString(plaintext);
             CryptographicOperations.ZeroMemory(plaintext);
 
-            return System.Text.Json.JsonSerializer.Deserialize<VaultAssetPayload>(json);
+            var payload = System.Text.Json.JsonSerializer.Deserialize<VaultAssetPayload>(json);
+            if (payload != null) payload.TransientAssetId = assetDto.AssetId;
+            return payload;
         }
 
         public CreateAssetRequestDto EncryptAsset(VaultAssetPayload payload)

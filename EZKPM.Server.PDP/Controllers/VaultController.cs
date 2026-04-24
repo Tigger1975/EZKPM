@@ -89,6 +89,24 @@ namespace EZKPM.Server.PDP.Controllers
             return Ok(new { AssetId = newAsset.Id });
         }
 
+        [HttpPut("assets/{id}")]
+        public async Task<IActionResult> UpdateAsset(Guid id, [FromBody] CreateAssetRequestDto request)
+        {
+            var userSid = GetUserSid();
+            var asset = await _db.VaultAssets
+                .Include(a => a.Acls.Where(acl => acl.AdSid == userSid))
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (asset == null || !asset.Acls.Any()) return Forbid(); // Owner or at least write access required
+
+            asset.CipherBlob = Convert.FromBase64String(request.CipherBlob);
+            asset.Nonce = Convert.FromBase64String(request.Nonce);
+            asset.MetadataHash = Convert.FromBase64String(request.MetadataHash ?? "AA==");
+            
+            await _db.SaveChangesAsync();
+            return Ok();
+        }
+
         [HttpGet("assets/{id}")]
         public async Task<IActionResult> GetAsset(Guid id)
         {

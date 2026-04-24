@@ -58,6 +58,9 @@ namespace EZKPM.Shared.Contracts
     /// </summary>
     public class VaultAssetPayload
     {
+        [System.Text.Json.Serialization.JsonIgnore]
+        public Guid? TransientAssetId { get; set; } // Nur im lokalen RAM für UI-Status
+
         public string AssetType { get; set; } // Login, Payment, SecureNote
         public string Title { get; set; }
         public string Username { get; set; }

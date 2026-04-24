@@ -37,6 +37,12 @@ namespace EZKPM.Client.Core.Services
             return result.GetProperty("assetId").GetGuid();
         }
 
+        public async Task UpdateAssetAsync(Guid id, CreateAssetRequestDto request)
+        {
+            var response = await _httpClient.PutAsJsonAsync($"/api/v1/vault/assets/{id}", request);
+            response.EnsureSuccessStatusCode();
+        }
+
         public async Task<bool> AppendAuditLogAsync(Guid assetId, AuditLogRequestDto logRequest)
         {
             var response = await _httpClient.PostAsJsonAsync($"/api/v1/vault/assets/{assetId}/audit", logRequest);
