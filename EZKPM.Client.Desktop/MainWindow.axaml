@@ -40,12 +40,16 @@
                     </ComboBox>
 
                     <TextBlock Text="Username / Email" FontWeight="SemiBold"/>
-                    <TextBox x:Name="UsernameTextBox" />
+                    <Grid ColumnDefinitions="*, Auto">
+                        <TextBox x:Name="UsernameTextBox" Grid.Column="0" />
+                        <Button Grid.Column="1" Content="Copy" Margin="10,0,0,0" Click="CopyUsernameButton_Click"/>
+                    </Grid>
 
                     <TextBlock Text="Password" FontWeight="SemiBold"/>
-                    <Grid ColumnDefinitions="*, Auto">
+                    <Grid ColumnDefinitions="*, Auto, Auto">
                         <TextBox x:Name="PasswordTextBox" Grid.Column="0" PasswordChar="*" />
-                        <Button Grid.Column="1" Content="Generate" Margin="10,0,0,0" Click="GeneratePasswordButton_Click"/>
+                        <Button Grid.Column="1" Content="Copy" Margin="10,0,0,0" Click="CopyPasswordButton_Click"/>
+                        <Button Grid.Column="2" Content="Generate" Margin="5,0,0,0" Click="GeneratePasswordButton_Click"/>
                     </Grid>
                     <CheckBox x:Name="ShowPasswordCheckBox" Content="Show Password" IsCheckedChanged="ShowPasswordCheckBox_CheckedChanged"/>
                     

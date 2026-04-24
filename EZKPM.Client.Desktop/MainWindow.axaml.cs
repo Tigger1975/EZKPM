@@ -124,6 +124,28 @@ public partial class MainWindow : Window
         DomSubmitTextBox.Text = "";
     }
 
+    private async void CopyUsernameButton_Click(object sender, RoutedEventArgs e)
+    {
+        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard != null)
+        {
+            await clipboard.SetTextAsync(UsernameTextBox.Text ?? "");
+            StatusTextBlock.Text = "Username in die Zwischenablage kopiert!";
+            StatusTextBlock.Foreground = Avalonia.Media.Brushes.Green;
+        }
+    }
+
+    private async void CopyPasswordButton_Click(object sender, RoutedEventArgs e)
+    {
+        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard != null)
+        {
+            await clipboard.SetTextAsync(PasswordTextBox.Text ?? "");
+            StatusTextBlock.Text = "Passwort in die Zwischenablage kopiert!";
+            StatusTextBlock.Foreground = Avalonia.Media.Brushes.Green;
+        }
+    }
+
     private void GeneratePasswordButton_Click(object sender, RoutedEventArgs e)
     {
         var config = new PasswordGeneratorConfig

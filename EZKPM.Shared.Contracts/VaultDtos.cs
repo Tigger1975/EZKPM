@@ -61,7 +61,9 @@ namespace EZKPM.Shared.Contracts
         [System.Text.Json.Serialization.JsonIgnore]
         public Guid? TransientAssetId { get; set; } // Nur im lokalen RAM für UI-Status
 
-        public string AssetType { get; set; } // Login, Payment, SecureNote
+        public Guid? ParentFolderId { get; set; } // Für die Tree-Struktur
+
+        public string AssetType { get; set; } // Folder, Login, Payment, SecureNote
         public string Title { get; set; }
         public string Username { get; set; }
         public string Password { get; set; }
