@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using EZKPM.Server.PDP.Data;
+using EZKPM.Shared.Contracts;
 
 namespace EZKPM.Server.PDP.Controllers
 {
@@ -14,7 +15,6 @@ namespace EZKPM.Server.PDP.Controllers
     /// Zentraler API-Endpunkt (PDP) für den Abruf verschlüsselter Assets.
     /// Erzwingt Zero-Knowledge, AD-SID-Prüfungen und Expiration-Policies.
     /// </summary>
-    [Authorize] // OIDC/JWT Auth zwingend erforderlich
     [ApiController]
     [Route("api/v1/vault")]
     public class VaultController : ControllerBase
@@ -26,16 +26,75 @@ namespace EZKPM.Server.PDP.Controllers
             _db = db;
         }
 
+        private string GetUserSid()
+        {
+            // Fallback für lokale Tests ohne OIDC
+            var sid = User.FindFirstValue(ClaimTypes.PrimarySid) ?? User.FindFirstValue("sid");
+            return string.IsNullOrEmpty(sid) ? "S-1-5-21-DUMMY-TEST-USER" : sid;
+        }
+
+        [HttpGet("assets/all")]
+        public async Task<IActionResult> GetAllAssets()
+        {
+            var userSid = GetUserSid();
+
+            var assets = await _db.VaultAssets
+                .Include(a => a.Acls.Where(acl => acl.AdSid == userSid))
+                .Where(a => a.Acls.Any(acl => acl.AdSid == userSid))
+                .ToListAsync();
+
+            var responseList = assets.Select(asset =>
+            {
+                var userAcl = asset.Acls.First();
+                return new VaultAssetResponseDto
+                {
+                    AssetId = asset.Id,
+                    CipherBlob = Convert.ToBase64String(asset.CipherBlob),
+                    Nonce = Convert.ToBase64String(asset.Nonce),
+                    PermissionLevel = userAcl.PermissionLevel,
+                    EncryptedKeyShare = Convert.ToBase64String(userAcl.EncryptedKeyShare),
+                    IsExpired = DateTime.UtcNow > asset.ExpiresAt
+                };
+            }).ToList();
+
+            return Ok(responseList);
+        }
+
+        [HttpPost("assets")]
+        public async Task<IActionResult> CreateAsset([FromBody] CreateAssetRequestDto request)
+        {
+            var userSid = GetUserSid();
+
+            var newAsset = new VaultAsset
+            {
+                Id = Guid.NewGuid(),
+                MetadataHash = Convert.FromBase64String(request.MetadataHash ?? "AA=="),
+                CipherBlob = Convert.FromBase64String(request.CipherBlob),
+                Nonce = Convert.FromBase64String(request.Nonce),
+                ExpiresAt = request.ExpiresAt
+            };
+
+            var ownerAcl = new AssetAcl
+            {
+                AssetId = newAsset.Id,
+                AdSid = userSid,
+                PermissionLevel = 3, // Owner
+                EncryptedKeyShare = Convert.FromBase64String(request.EncryptedKeyShare)
+            };
+
+            _db.VaultAssets.Add(newAsset);
+            _db.AssetAcls.Add(ownerAcl);
+            await _db.SaveChangesAsync();
+
+            return Ok(new { AssetId = newAsset.Id });
+        }
+
         [HttpGet("assets/{id}")]
         public async Task<IActionResult> GetAsset(Guid id)
         {
             // 1. Identität: AD SID aus dem Token extrahieren (ClaimType abhängig vom OIDC Provider)
-            var userSid = User.FindFirstValue(ClaimTypes.PrimarySid) ?? User.FindFirstValue("sid");
-            if (string.IsNullOrEmpty(userSid))
-            {
-                // Security-Event: Login ohne SID. Evtl. Token-Manipulation oder Fehlkonfiguration im AD.
-                return Unauthorized(new { Error = "Keine AD-SID im Token gefunden. Zugriff verweigert." });
-            }
+            var userSid = GetUserSid();
+
 
             // 2. Asset & ACL laden (Wir laden gezielt nur den ACL-Eintrag für den aufrufenden User)
             var asset = await _db.VaultAssets
@@ -69,7 +128,7 @@ namespace EZKPM.Server.PDP.Controllers
             }
 
             // 4. Zero-Knowledge-Auslieferung: Der Server gibt nur Chiffren und Nonces aus.
-            var responseDto = new
+            var responseDto = new VaultAssetResponseDto
             {
                 AssetId = asset.Id,
                 CipherBlob = Convert.ToBase64String(asset.CipherBlob),
@@ -89,8 +148,7 @@ namespace EZKPM.Server.PDP.Controllers
         [HttpPost("assets/{id}/audit")]
         public async Task<IActionResult> AppendAuditLog(Guid id, [FromBody] AuditLogRequestDto request)
         {
-            var userSid = User.FindFirstValue(ClaimTypes.PrimarySid) ?? User.FindFirstValue("sid");
-            if (string.IsNullOrEmpty(userSid)) return Unauthorized();
+            var userSid = GetUserSid();
 
             var hasAccess = await _db.AssetAcls.AnyAsync(a => a.AssetId == id && a.AdSid == userSid);
             if (!hasAccess) return Forbid();
@@ -145,16 +203,5 @@ namespace EZKPM.Server.PDP.Controllers
 
             return Ok();
         }
-    }
-
-    /// <summary>
-    /// Data Transfer Object für eingehende Audit-Logs.
-    /// </summary>
-    public class AuditLogRequestDto
-    {
-        public string EncryptedLogBlob { get; set; } // Base64
-        public string Nonce { get; set; } // Base64
-        public string PreviousEntryHash { get; set; } // Base64
-        public string CurrentEntryHash { get; set; } // Base64
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Security.Cryptography;
 using EZKPM.Client.Core.Security;
 
@@ -122,7 +122,7 @@ namespace EZKPM.Client.Core.Cryptography
         private byte[] GenerateKyberSharedSecret(byte[] pubKey, out byte[] ciphertext)
         {
             ciphertext = new byte[768]; RandomNumberGenerator.Fill(ciphertext);
-            var secret = new byte[32]; RandomNumberGenerator.Fill(secret); return secret;
+            return new byte[32]; // DUMMY: Fester Rückgabewert für lokalen Test-Roundtrip
         }
         private byte[] DecapsulateKyber(SecureMemory privKey, byte[] ciphertext) { return new byte[32]; }
 

@@ -1,9 +1,68 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:contracts="clr-namespace:EZKPM.Shared.Contracts;assembly=EZKPM.Shared.Contracts"
+        Width="900" Height="600"
         x:Class="EZKPM.Client.Desktop.MainWindow"
-        Title="EZKPM.Client.Desktop">
-    Welcome to Avalonia!
+        Title="EZKPM Vault Manager">
+    <Grid ColumnDefinitions="300, *">
+        <!-- Sidebar: Asset List -->
+        <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="0,0,1,0" Padding="10">
+            <Grid RowDefinitions="Auto, *, Auto">
+                <TextBlock Text="My Vault" FontWeight="Bold" FontSize="20" Margin="0,0,0,10"/>
+                <ListBox x:Name="AssetListBox" Grid.Row="1" SelectionChanged="AssetListBox_SelectionChanged">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="contracts:VaultAssetPayload">
+                            <StackPanel Margin="0,5">
+                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding AssetType}" FontSize="12" Foreground="Gray" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <Button Grid.Row="2" Content="+ New Asset" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,10,0,0" Click="NewAssetButton_Click" Background="#28a745" Foreground="White"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Area: Editor -->
+        <Grid Grid.Column="1" RowDefinitions="*, Auto">
+            <ScrollViewer Grid.Row="0" Padding="20">
+                <StackPanel Spacing="15" x:Name="EditorPanel" IsVisible="False">
+                    <TextBlock Text="Edit Asset" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                    <TextBlock Text="Title" FontWeight="SemiBold"/>
+                    <TextBox x:Name="TitleTextBox" />
+
+                    <TextBlock Text="Asset Type" FontWeight="SemiBold"/>
+                    <ComboBox x:Name="AssetTypeComboBox" SelectedIndex="0" HorizontalAlignment="Stretch">
+                        <ComboBoxItem>Login</ComboBoxItem>
+                        <ComboBoxItem>Payment</ComboBoxItem>
+                        <ComboBoxItem>SecureNote</ComboBoxItem>
+                    </ComboBox>
+
+                    <TextBlock Text="Username / Email" FontWeight="SemiBold"/>
+                    <TextBox x:Name="UsernameTextBox" />
+
+                    <TextBlock Text="Password" FontWeight="SemiBold"/>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <TextBox x:Name="PasswordTextBox" Grid.Column="0" PasswordChar="*" />
+                        <Button Grid.Column="1" Content="Generate" Margin="10,0,0,0" Click="GeneratePasswordButton_Click"/>
+                    </Grid>
+                    <CheckBox x:Name="ShowPasswordCheckBox" Content="Show Password" IsCheckedChanged="ShowPasswordCheckBox_CheckedChanged"/>
+
+                    <TextBlock Text="URL" FontWeight="SemiBold"/>
+                    <TextBox x:Name="UrlTextBox" />
+
+                    <TextBlock Text="Notes" FontWeight="SemiBold"/>
+                    <TextBox x:Name="NotesTextBox" AcceptsReturn="True" Height="80"/>
+
+                    <Button Content="Save to Server" HorizontalAlignment="Right" Click="SaveButton_Click" Background="#0078D7" Foreground="White" Padding="20,10"/>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Status Message pinned to bottom -->
+            <TextBox Grid.Row="1" x:Name="StatusTextBlock" 
+                     IsReadOnly="True" BorderThickness="0" Background="Transparent" 
+                     TextWrapping="Wrap" Margin="20,10,20,10" MinHeight="40" />
+        </Grid>
+    </Grid>
 </Window>

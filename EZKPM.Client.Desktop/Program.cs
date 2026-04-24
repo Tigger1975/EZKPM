@@ -1,11 +1,14 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Net.Http;
 using Avalonia;
 using Avalonia.Threading;
+using EZKPM.Client.Core.Cryptography;
 using EZKPM.Client.Core.Interop;
+using EZKPM.Client.Core.Services;
 using EZKPM.Client.Desktop.Views;
 
 namespace EZKPM.Client.Desktop
@@ -23,7 +26,7 @@ namespace EZKPM.Client.Desktop
         }
 
         [STAThread]
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
             InitializeKillSwitch();
 
@@ -89,7 +92,11 @@ namespace EZKPM.Client.Desktop
         {
             try
             {
-                var orchestrator = new RealDesktopVaultOrchestrator();
+                var httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5117") };
+                var apiClient = new VaultApiClient(httpClient);
+                var keyWrapper = new HybridPqcKeyWrapper();
+                var cryptoService = new VaultCryptoService(keyWrapper);
+                var orchestrator = new RealDesktopVaultOrchestrator(apiClient, cryptoService);
                 var host = new BrowserMessagingHost(orchestrator);
 
                 LogDebug("Awaiting messages from browser...");
@@ -115,10 +122,21 @@ namespace EZKPM.Client.Desktop
 
     internal class RealDesktopVaultOrchestrator : IVaultOrchestrator
     {
+        private readonly VaultApiClient _apiClient;
+        private readonly VaultCryptoService _cryptoService;
+
+        public RealDesktopVaultOrchestrator(VaultApiClient apiClient, VaultCryptoService cryptoService)
+        {
+            _apiClient = apiClient;
+            _cryptoService = cryptoService;
+        }
+
         public Task<dynamic> CheckAssetForUrlAsync(string url)
         {
             Program.LogDebug($"Checking asset for URL: {url}");
 
+            // In reality, search the local metadata index or server.
+            // For the first test application, return a dummy payment asset metadata block.
             dynamic result = new System.Dynamic.ExpandoObject();
             result.AssetId = Guid.NewGuid();
             result.IsPaymentAsset = true;
@@ -140,10 +158,24 @@ namespace EZKPM.Client.Desktop
                     Program.LogDebug("Displaying AuditDialog...");
 
                     var result = await dialog.ShowAuditPromptAsync();
-
                     Program.LogDebug($"Dialog closed. Result: IsAuthorized={result.IsAuthorized}");
 
-                    tcs.SetResult(result.IsAuthorized);
+                    if (result.IsAuthorized)
+                    {
+                        // Generate Audit Log using CryptoService
+                        string logMessage = $"Amount: {result.Amount}, Order: {result.OrderId}";
+                        var auditDto = _cryptoService.CreateAuditLogRequest(logMessage);
+                        
+                        // Send to PDP Server
+                        bool success = await _apiClient.AppendAuditLogAsync(assetId, auditDto);
+                        Program.LogDebug($"Audit Log Sync to PDP: {(success ? "Success" : "Failed")}");
+                        
+                        tcs.SetResult(success);
+                    }
+                    else
+                    {
+                        tcs.SetResult(false);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -155,15 +187,26 @@ namespace EZKPM.Client.Desktop
             return await tcs.Task;
         }
 
-        public Task<dynamic> DecryptAssetAsync(Guid assetId)
+        public async Task<dynamic> DecryptAssetAsync(Guid assetId)
         {
             Program.LogDebug("Decrypting asset...");
 
-            dynamic result = new System.Dynamic.ExpandoObject();
-            result.Username = "MyCardName";
-            result.Password = "1234-5678-9012-3456";
+            // 1. Fetch encrypted Asset from VaultController (PDP)
+            var assetDto = await _apiClient.GetAssetAsync(assetId);
 
-            return Task.FromResult<dynamic>(result);
+            if (assetDto == null)
+                throw new InvalidOperationException("Asset not found or access denied.");
+
+            if (assetDto.IsExpired)
+            {
+                Program.LogDebug("Asset is expired (FA 30). Denying access.");
+                throw new UnauthorizedAccessException("Asset is expired.");
+            }
+
+            // 2. Perform Zero-Knowledge Decryption locally
+            var decryptedData = _cryptoService.DecryptAsset(assetDto);
+            
+            return decryptedData;
         }
     }
 }
