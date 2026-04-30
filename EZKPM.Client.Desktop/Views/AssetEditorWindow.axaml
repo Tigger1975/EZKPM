@@ -232,7 +232,7 @@
                                 <Button Classes="outline" Content="➕" ToolTip.Tip="Add Variable" Click="AddCustomFieldButton_Click" HorizontalAlignment="Left"/>
                             </StackPanel>
                         </TabItem>
-                        <TabItem Header="Berechtigungen">
+                        <TabItem Header="Permissions (ACL)">
                             <StackPanel Spacing="10" Margin="10">
                                 <TextBlock Text="Verwalte Benutzer, die Zugriff auf dieses Asset/diesen Ordner haben." Foreground="#6B7280"/>
                                 <Grid ColumnDefinitions="*, Auto, 130, Auto" Margin="0,10,0,5">

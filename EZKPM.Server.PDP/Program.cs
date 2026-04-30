@@ -10,9 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// Für Phase 2 Test: In-Memory DB statt PostgreSQL nutzen, um direkt loslegen zu können
+// Für Phase 2 Test: SQLite statt In-Memory, um Daten dauerhaft zu speichern
 builder.Services.AddDbContext<EzkpmDbContext>(options =>
-    options.UseInMemoryDatabase("EzkpmTestDb"));
+    options.UseSqlite("Data Source=ezkpm_vault.db"));
 
 // TODO: In einer echten Umgebung OIDC Authentication hinzufügen
 // builder.Services.AddAuthentication(...)
@@ -22,6 +22,13 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+}
+
+// Datenbank erstellen, falls nicht vorhanden
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<EzkpmDbContext>();
+    db.Database.EnsureCreated();
 }
 
 app.UseHttpsRedirection();

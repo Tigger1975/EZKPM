@@ -103,7 +103,8 @@ namespace EZKPM.Client.Core.Cryptography
                 CipherBlob = Convert.ToBase64String(cipherBlob),
                 Nonce = Convert.ToBase64String(nonce),
                 ExpiresAt = DateTime.UtcNow.AddDays(payload.PasswordValidityDays > 0 && payload.PasswordValidityDays <= 365 ? payload.PasswordValidityDays : 365), // FA 30
-                EncryptedKeyShare = Convert.ToBase64String(wrappedKey)
+                EncryptedKeyShare = Convert.ToBase64String(wrappedKey),
+                Acls = payload.Acls ?? new System.Collections.Generic.List<EZKPM.Shared.Contracts.AclEntryDto>()
             };
         }
 

@@ -102,6 +102,11 @@
                             <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4" Background="Transparent"
                                         PointerPressed="TreeNode_PointerPressed"
                                         PointerMoved="TreeNode_PointerMoved">
+                                <StackPanel.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Edit Folder" Click="EditFolderMenuItem_Click" />
+                                    </ContextMenu>
+                                </StackPanel.ContextMenu>
                                 <TextBlock Text="{Binding Icon}" FontSize="18" VerticalAlignment="Center" Foreground="#FACC15"/>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="{Binding Title}" FontWeight="Medium" Foreground="White" FontSize="14" />
@@ -139,6 +144,7 @@
                                 <ComboBoxItem Content="API Key" />
                                 <ComboBoxItem Content="Authenticator" />
                             </ComboBox>
+                            <Button Content="📥 Importieren" Classes="outline" Click="ImportKeePass_Click" />
                             <Button Content="🗑️ Löschen" Classes="outline" Click="DeleteSelectedAssets_Click" Foreground="#EF4444" BorderBrush="#EF4444" />
                         </StackPanel>
 

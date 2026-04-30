@@ -12,6 +12,8 @@ using Avalonia.Input.Platform;
 using EZKPM.Client.Core.Cryptography;
 using EZKPM.Client.Core.Services;
 using EZKPM.Shared.Contracts;
+using Avalonia.Platform.Storage;
+using System.IO;
 
 namespace EZKPM.Client.Desktop;
 
@@ -182,11 +184,91 @@ public partial class MainWindow : Window
         await LoadAssetsAsync();
     }
 
-        private void AssetsDataGrid_DoubleTapped(object sender, Avalonia.Input.TappedEventArgs e)
+    private async void ImportKeePass_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        try
+        {
+            var files = await this.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "KeePass XML Datei auswählen",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("KeePass XML") { Patterns = new[] { "*.xml" } },
+                    new FilePickerFileType("Alle Dateien") { Patterns = new[] { "*.*" } }
+                }
+            });
+
+            if (files.Count >= 1)
+            {
+                var file = files[0];
+                await using var stream = await file.OpenReadAsync();
+                
+                var importer = new KeePassXmlImporter();
+                var importedPayloads = await importer.ImportAsync(stream);
+
+                int successCount = 0;
+                var idMap = new Dictionary<Guid, Guid>();
+
+                var currentUser = Environment.UserDomainName + "\\" + Environment.UserName;
+                if (currentUser.StartsWith("\\")) currentUser = Environment.UserName;
+
+                foreach (var payload in importedPayloads)
+                {
+                    try
+                    {
+                        if (payload.ParentFolderId.HasValue && idMap.TryGetValue(payload.ParentFolderId.Value, out var realParentId))
+                        {
+                            payload.ParentFolderId = realParentId;
+                        }
+
+                        // Ensure we have owner ACLs, otherwise the server rejects it or it becomes invisible
+                        if (payload.Acls.Count == 0)
+                        {
+                            payload.Acls.Add(new AclEntryDto { AdSid = currentUser, PermissionLevel = 3 });
+                        }
+
+                        var requestDto = _cryptoService.EncryptAsset(payload);
+                        Guid realId = await _apiClient.CreateAssetAsync(requestDto);
+                        
+                        if (payload.TransientAssetId.HasValue)
+                        {
+                            idMap[payload.TransientAssetId.Value] = realId;
+                        }
+
+                        successCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Fehler beim Importieren eines Assets ({payload.Title}): {ex.Message}");
+                    }
+                }
+
+                ShowStatus($"Import abgeschlossen: {successCount} Assets importiert.");
+                await LoadAssetsAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Fehler beim Import: {ex.Message}", isError: true);
+        }
+    }
+
+    private void AssetsDataGrid_DoubleTapped(object sender, Avalonia.Input.TappedEventArgs e)
     {
         if (sender is DataGrid grid && grid.SelectedItem is VaultAssetPayload payload)
         {
             var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList());
+            editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
+            editor.Show();
+        }
+    }
+
+    private void EditFolderMenuItem_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is MenuItem menuItem && menuItem.DataContext is VaultTreeNode node)
+        {
+            var editor = new Views.AssetEditorWindow(node.Payload, _decryptedAssets.ToList());
             editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
             editor.Show();
         }

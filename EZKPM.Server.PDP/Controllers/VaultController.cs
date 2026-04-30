@@ -78,16 +78,43 @@ namespace EZKPM.Server.PDP.Controllers
                 ExpiresAt = request.ExpiresAt
             };
 
-            var ownerAcl = new AssetAcl
-            {
-                AssetId = newAsset.Id,
-                AdSid = userSid,
-                PermissionLevel = 3, // Owner
-                EncryptedKeyShare = Convert.FromBase64String(request.EncryptedKeyShare)
-            };
-
             _db.VaultAssets.Add(newAsset);
-            _db.AssetAcls.Add(ownerAcl);
+            
+            if (request.Acls != null && request.Acls.Count > 0)
+            {
+                foreach (var aclDto in request.Acls)
+                {
+                    // Clean up potential SID string if it contains DisplayName
+                    var cleanSid = aclDto.AdSid;
+                    if (cleanSid.Contains("(") && cleanSid.Contains(")"))
+                    {
+                        var start = cleanSid.LastIndexOf("(") + 1;
+                        var end = cleanSid.LastIndexOf(")");
+                        if (end > start) cleanSid = cleanSid.Substring(start, end - start);
+                    }
+
+                    _db.AssetAcls.Add(new AssetAcl
+                    {
+                        AssetId = newAsset.Id,
+                        AdSid = string.IsNullOrWhiteSpace(cleanSid) ? userSid : cleanSid,
+                        PermissionLevel = aclDto.PermissionLevel,
+                        EncryptedKeyShare = string.IsNullOrWhiteSpace(aclDto.EncryptedKeyShare) 
+                            ? Convert.FromBase64String(request.EncryptedKeyShare) 
+                            : Convert.FromBase64String(aclDto.EncryptedKeyShare)
+                    });
+                }
+            }
+            else
+            {
+                _db.AssetAcls.Add(new AssetAcl
+                {
+                    AssetId = newAsset.Id,
+                    AdSid = userSid,
+                    PermissionLevel = 3, // Owner
+                    EncryptedKeyShare = Convert.FromBase64String(request.EncryptedKeyShare)
+                });
+            }
+
             await _db.SaveChangesAsync();
 
             return Ok(new { AssetId = newAsset.Id });
@@ -112,10 +139,40 @@ namespace EZKPM.Server.PDP.Controllers
             asset.Nonce = Convert.FromBase64String(request.Nonce);
             asset.MetadataHash = metaHash;
             
-            // WICHTIG: Da der Client den Blob mit einem NEUEN Asset-Key verschlüsselt hat,
-            // müssen wir auch den neuen gewrappten Key für den Owner speichern!
-            var acl = asset.Acls.First();
-            acl.EncryptedKeyShare = Convert.FromBase64String(request.EncryptedKeyShare);
+            // ACLs updaten
+            if (request.Acls != null && request.Acls.Count > 0)
+            {
+                // Alte entfernen
+                _db.AssetAcls.RemoveRange(_db.AssetAcls.Where(a => a.AssetId == id));
+                
+                // Neue hinzufügen
+                foreach (var aclDto in request.Acls)
+                {
+                    var cleanSid = aclDto.AdSid;
+                    if (cleanSid.Contains("(") && cleanSid.Contains(")"))
+                    {
+                        var start = cleanSid.LastIndexOf("(") + 1;
+                        var end = cleanSid.LastIndexOf(")");
+                        if (end > start) cleanSid = cleanSid.Substring(start, end - start);
+                    }
+
+                    _db.AssetAcls.Add(new AssetAcl
+                    {
+                        AssetId = asset.Id,
+                        AdSid = string.IsNullOrWhiteSpace(cleanSid) ? userSid : cleanSid,
+                        PermissionLevel = aclDto.PermissionLevel,
+                        EncryptedKeyShare = string.IsNullOrWhiteSpace(aclDto.EncryptedKeyShare) 
+                            ? Convert.FromBase64String(request.EncryptedKeyShare) 
+                            : Convert.FromBase64String(aclDto.EncryptedKeyShare)
+                    });
+                }
+            }
+            else
+            {
+                // Fallback: Wenn keine Acls geschickt wurden, behalte zumindest den Owner-Key aktuell
+                var acl = asset.Acls.First();
+                acl.EncryptedKeyShare = Convert.FromBase64String(request.EncryptedKeyShare);
+            }
             
             await _db.SaveChangesAsync();
             return Ok();
