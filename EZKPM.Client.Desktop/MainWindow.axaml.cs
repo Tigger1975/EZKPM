@@ -152,7 +152,7 @@ public partial class MainWindow : Window
         Traverse(_treeNodes);
 
         _treeNodes.Clear();
-        var nodesMap = _decryptedAssets.Where(a => a.AssetType == "Folder").ToDictionary(a => a.TransientAssetId.GetValueOrDefault(), a => new VaultTreeNode { Payload = a });
+        var nodesMap = _decryptedAssets.Where(a => a.AssetType == "Folder" && !a.IsDeleted).ToDictionary(a => a.TransientAssetId.GetValueOrDefault(), a => new VaultTreeNode { Payload = a });
 
         foreach (var node in nodesMap.Values)
         {
@@ -461,13 +461,13 @@ public partial class MainWindow : Window
         {
             if (node.Payload.TransientAssetId.HasValue)
             {
-                var dialog = new Views.ConfirmationDialog($"Möchten Sie den Ordner '{node.Title}' wirklich in den Papierkorb verschieben?");
+                var dialog = new Views.ConfirmationDialog($"Möchten Sie den Ordner '{node.Title}' und alle seine Inhalte wirklich in den Papierkorb verschieben?");
                 var result = await dialog.ShowDialogAsync(this);
                 if (!result) return;
                 
                 try
                 {
-                    await _apiClient.DeleteAssetAsync(node.Payload.TransientAssetId.Value);
+                    await DeleteAssetRecursiveAsync(node.Payload.TransientAssetId.Value);
                     ShowStatus($"Ordner '{node.Title}' gelöscht.");
                     await LoadAssetsAsync();
                 }
@@ -477,6 +477,26 @@ public partial class MainWindow : Window
                 }
             }
         }
+    }
+
+    private async Task DeleteAssetRecursiveAsync(Guid folderId)
+    {
+        var children = _decryptedAssets.Where(a => a.ParentFolderId == folderId).ToList();
+        foreach (var child in children)
+        {
+            if (child.TransientAssetId.HasValue)
+            {
+                if (child.AssetType == "Folder")
+                {
+                    await DeleteAssetRecursiveAsync(child.TransientAssetId.Value);
+                }
+                else
+                {
+                    await _apiClient.DeleteAssetAsync(child.TransientAssetId.Value);
+                }
+            }
+        }
+        await _apiClient.DeleteAssetAsync(folderId);
     }
 
 
