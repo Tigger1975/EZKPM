@@ -352,6 +352,7 @@ public partial class MainWindow : Window
                 AllowMultiple = false,
                 FileTypeFilter = new[]
                 {
+                    new FilePickerFileType("KeePass Database") { Patterns = new[] { "*.kdbx" } },
                     new FilePickerFileType("KeePass XML") { Patterns = new[] { "*.xml" } },
                     new FilePickerFileType("CSV Datei") { Patterns = new[] { "*.csv" } },
                     new FilePickerFileType("Alle Dateien") { Patterns = new[] { "*.*" } }
@@ -361,13 +362,36 @@ public partial class MainWindow : Window
             if (files.Count >= 1)
             {
                 var file = files[0];
-                await using var stream = await file.OpenReadAsync();
+                string password = null;
+                string keyFilePath = null;
+                IPasswordDbImporter importer;
                 
-                IPasswordDbImporter importer = file.Name.EndsWith(".csv", StringComparison.OrdinalIgnoreCase) 
-                    ? new CsvImporter() 
-                    : new KeePassXmlImporter();
+                if (file.Name.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+                {
+                    importer = new CsvImporter();
+                }
+                else if (file.Name.EndsWith(".kdbx", StringComparison.OrdinalIgnoreCase))
+                {
+                    importer = new KdbxImporter();
+                    var pwdDialog = new Views.PasswordPromptDialog();
+                    var result = await pwdDialog.ShowDialogAsync(this);
+                    
+                    if (result == null || (string.IsNullOrEmpty(result.Password) && string.IsNullOrEmpty(result.KeyFilePath)))
+                    {
+                        ShowStatus("Import abgebrochen: Kein Passwort / keine Key-Datei eingegeben.");
+                        return;
+                    }
+                    
+                    password = result.Password;
+                    keyFilePath = result.KeyFilePath;
+                }
+                else
+                {
+                    importer = new KeePassXmlImporter();
+                }
 
-                var importedPayloads = await importer.ImportAsync(stream);
+                await using var stream = await file.OpenReadAsync();
+                var importedPayloads = await importer.ImportAsync(stream, password, keyFilePath);
 
                 int successCount = 0;
                 var idMap = new Dictionary<Guid, Guid>();

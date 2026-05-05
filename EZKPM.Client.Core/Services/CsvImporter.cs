@@ -9,7 +9,7 @@ namespace EZKPM.Client.Core.Services
 {
     public class CsvImporter : IPasswordDbImporter
     {
-        public async Task<List<VaultAssetPayload>> ImportAsync(Stream fileStream)
+        public async Task<List<VaultAssetPayload>> ImportAsync(Stream fileStream, string password = null, string keyFilePath = null)
         {
             var resultList = new List<VaultAssetPayload>();
             

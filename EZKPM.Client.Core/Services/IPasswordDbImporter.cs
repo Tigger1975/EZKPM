@@ -13,6 +13,6 @@ namespace EZKPM.Client.Core.Services
         /// </summary>
         /// <param name="fileStream">Stream der Import-Datei</param>
         /// <returns>Eine flache Liste von Payload-Objekten mit korrekten ParentFolderIds (falls unterstützt)</returns>
-        Task<List<VaultAssetPayload>> ImportAsync(Stream fileStream);
+        Task<List<VaultAssetPayload>> ImportAsync(Stream fileStream, string password = null, string keyFilePath = null);
     }
 }

@@ -10,7 +10,7 @@ namespace EZKPM.Client.Core.Services
 {
     public class KeePassXmlImporter : IPasswordDbImporter
     {
-        public Task<List<VaultAssetPayload>> ImportAsync(Stream fileStream)
+        public Task<List<VaultAssetPayload>> ImportAsync(Stream fileStream, string password = null, string keyFilePath = null)
         {
             var resultList = new List<VaultAssetPayload>();
             try
