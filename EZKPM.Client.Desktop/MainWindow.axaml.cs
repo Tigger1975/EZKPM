@@ -230,7 +230,11 @@ public partial class MainWindow : Window
             filtered = filtered.Where(a => a.ParentFolderId == parentId);
         }
 
-        if (selectedType != "Alle Typen")
+        if (selectedType == "Abgelaufen (Rotation)")
+        {
+            filtered = filtered.Where(a => a.IsExpired);
+        }
+        else if (selectedType != "Alle Typen")
         {
             filtered = filtered.Where(a => a.AssetType == selectedType);
         }

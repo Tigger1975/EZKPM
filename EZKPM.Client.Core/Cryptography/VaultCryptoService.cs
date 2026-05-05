@@ -54,7 +54,11 @@ namespace EZKPM.Client.Core.Cryptography
             CryptographicOperations.ZeroMemory(plaintext);
 
             var payload = System.Text.Json.JsonSerializer.Deserialize<VaultAssetPayload>(json);
-            if (payload != null) payload.TransientAssetId = assetDto.AssetId;
+            if (payload != null) 
+            {
+                payload.TransientAssetId = assetDto.AssetId;
+                payload.IsExpired = assetDto.IsExpired;
+            }
             return payload;
         }
 

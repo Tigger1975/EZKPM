@@ -72,6 +72,9 @@ public partial class AssetEditorWindow : Window
         if (payload != null)
         {
             _currentEditingAssetId = payload.TransientAssetId;
+            
+            var expiredPanel = this.FindControl<Avalonia.Controls.Border>("ExpiredWarningPanel");
+            if (expiredPanel != null) expiredPanel.IsVisible = payload.IsExpired;
 
             // Set Title, Username, Password, etc.
             TitleTextBox.Text = payload.Title ?? "";
@@ -154,6 +157,9 @@ public partial class AssetEditorWindow : Window
         _currentEditingAssetId = null;
         
         
+        var expiredPanel = this.FindControl<Avalonia.Controls.Border>("ExpiredWarningPanel");
+        if (expiredPanel != null) expiredPanel.IsVisible = false;
+
         TitleTextBox.Text = "";
         UsernameTextBox.Text = "";
         PasswordTextBox.Text = "";

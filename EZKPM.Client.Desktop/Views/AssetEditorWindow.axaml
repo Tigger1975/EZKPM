@@ -62,6 +62,16 @@
                                 
                                 <TextBlock x:Name="StatusTextBlock" IsVisible="False" FontWeight="Bold" Margin="0,0,0,10" />
 
+                                <Border x:Name="ExpiredWarningPanel" IsVisible="False" Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="8" Padding="15" Margin="0,0,0,20">
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <TextBlock Text="⚠️" FontSize="24" VerticalAlignment="Center" />
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="ACHTUNG: Dieses Asset ist abgelaufen!" FontWeight="Bold" Foreground="#991B1B" FontSize="14" />
+                                            <TextBlock Text="Die Lebensdauer (max. 365 Tage) wurde überschritten. Bitte ändern Sie das Passwort umgehend und speichern Sie, um den Zugriff (z.B. Autofill) wieder zu ermöglichen." Foreground="#7F1D1D" FontSize="12" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
                     <!-- Title, Type & Parent Folder -->
                     <Grid ColumnDefinitions="*, 20, 150, 20, 200">
                         <StackPanel Grid.Column="0">

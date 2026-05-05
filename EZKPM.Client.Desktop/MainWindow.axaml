@@ -136,6 +136,7 @@
                             <TextBox x:Name="SearchTextBox" PlaceholderText="Suchen..." Width="250" TextChanged="SearchTextBox_TextChanged" />
                             <ComboBox x:Name="TypeFilterComboBox" Width="150" SelectedIndex="0" SelectionChanged="TypeFilterComboBox_SelectionChanged">
                                 <ComboBoxItem Content="Alle Typen" />
+                                <ComboBoxItem Content="Abgelaufen (Rotation)" />
                                 <ComboBoxItem Content="Login" />
                                 <ComboBoxItem Content="Passkey" />
                                 <ComboBoxItem Content="Payment" />
@@ -159,7 +160,18 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTextColumn Header="Name" Binding="{Binding Title}" Width="2*" />
+                                <DataGridTemplateColumn Header="Name" Width="2*" SortMemberPath="Title">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="contracts:VaultAssetPayload">
+                                            <StackPanel Orientation="Horizontal" Spacing="5" Margin="5,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
+                                                <Border Background="#EF4444" CornerRadius="3" Padding="4,2" VerticalAlignment="Center" IsVisible="{Binding IsExpired}">
+                                                    <TextBlock Text="ABGELAUFEN" Foreground="White" FontSize="10" FontWeight="Bold" />
+                                                </Border>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Pfad" Binding="{Binding FullPath}" Width="2*" Foreground="#6B7280" />
 
                                 <DataGridTemplateColumn Header="Beschreibung" Width="3*" SortMemberPath="DetailedDescription">

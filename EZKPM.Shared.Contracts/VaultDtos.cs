@@ -86,6 +86,9 @@ namespace EZKPM.Shared.Contracts
         public Guid? TransientAssetId { get; set; } // Nur im lokalen RAM für UI-Status
         
         [System.Text.Json.Serialization.JsonIgnore]
+        public bool IsExpired { get; set; } // Indicates if the server flagged it as expired
+        
+        [System.Text.Json.Serialization.JsonIgnore]
         public string FullPath { get; set; } // Computed path for display
 
         public Guid? ParentFolderId { get; set; } // Für die Tree-Struktur
