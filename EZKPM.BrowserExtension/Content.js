@@ -5,51 +5,491 @@
 
 // Suchen nach Login- oder Payment-Formularen
 function scanForForms() {
+    console.log("EZKPM: scanForForms started");
+    // 1. Prüfen, ob wir von Schritt 1 (Username) über einen Page-Reload auf Schritt 2 (Password) gekommen sind
+    const savedSessionStr = sessionStorage.getItem('ezkpm_active_autofill');
+    if (savedSessionStr) {
+        console.log("EZKPM: Found savedSessionStr, injecting...");
+        const cred = JSON.parse(savedSessionStr);
+        
+        // Blockiere das UI sofort, wenn wir wissen, dass wir in einem Autologin-Ablauf sind
+        blockUserInput();
+        
+        const passField = document.querySelector('input[type="password"]');
+        if (passField) {
+            console.log("EZKPM: Zweischritt-Login (Reload) erkannt. Injiziere autorisiertes Passwort...");
+            blockUserInput();
+            setTimeout(() => performStealthInjection(cred.Username, cred.Password, cred.CustomFields), 200);
+            
+            // ANTI-FORENSIK: Storage sofort leeren
+            sessionStorage.removeItem('ezkpm_active_autofill');
+            return;
+        } else {
+            // Fallback: Wenn wir geladen wurden, aber kein Passwortfeld da ist (z.B. Fehlerseite),
+            // heben wir den Blocker nach kurzer Zeit wieder auf und brechen den Auto-Flow ab.
+            sessionStorage.removeItem('ezkpm_active_autofill');
+        }
+    }
+
     const passwordInputs = document.querySelectorAll('input[type="password"]');
     const ccInputs = document.querySelectorAll('input[name*="card"], input[id*="cc"]'); // Heuristik für Payment-Assets (FA 21)
+    
+    // Nur Textfelder prüfen, die nach Login aussehen, um ständige Anfragen auf Nicht-Login-Seiten zu vermeiden
+    const loginTextInputs = document.querySelectorAll('input[name*="user" i], input[name*="login" i], input[name*="email" i], input[name*="kunden" i], input[name*="account" i], input[id*="user" i], input[id*="login" i]');
 
-    if (passwordInputs.length > 0 || ccInputs.length > 0) {
+    console.log(`EZKPM: Found ${passwordInputs.length} password inputs, ${ccInputs.length} CC inputs, ${loginTextInputs.length} login-like text inputs`);
+
+    if (passwordInputs.length > 0 || ccInputs.length > 0 || loginTextInputs.length > 0) {
+        console.log("EZKPM: Sending REQUEST_AUTOFILL to background...");
         // Formular gefunden, wir fragen den Background-Worker (und damit den Desktop-Client), 
         // ob wir Credentials für diese URL haben.
-        chrome.runtime.sendMessage({ 
-            type: "REQUEST_AUTOFILL", 
-            url: window.location.hostname 
-        });
+        try {
+            chrome.runtime.sendMessage({ 
+                type: "REQUEST_AUTOFILL", 
+                url: window.location.hostname 
+            }, (response) => {
+                if (chrome.runtime.lastError) {
+                    console.error("EZKPM: sendMessage failed:", chrome.runtime.lastError.message);
+                } else {
+                    console.log("EZKPM: sendMessage succeeded");
+                }
+            });
+        } catch (err) {
+            console.error("EZKPM: Exception during sendMessage:", err);
+        }
+    } else {
+        console.log("EZKPM: No inputs found, skipping autofill request.");
     }
 }
 
+let pendingInjectionUsername = null; // Speichert den Username, während wir auf Passwort warten
+
 // Antwort vom Background-Worker (bzw. dem nativen C# Client) verarbeiten
 chrome.runtime.onMessage.addListener((message) => {
+    console.log("EZKPM Content-Script received message:", message.Type);
     if (message.Type === "AUDIT_REQUIRED") {
-        // FA 22 (Pflicht-Logging): Der Desktop-Client blockiert die Herausgabe.
-        // Wir blenden einen Hinweis auf der Webseite ein, dass der Nutzer in die Desktop-App wechseln muss.
         alert("EZK-PM Security: " + message.Message);
     } 
-    else if (message.Type === "AUTOFILL_DATA") {
-        // Stealth-Injection der Daten
-        performStealthInjection(message.Username, message.Password);
-        
-        // ANTI-FORENSIK (FA 4.3): Variablen im JS-Speicher sofort nullen, 
-        // damit kein Web-Skript sie aus dem RAM kratzen kann.
-        message.Username = null;
-        message.Password = null;
-        message = null;
+    else if (message.Type === "AVAILABLE_CREDENTIALS") {
+        const credentials = message.Credentials;
+        if (credentials && credentials.length > 0) {
+            showInlineLogo(credentials);
+        }
+    }
+    else if (message.Type === "CREDENTIAL_DATA_RESPONSE") {
+        // Der Nutzer hat im Desktop-Client den Grund angegeben und bestätigt! (FA 22)
+        if (pendingInjectionUsername !== null) {
+            sessionStorage.setItem('ezkpm_active_autofill', JSON.stringify({ 
+                Username: pendingInjectionUsername, 
+                Password: message.Password, 
+                CustomFields: message.CustomFields 
+            }));
+            blockUserInput();
+            performStealthInjection(pendingInjectionUsername, message.Password, message.CustomFields);
+            pendingInjectionUsername = null;
+        }
+    }
+    else if (message.Type === "AUDIT_REJECTED") {
+        alert("EZK-PM Security: Die Herausgabe des Passworts wurde im Desktop-Client abgelehnt oder abgebrochen.");
+        pendingInjectionUsername = null;
     }
 });
 
-function performStealthInjection(username, password) {
-    const userField = document.querySelector('input[type="text"], input[type="email"]');
-    const passField = document.querySelector('input[type="password"]');
+function showInlineLogo(credentials) {
+    const isVisible = (el) => {
+        if (!el) return false;
+        const rect = el.getBoundingClientRect();
+        const style = window.getComputedStyle(el);
+        // Echte Eingabefelder sind größer als 10x10 Pixel (verhindert Honeypots/Hidden Fields)
+        return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none' && el.type !== 'hidden';
+    };
 
-    if (userField && passField) {
-        userField.value = username;
-        passField.value = password;
+    // Priorität 1: Das Username/Login/Email-Feld
+    const explicitUserFields = document.querySelectorAll('input[name*="user" i], input[name*="login" i], input[name*="email" i], input[name*="kunden" i], input[name*="account" i], input[id*="user" i], input[id*="login" i]');
+    let targetField = Array.from(explicitUserFields).find(isVisible);
+    
+    // Priorität 2: Sichtbares Passwort-Feld (falls explizite Username-Felder fehlen)
+    if (!targetField) {
+        targetField = Array.from(document.querySelectorAll('input[type="password"]')).find(isVisible);
+    }
+
+    // Wenn weder ein Passwort-Feld noch ein explizites Login-Feld gefunden wurde, brechen wir ab.
+    // So verhindern wir, dass das Wappen an generische Suchfelder (z.B. Artikelnummer) angehängt wird.
+    if (!targetField) return;
+
+    // Vorhandenes Icon entfernen, falls es an ein altes/verstecktes Feld gehängt war
+    const existingIcon = document.getElementById('ezkpm-inline-icon');
+    if (existingIcon) existingIcon.remove();
+
+    const icon = document.createElement('img');
+    icon.id = 'ezkpm-inline-icon';
+    icon.src = chrome.runtime.getURL('icons/icon_green.png');
+    icon.style.position = 'absolute';
+    icon.style.height = '20px';
+    icon.style.cursor = 'pointer';
+    icon.style.zIndex = '9999';
+    icon.title = `EZKPM Autofill (${credentials.length} verfügbare Konten)`;
+
+    // Position the icon correctly over the input field
+    const rect = targetField.getBoundingClientRect();
+    icon.style.left = (rect.right - 30 + window.scrollX) + 'px';
+    icon.style.top = (rect.top + rect.height / 2 - 10 + window.scrollY) + 'px';
+    
+    // Fallback if inside a relative container or scrolling happens, 
+    // we recalculate on scroll
+    const updatePos = () => {
+        const newRect = targetField.getBoundingClientRect();
+        icon.style.left = (newRect.right - 30 + window.scrollX) + 'px';
+        icon.style.top = (newRect.top + newRect.height / 2 - 10 + window.scrollY) + 'px';
+    };
+    window.addEventListener('scroll', updatePos);
+    window.addEventListener('resize', updatePos);
+
+    document.body.appendChild(icon);
+
+    icon.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (credentials.length === 1) {
+            // Fordere Passwort beim Desktop-Client an (löst dort Audit-Dialog aus)
+            pendingInjectionUsername = credentials[0].Username;
+            chrome.runtime.sendMessage({ 
+                type: "REQUEST_CREDENTIAL_DATA", 
+                assetId: credentials[0].AssetId 
+            });
+            icon.remove();
+        } else {
+            showCredentialSelector(credentials, icon);
+        }
+    });
+}
+
+function showCredentialSelector(credentials, anchorElement) {
+    let existing = document.getElementById('ezkpm-selector');
+    if (existing) { existing.remove(); return; }
+
+    const rect = anchorElement.getBoundingClientRect();
+    const dropdown = document.createElement('div');
+    dropdown.id = 'ezkpm-selector';
+    dropdown.style.position = 'absolute';
+    dropdown.style.top = (rect.bottom + 5 + window.scrollY) + 'px';
+    dropdown.style.left = (rect.left - 150 + window.scrollX) + 'px';
+    dropdown.style.width = '250px';
+    dropdown.style.backgroundColor = '#1E293B';
+    dropdown.style.border = '1px solid #3B82F6';
+    dropdown.style.borderRadius = '5px';
+    dropdown.style.zIndex = '10000';
+    dropdown.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
+    dropdown.style.padding = '5px 0';
+    dropdown.style.color = 'white';
+    dropdown.style.fontFamily = 'sans-serif';
+
+    credentials.forEach(cred => {
+        const item = document.createElement('div');
+        item.style.padding = '8px 15px';
+        item.style.cursor = 'pointer';
+        item.style.borderBottom = '1px solid #334155';
+        item.innerHTML = `<strong>${cred.Title}</strong><br><span style="font-size:11px;color:#94A3B8">${cred.Username}</span>`;
         
-        // Events feuern, damit SPA-Frameworks (React, Angular) die Änderung bemerken
+        item.addEventListener('mouseover', () => item.style.backgroundColor = '#334155');
+        item.addEventListener('mouseout', () => item.style.backgroundColor = 'transparent');
+        
+        item.addEventListener('click', () => {
+            pendingInjectionUsername = cred.Username;
+            chrome.runtime.sendMessage({ 
+                type: "REQUEST_CREDENTIAL_DATA", 
+                assetId: cred.AssetId 
+            });
+            dropdown.remove();
+            anchorElement.remove();
+        });
+        dropdown.appendChild(item);
+    });
+
+    document.body.appendChild(dropdown);
+    
+    setTimeout(() => {
+        const closeHandler = (e) => {
+            if (!dropdown.contains(e.target) && e.target !== anchorElement) {
+                dropdown.remove();
+                document.removeEventListener('click', closeHandler);
+            }
+        };
+        document.addEventListener('click', closeHandler);
+    }, 100);
+}
+
+// Globale Referenzen für den Blocker
+let blockerTimeoutId = null;
+let preventKeysHandler = null;
+
+function blockUserInput() {
+    // Falls ein Blocker bereits existiert (z.B. bei SPA Schritt 2), setzen wir nur den Timer neu auf 5 Sekunden!
+    if (document.getElementById('ezkpm-blocker')) {
+        if (blockerTimeoutId) clearTimeout(blockerTimeoutId);
+        blockerTimeoutId = setTimeout(removeBlocker, 5000);
+        return;
+    }
+
+    // Erstelle ein unsichtbares (oder sehr leicht abgedunkeltes) Overlay über den gesamten Bildschirm
+    const blocker = document.createElement('div');
+    blocker.id = 'ezkpm-blocker';
+    blocker.style.position = 'fixed';
+    blocker.style.top = '0';
+    blocker.style.left = '0';
+    blocker.style.width = '100vw';
+    blocker.style.height = '100vh';
+    blocker.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
+    blocker.style.zIndex = '2147483647'; // Maximaler Z-Index
+    blocker.style.display = 'flex';
+    blocker.style.alignItems = 'flex-end';
+    blocker.style.justifyContent = 'center';
+    blocker.style.paddingBottom = '15vh';
+    blocker.style.cursor = 'wait'; // Lade-Mauszeiger
+
+    const msgBox = document.createElement('div');
+    msgBox.style.backgroundColor = '#1E293B';
+    msgBox.style.color = '#10B981'; // Grün
+    msgBox.style.padding = '10px 20px';
+    msgBox.style.borderRadius = '6px';
+    msgBox.style.fontFamily = 'sans-serif';
+    msgBox.style.fontSize = '14px';
+    msgBox.style.fontWeight = 'bold';
+    msgBox.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
+    msgBox.innerHTML = '🛡️ EZKPM Auto-Login läuft...';
+    blocker.appendChild(msgBox);
+
+    document.body.appendChild(blocker);
+
+    // Tastatur-Events blockieren (Capture Phase)
+    preventKeysHandler = (e) => {
+        if (e.key === 'Escape' || e.key === 'F5') return; // Erlaube Abbruch oder Reload
+        e.preventDefault();
+        e.stopPropagation();
+    };
+    window.addEventListener('keydown', preventKeysHandler, true);
+    window.addEventListener('keypress', preventKeysHandler, true);
+    
+    // Nach 5 Sekunden den Blocker wieder entfernen
+    blockerTimeoutId = setTimeout(removeBlocker, 5000);
+}
+
+function removeBlocker() {
+    const blocker = document.getElementById('ezkpm-blocker');
+    if (blocker) blocker.remove();
+    if (preventKeysHandler) {
+        window.removeEventListener('keydown', preventKeysHandler, true);
+        window.removeEventListener('keypress', preventKeysHandler, true);
+    }
+}
+
+function performStealthInjection(username, password, customFields = []) {
+    let injected = false;
+    const injectedFields = new Set(); // Merkt sich, welche Felder wir schon befüllt haben
+
+    // Hilfsfunktion: Prüft Sichtbarkeit strenger
+    const isVisible = (el) => {
+        if (!el) return false;
+        const r = el.getBoundingClientRect();
+        const style = window.getComputedStyle(el);
+        return r.width > 0 && r.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+    };
+
+    // 1. Custom Fields injizieren (z.B. Kundennummer) - Höchste Priorität!
+    if (customFields && customFields.length > 0) {
+        customFields.forEach(cf => {
+            if (!cf.Name || !cf.Value) return;
+            
+            // Fuzzy-Name für tolerante Suche (z.B. "Kundenummer" vs "Kundennummer")
+            const fuzzyName = cf.Name.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/(.)\1+/g, '$1');
+
+            // Suche per name, id, placeholder oder aria-label (exakt)
+            let field = document.querySelector(`input[name="${cf.Name}" i], input[id="${cf.Name}" i], input[placeholder*="${cf.Name}" i], input[aria-label*="${cf.Name}" i]`);
+            
+            // Fallback 1: Suche über Labels (Fuzzy)
+            if (!field) {
+                const labels = Array.from(document.querySelectorAll('label'));
+                const matchingLabel = labels.find(l => l.innerText.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/(.)\1+/g, '$1').includes(fuzzyName));
+                if (matchingLabel) {
+                    if (matchingLabel.htmlFor) field = document.getElementById(matchingLabel.htmlFor);
+                    if (!field) field = matchingLabel.querySelector('input');
+                    if (!field && matchingLabel.nextElementSibling && matchingLabel.nextElementSibling.tagName === 'INPUT') {
+                        field = matchingLabel.nextElementSibling;
+                    }
+                    if (!field && matchingLabel.parentElement) {
+                        field = matchingLabel.parentElement.querySelector('input');
+                    }
+                }
+            }
+
+            // Fallback 2: DOM-Linearer Scan (Leserichtung)
+            // Wenn wir das Wort auf der Webseite sehen, ist das nächste Input-Feld in der Regel das richtige!
+            if (!field) {
+                try {
+                    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+                    let foundText = false;
+                    while (walker.nextNode()) {
+                        const node = walker.currentNode;
+                        
+                        if (!foundText && node.nodeType === Node.TEXT_NODE) {
+                            if (node.textContent) {
+                                const fuzzyText = node.textContent.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/(.)\1+/g, '$1');
+                                if (fuzzyText.includes(fuzzyName)) {
+                                    foundText = true;
+                                }
+                            }
+                        } 
+                        else if (foundText && node.nodeType === Node.ELEMENT_NODE && node.tagName === 'INPUT') {
+                            if (isVisible(node) && !['hidden', 'button', 'submit', 'checkbox', 'radio'].includes(node.type.toLowerCase())) {
+                                field = node;
+                                break;
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.error("EZKPM TreeWalker Error:", err);
+                }
+            }
+
+            if (field) {
+                field.value = cf.Value;
+                field.dispatchEvent(new Event('input', { bubbles: true }));
+                field.dispatchEvent(new Event('change', { bubbles: true }));
+                injectedFields.add(field);
+                injected = true;
+                console.log(`EZKPM: Custom Field '${cf.Name}' erfolgreich befüllt.`);
+            } else {
+                console.warn(`EZKPM: Custom Field '${cf.Name}' konnte auf der Webseite nicht gefunden werden!`);
+            }
+        });
+    }
+
+
+    // 2. Standard Username injizieren (überspringt Felder, die schon per CustomField befüllt wurden)
+    let userField = null;
+    
+    // A) Explizite Username-Felder bevorzugen
+    const explicitUserFields = document.querySelectorAll('input[name*="user" i], input[name*="login" i], input[name*="alias" i], input[name*="account" i], input[id*="user" i], input[id*="login" i], input[type="email"]');
+    userField = Array.from(explicitUserFields).find(el => isVisible(el) && !injectedFields.has(el));
+
+    // B) Fallback: Das erste Textfeld in einem Formular
+    if (!userField) {
+        const formInputs = document.querySelectorAll('form input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="password"])');
+        userField = Array.from(formInputs).find(el => isVisible(el) && !injectedFields.has(el));
+    }
+
+    if (userField && username && userField.value !== username) {
+        userField.value = username;
         userField.dispatchEvent(new Event('input', { bubbles: true }));
+        userField.dispatchEvent(new Event('change', { bubbles: true }));
+        injected = true;
+    }
+
+    // 3. Passwort injizieren
+    const passField = document.querySelector('input[type="password"]');
+    if (passField && password && passField.value !== password) {
+        passField.value = password;
         passField.dispatchEvent(new Event('input', { bubbles: true }));
+        passField.dispatchEvent(new Event('change', { bubbles: true }));
+        injected = true;
+    }
+
+    if (injected) {
+        console.log("EZKPM: Credentials injected securely.");
+
+        // 1. Strict Observer: Verhindere das Aufdecken des Passworts
+        if (passField) {
+            const strictObserver = new MutationObserver((mutations) => {
+                for (const mutation of mutations) {
+                    if (mutation.attributeName === 'type') {
+                        if (passField.getAttribute('type') === 'text') {
+                            console.warn("EZKPM Security: Webseite versuchte das Passwort aufzudecken. Feld wird geleert!");
+                            passField.value = "";
+                            passField.dispatchEvent(new Event('input', { bubbles: true }));
+                            passField.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }
+                }
+            });
+            strictObserver.observe(passField, { attributes: true, attributeFilter: ['type'] });
+        }
+
+        // 2. Auto-Submit: Formular automatisch absenden
+        setTimeout(() => {
+            let submitted = false;
+            
+            // Versuch 1: Das umgebende Formular
+            if (passField && passField.form) {
+                const submitBtn = passField.form.querySelector('button[type="submit"], input[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.click();
+                    submitted = true;
+                } else {
+                    try {
+                        passField.form.requestSubmit();
+                        submitted = true;
+                    } catch (e) {
+                        passField.form.submit();
+                        submitted = true;
+                    }
+                }
+            }
+
+            // Versuch 2: Heuristische Suche nach Anmelde-Buttons im gesamten DOM (für SPAs ohne echtes <form>)
+            if (!submitted) {
+                const buttons = Array.from(document.querySelectorAll('button, input[type="button"], div[role="button"]'));
+                const loginBtn = buttons.find(b => {
+                    const text = (b.innerText || b.value || "").toLowerCase();
+                    return text.includes("login") || text.includes("sign in") || text.includes("anmelden") || text.includes("einloggen") || text.includes("weiter") || text.includes("next");
+                });
+                
+                if (loginBtn) {
+                    loginBtn.click();
+                    submitted = true;
+                }
+            }
+            
+            if (submitted) {
+                console.log("EZKPM: Auto-Submit erfolgreich ausgelöst.");
+            }
+        }, 500); // Kurze Verzögerung, damit Frameworks wie React die Input-Events verarbeiten können
     }
 }
 
 // Initiale Ausführung
 setTimeout(scanForForms, 1000);
+
+// SPA Support (2-Schritt Logins): Beobachte das DOM auf neue Eingabefelder
+const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+        if (mutation.addedNodes.length > 0) {
+            const addedPasswordNode = Array.from(mutation.addedNodes).some(node => 
+                node.nodeType === 1 && (node.matches('input[type="password"]') || node.querySelector('input[type="password"]'))
+            );
+            const addedTextNode = Array.from(mutation.addedNodes).some(node => 
+                node.nodeType === 1 && (
+                    node.matches('input[name*="user" i], input[name*="login" i], input[name*="email" i], input[name*="kunden" i], input[name*="account" i], input[id*="user" i], input[id*="login" i]') || 
+                    node.querySelector('input[name*="user" i], input[name*="login" i], input[name*="email" i], input[name*="kunden" i], input[name*="account" i], input[id*="user" i], input[id*="login" i]')
+                )
+            );
+
+            if (addedPasswordNode || addedTextNode) {
+                // Ein Passwort- oder Textfeld ist dynamisch aufgetaucht (SPA Load oder Weiter-Klick).
+                const savedSessionStr = sessionStorage.getItem('ezkpm_active_autofill');
+                if (savedSessionStr && addedPasswordNode) {
+                    const cred = JSON.parse(savedSessionStr);
+                    console.log("EZKPM: SPA Two-Step Login detected. Auto-injecting approved password...");
+                    blockUserInput();
+                    setTimeout(() => performStealthInjection(cred.Username, cred.Password, cred.CustomFields), 200);
+                    sessionStorage.removeItem('ezkpm_active_autofill');
+                } else if (!savedSessionStr) {
+                    // Trigger scanForForms to request autofill for the newly added fields
+                    scanForForms();
+                }
+                break;
+            }
+        }
+    }
+});
+
+observer.observe(document.body, { childList: true, subtree: true });

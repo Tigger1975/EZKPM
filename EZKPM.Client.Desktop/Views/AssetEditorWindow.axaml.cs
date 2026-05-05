@@ -193,10 +193,13 @@ public partial class AssetEditorWindow : Window
         _attachments.Clear();
         _acls.Clear();
         
-        // Automatischer Owner = Ersteller
-        var currentUser = Environment.UserDomainName + "\\" + Environment.UserName;
-        if (currentUser.StartsWith("\\")) currentUser = Environment.UserName; // fallback
-        _acls.Add(new AclEntryDto { AdSid = currentUser, PermissionLevel = 3 });
+        // Automatischer Owner = Ersteller (Echte AD SID)
+        var currentUser = AdSearchService.GetCurrentUser();
+        _acls.Add(new AclEntryDto { 
+            AdSid = currentUser.Sid, 
+            DisplayName = currentUser.DisplayName,
+            PermissionLevel = 3 // Owner
+        });
 
         if (keepFolderId != null && ParentFolderComboBox.ItemsSource is List<FolderSelectionItem> flist)
         {
@@ -404,6 +407,13 @@ public partial class AssetEditorWindow : Window
     {
         try
         {
+            string urlValue = UrlTextBox.Text ?? "";
+            if (!string.IsNullOrEmpty(urlValue) && urlValue.Trim().StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+            {
+                ShowStatus("Warnung: URL verwendet unverschlüsseltes HTTP. Dies ist unsicher!", isWarning: true);
+                await Task.Delay(1500); // Kurze Pause, damit der Nutzer die Warnung sieht
+            }
+
             string loginMethodStr = "AutoLearn";
             if (LoginMethodComboBox.SelectedIndex == 1) loginMethodStr = "OneStep";
             else if (LoginMethodComboBox.SelectedIndex == 2) loginMethodStr = "TwoStep";
@@ -519,9 +529,13 @@ public partial class AssetEditorWindow : Window
     private void ShowStatus(string message, bool isError = false, bool isWarning = false)
     {
         Console.WriteLine(message);
-        if (isError) { }
-        else if (isWarning) { }
-        else { }
+        var statusBlock = this.FindControl<TextBlock>("StatusTextBlock");
+        if (statusBlock != null)
+        {
+            statusBlock.Text = message;
+            statusBlock.Foreground = isError ? Avalonia.Media.Brushes.Red : (isWarning ? Avalonia.Media.Brushes.DarkOrange : Avalonia.Media.Brushes.Green);
+            statusBlock.IsVisible = true;
+        }
 
         if (string.IsNullOrEmpty(message)) return;
 

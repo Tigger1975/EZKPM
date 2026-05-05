@@ -28,19 +28,32 @@ namespace EZKPM.Server.PDP.Controllers
 
         private string GetUserSid()
         {
-            // Fallback für lokale Tests ohne OIDC
+            // Try to get SID from token
             var sid = User.FindFirstValue(ClaimTypes.PrimarySid) ?? User.FindFirstValue("sid");
-            return string.IsNullOrEmpty(sid) ? "S-1-5-21-DUMMY-TEST-USER" : sid;
+            if (!string.IsNullOrEmpty(sid)) return sid;
+
+            // Fallback for local testing: Get the true Windows SID of the running process
+            try 
+            {
+                return System.Security.Principal.WindowsIdentity.GetCurrent().User?.Value ?? "S-1-5-21-DUMMY-FALLBACK";
+            }
+            catch
+            {
+                var currentUser = Environment.UserDomainName + "\\" + Environment.UserName;
+                if (currentUser.StartsWith("\\")) currentUser = Environment.UserName;
+                return currentUser;
+            }
         }
 
         [HttpGet("assets/all")]
         public async Task<IActionResult> GetAllAssets()
         {
             var userSid = GetUserSid();
+            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
 
             var assets = await _db.VaultAssets
-                .Include(a => a.Acls.Where(acl => acl.AdSid == userSid))
-                .Where(a => a.Acls.Any(acl => acl.AdSid == userSid))
+                .Include(a => a.Acls.Where(acl => acl.AdSid == userSid || acl.AdSid == dummySid))
+                .Where(a => a.Acls.Any(acl => acl.AdSid == userSid || acl.AdSid == dummySid))
                 .ToListAsync();
 
             var responseList = assets.Select(asset =>
@@ -124,13 +137,14 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> UpdateAsset(Guid id, [FromBody] CreateAssetRequestDto request)
         {
             var userSid = GetUserSid();
+            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
             
             byte[] metaHash = Convert.FromBase64String(request.MetadataHash ?? "AA==");
             // Uniqueness check removed: Users can have multiple folders (empty URL/User) 
             // or multiple accounts with the same username on the same domain.
 
             var asset = await _db.VaultAssets
-                .Include(a => a.Acls.Where(acl => acl.AdSid == userSid))
+                .Include(a => a.Acls.Where(acl => acl.AdSid == userSid || acl.AdSid == dummySid))
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (asset == null || !asset.Acls.Any()) return Forbid(); // Owner or at least write access required
@@ -182,9 +196,10 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> DeleteAsset(Guid id)
         {
             var userSid = GetUserSid();
+            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
             
             var asset = await _db.VaultAssets
-                .Include(a => a.Acls.Where(acl => acl.AdSid == userSid))
+                .Include(a => a.Acls.Where(acl => acl.AdSid == userSid || acl.AdSid == dummySid))
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (asset == null) return NotFound();
@@ -200,11 +215,12 @@ namespace EZKPM.Server.PDP.Controllers
         {
             // 1. Identität: AD SID aus dem Token extrahieren (ClaimType abhängig vom OIDC Provider)
             var userSid = GetUserSid();
+            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
 
 
             // 2. Asset & ACL laden (Wir laden gezielt nur den ACL-Eintrag für den aufrufenden User)
             var asset = await _db.VaultAssets
-                .Include(a => a.Acls.Where(acl => acl.AdSid == userSid))
+                .Include(a => a.Acls.Where(acl => acl.AdSid == userSid || acl.AdSid == dummySid))
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (asset == null)

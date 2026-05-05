@@ -17,6 +17,29 @@ public class AdPrincipal
 
 public static class AdSearchService
 {
+    public static AdPrincipal GetCurrentUser()
+    {
+        try
+        {
+            var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+            return new AdPrincipal 
+            { 
+                DisplayName = identity.Name, 
+                Sid = identity.User?.Value ?? Environment.UserDomainName + "\\" + Environment.UserName, 
+                Type = "User" 
+            };
+        }
+        catch
+        {
+            return new AdPrincipal 
+            { 
+                DisplayName = Environment.UserName, 
+                Sid = Environment.UserDomainName + "\\" + Environment.UserName, 
+                Type = "User" 
+            };
+        }
+    }
+
     public static async Task<List<AdPrincipal>> SearchAsync(string query)
     {
         return await Task.Run(() =>

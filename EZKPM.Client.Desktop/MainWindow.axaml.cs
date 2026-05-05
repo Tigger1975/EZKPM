@@ -14,6 +14,7 @@ using EZKPM.Client.Core.Services;
 using EZKPM.Shared.Contracts;
 using Avalonia.Platform.Storage;
 using System.IO;
+using EZKPM.Client.Desktop.Services;
 
 namespace EZKPM.Client.Desktop;
 
@@ -24,8 +25,9 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<VaultAssetPayload> _decryptedAssets = new();
     private readonly ObservableCollection<VaultTreeNode> _treeNodes = new();
     private readonly HashSet<Guid> _expandedFolderIds = new();
+    private readonly BrowserBridgeServer _bridgeServer;
     
-    public MainWindow()
+    public MainWindow(Views.SplashScreenWindow? splash = null)
     {
         InitializeComponent();
 
@@ -34,19 +36,86 @@ public partial class MainWindow : Window
         _cryptoService = new VaultCryptoService(new HybridPqcKeyWrapper());
 
         AssetTreeView.ItemsSource = _treeNodes;
+
+        _bridgeServer = new BrowserBridgeServer(() => _decryptedAssets, RequestAuditAsync);
+        _bridgeServer.Start();
+
         // Auto-load assets on startup
-        _ = LoadAssetsAsync();
+        _ = LoadAssetsAndShowAsync(splash);
     }
 
-    private async Task LoadAssetsAsync()
+    private async Task<bool> RequestAuditAsync(Guid assetId)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+        Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+        {
+            try
+            {
+                var dialog = new Views.AuditDialog();
+                // If MainWindow is visible, show as dialog, else just show it
+                var result = await dialog.ShowAuditPromptAsync();
+                
+                if (result.IsAuthorized)
+                {
+                    // Update AuditLog on server (FA 22)
+                    var asset = _decryptedAssets.FirstOrDefault(a => a.TransientAssetId == assetId);
+                    if (asset != null)
+                    {
+                        var req = _cryptoService.CreateAuditLog(assetId, result.Reason);
+                        await _apiClient.AppendAuditLogAsync(assetId, req);
+                    }
+                }
+                
+                tcs.SetResult(result.IsAuthorized);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Audit Request Error: {ex.Message}");
+                tcs.SetResult(false);
+            }
+        });
+        return await tcs.Task;
+    }
+
+    private async Task LoadAssetsAndShowAsync(Views.SplashScreenWindow? splash)
+    {
+        if (splash != null) splash.UpdateStatus("Verbinde mit Vault Server...", 20);
+        await Task.Delay(500); // Artificial delay to let the splash screen render
+
+        await LoadAssetsAsync(splash);
+        
+        if (splash != null)
+        {
+            splash.UpdateStatus("Starte Desktop Client...", 100);
+            await Task.Delay(500); // Artificial delay to ensure user sees 100%
+            
+            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                desktop.MainWindow = this;
+            }
+            this.Show();
+            splash.Close();
+        }
+    }
+
+    private async Task LoadAssetsAsync(Views.SplashScreenWindow? splash = null)
     {
         try
         {
             var serverAssets = await _apiClient.GetAllAssetsAsync();
             _decryptedAssets.Clear();
 
+            int total = serverAssets.Count;
+            int current = 0;
             foreach (var dto in serverAssets)
             {
+                current++;
+                if (splash != null && total > 0)
+                {
+                    double progress = 20.0 + (80.0 * ((double)current / total));
+                    splash.UpdateStatus($"Entschlüssele Asset {current} von {total}...", progress);
+                }
+
                 try
                 {
                     var payload = _cryptoService.DecryptAsset(dto);
@@ -103,10 +172,28 @@ public partial class MainWindow : Window
         }
         
         // Update DataGrid with root assets initially
-        // Update DataGrid with root assets initially
+        ComputePaths();
         UpdateDataGrid();
+    }
+
+    private void ComputePaths()
+    {
+        var folderMap = _decryptedAssets.Where(a => a.AssetType == "Folder").ToDictionary(a => a.TransientAssetId.GetValueOrDefault(), a => a);
         
-        
+        foreach (var asset in _decryptedAssets)
+        {
+            if (asset.AssetType == "Folder") continue;
+
+            var pathParts = new List<string>();
+            var currentId = asset.ParentFolderId;
+            while (currentId.HasValue && folderMap.TryGetValue(currentId.Value, out var parentFolder))
+            {
+                pathParts.Insert(0, parentFolder.Title);
+                currentId = parentFolder.ParentFolderId;
+            }
+
+            asset.FullPath = pathParts.Count > 0 ? string.Join(" / ", pathParts) : "/ (Wurzelverzeichnis)";
+        }
     }
 
     private void AssetTreeView_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -134,14 +221,21 @@ public partial class MainWindow : Window
         string searchText = searchTextBox?.Text?.ToLower() ?? "";
         string selectedType = (typeFilterComboBox?.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() ?? "Alle Typen";
 
-        var filtered = _decryptedAssets.Where(a => a.AssetType != "Folder" && a.ParentFolderId == parentId);
+        bool isSearching = !string.IsNullOrWhiteSpace(searchText);
+
+        var filtered = _decryptedAssets.Where(a => a.AssetType != "Folder");
+
+        if (!isSearching)
+        {
+            filtered = filtered.Where(a => a.ParentFolderId == parentId);
+        }
 
         if (selectedType != "Alle Typen")
         {
             filtered = filtered.Where(a => a.AssetType == selectedType);
         }
 
-        if (!string.IsNullOrWhiteSpace(searchText))
+        if (isSearching)
         {
             filtered = filtered.Where(a => 
                 (a.Title != null && a.Title.ToLower().Contains(searchText)) ||
@@ -364,11 +458,14 @@ public partial class MainWindow : Window
 
                 try
                 {
-                    var requestDto = _cryptoService.EncryptAsset(draggedNode.Payload);
-                    await _apiClient.UpdateAssetAsync(draggedNode.Payload.TransientAssetId.Value, requestDto);
-                    
-                    await LoadAssetsAsync();
-                    ShowStatus($"'{draggedNode.Title}' in '{targetNode.Title}' verschoben!");
+                    if (draggedNode.Payload.TransientAssetId.HasValue)
+                    {
+                        var requestDto = _cryptoService.EncryptAsset(draggedNode.Payload);
+                        await _apiClient.UpdateAssetAsync(draggedNode.Payload.TransientAssetId.Value, requestDto);
+                        
+                        await LoadAssetsAsync();
+                        ShowStatus($"'{draggedNode.Title}' in '{targetNode.Title}' verschoben!");
+                    }
                 }
                 catch (Exception ex)
                 {

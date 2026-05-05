@@ -84,6 +84,9 @@ namespace EZKPM.Shared.Contracts
     {
         [System.Text.Json.Serialization.JsonIgnore]
         public Guid? TransientAssetId { get; set; } // Nur im lokalen RAM für UI-Status
+        
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string FullPath { get; set; } // Computed path for display
 
         public Guid? ParentFolderId { get; set; } // Für die Tree-Struktur
 

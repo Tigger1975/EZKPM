@@ -25,7 +25,11 @@ namespace EZKPM.Client.Desktop
                 // Im Extension-Modus bleibt die App komplett unsichtbar im Hintergrund!
                 if (!isExtensionMode)
                 {
-                    desktop.MainWindow = new MainWindow();
+                    var splash = new Views.SplashScreenWindow();
+                    desktop.MainWindow = splash;
+                    
+                    // MainWindow starts loading, will swap itself and close splash when ready
+                    var main = new MainWindow(splash);
                 }
             }
 

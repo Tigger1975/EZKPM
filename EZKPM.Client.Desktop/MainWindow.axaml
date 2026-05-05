@@ -7,6 +7,7 @@
         FontFamily="Inter, sans-serif"
         x:Class="EZKPM.Client.Desktop.MainWindow"
         Title="EZKPM Vault Manager"
+        Icon="avares://EZKPM.Client.Desktop/Assets/logo.png"
         Background="#F5F7FA">
     <Window.Resources>
         <local:AssetTypeToIconConverter x:Key="IconConverter" />
@@ -159,6 +160,7 @@
                                 </DataGridTemplateColumn>
 
                                 <DataGridTextColumn Header="Name" Binding="{Binding Title}" Width="2*" />
+                                <DataGridTextColumn Header="Pfad" Binding="{Binding FullPath}" Width="2*" Foreground="#6B7280" />
 
                                 <DataGridTemplateColumn Header="Beschreibung" Width="3*" SortMemberPath="DetailedDescription">
                                     <DataGridTemplateColumn.CellTemplate>
