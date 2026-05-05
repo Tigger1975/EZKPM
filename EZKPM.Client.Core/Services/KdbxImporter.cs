@@ -116,6 +116,18 @@ namespace EZKPM.Client.Core.Services
                 }
             }
 
+            foreach (var bin in entry.Binaries)
+            {
+                if (!string.IsNullOrEmpty(bin.Key) && bin.Value != null)
+                {
+                    payload.Attachments.Add(new VaultAttachment
+                    {
+                        FileName = bin.Key,
+                        FileData = bin.Value.ReadData()
+                    });
+                }
+            }
+
             return payload;
         }
     }
