@@ -392,8 +392,7 @@ public partial class MainWindow : Window
                 int successCount = 0;
                 var idMap = new Dictionary<Guid, Guid>();
 
-                var currentUser = Environment.UserDomainName + "\\" + Environment.UserName;
-                if (currentUser.StartsWith("\\")) currentUser = Environment.UserName;
+                var currentUserSid = Services.AdSearchService.GetCurrentUser().Sid;
 
                 foreach (var payload in importedPayloads)
                 {
@@ -407,7 +406,7 @@ public partial class MainWindow : Window
                         // Ensure we have owner ACLs, otherwise the server rejects it or it becomes invisible
                         if (payload.Acls.Count == 0)
                         {
-                            payload.Acls.Add(new AclEntryDto { AdSid = currentUser, PermissionLevel = 3 });
+                            payload.Acls.Add(new AclEntryDto { AdSid = currentUserSid, PermissionLevel = 3 });
                         }
 
                         var requestDto = _cryptoService.EncryptAsset(payload);
