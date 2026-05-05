@@ -70,5 +70,20 @@ namespace EZKPM.Client.Core.Services
             var response = await _httpClient.PostAsJsonAsync($"/api/v1/vault/assets/{assetId}/audit", logRequest);
             return response.IsSuccessStatusCode;
         }
+
+        public async Task<byte[]> GetLatestAuditHashAsync(Guid assetId)
+        {
+            var response = await _httpClient.GetAsync($"/api/v1/vault/assets/{assetId}/audit/latest-hash");
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                var hashStr = result.GetProperty("hash").GetString();
+                if (!string.IsNullOrEmpty(hashStr))
+                {
+                    return Convert.FromBase64String(hashStr);
+                }
+            }
+            return new byte[32]; // Fallback genesis hash
+        }
     }
 }

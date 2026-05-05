@@ -250,9 +250,12 @@ namespace EZKPM.Client.Desktop
 
                     if (result.IsAuthorized)
                     {
+                        // Fetch latest hash from PDP
+                        byte[] previousHash = await _apiClient.GetLatestAuditHashAsync(assetId);
+
                         // Generate Audit Log using CryptoService
                         string logMessage = $"Amount: {result.Amount}, Order: {result.OrderId}";
-                        var auditDto = _cryptoService.CreateAuditLogRequest(logMessage);
+                        var auditDto = _cryptoService.CreateAuditLogRequest(logMessage, previousHash);
                         
                         // Send to PDP Server
                         bool success = await _apiClient.AppendAuditLogAsync(assetId, auditDto);

@@ -118,8 +118,11 @@ namespace EZKPM.Client.Tests.Security
             Guid assetId = Guid.NewGuid();
             
             // Act
-            var log1 = cryptoService.CreateAuditLogRequest("Erster Zugriff");
-            var log2 = cryptoService.CreateAuditLogRequest("Zweiter Zugriff");
+            byte[] initialHash = new byte[32];
+            var log1 = cryptoService.CreateAuditLogRequest("Erster Zugriff", initialHash);
+            
+            byte[] prevHash = Convert.FromBase64String(log1.CurrentEntryHash);
+            var log2 = cryptoService.CreateAuditLogRequest("Zweiter Zugriff", prevHash);
 
             // Assert
             Assert.NotNull(log1.EncryptedLogBlob);

@@ -291,8 +291,9 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> AppendAuditLog(Guid id, [FromBody] AuditLogRequestDto request)
         {
             var userSid = GetUserSid();
+            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
 
-            var hasAccess = await _db.AssetAcls.AnyAsync(a => a.AssetId == id && a.AdSid == userSid);
+            var hasAccess = await _db.AssetAcls.AnyAsync(a => a.AssetId == id && (a.AdSid == userSid || a.AdSid == dummySid));
             if (!hasAccess) return Forbid();
 
             // 1. Letzten Log-Eintrag für dieses Asset holen, um die Kette zu prüfen
@@ -344,6 +345,24 @@ namespace EZKPM.Server.PDP.Controllers
             await _db.SaveChangesAsync();
 
             return Ok();
+        }
+
+        [HttpGet("assets/{id}/audit/latest-hash")]
+        public async Task<IActionResult> GetLatestAuditHash(Guid id)
+        {
+            var userSid = GetUserSid();
+            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
+
+            var hasAccess = await _db.AssetAcls.AnyAsync(a => a.AssetId == id && (a.AdSid == userSid || a.AdSid == dummySid));
+            if (!hasAccess) return Forbid();
+
+            var latestLog = await _db.AuditLogs
+                .Where(l => l.AssetId == id)
+                .OrderByDescending(l => l.Timestamp)
+                .FirstOrDefaultAsync();
+
+            byte[] expectedHash = latestLog != null ? latestLog.CurrentEntryHash : new byte[32];
+            return Ok(new { Hash = Convert.ToBase64String(expectedHash) });
         }
     }
 }

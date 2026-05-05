@@ -141,7 +141,7 @@ namespace EZKPM.Client.Core.Cryptography
             return new string(chars);
         }
 
-        public AuditLogRequestDto CreateAuditLogRequest(string cleartextLog)
+        public AuditLogRequestDto CreateAuditLogRequest(string cleartextLog, byte[] previousHash)
         {
             // FA 22 & FA 4.2 implementation
             byte[] logBytes = Encoding.UTF8.GetBytes(cleartextLog);
@@ -165,17 +165,14 @@ namespace EZKPM.Client.Core.Cryptography
 
             // Hash Chaining: CurrentHash = SHA256(PreviousHash + EncryptedBlob)
             using var sha256 = SHA256.Create();
-            byte[] buffer = new byte[_testPreviousHash.Length + encryptedBlob.Length];
-            Buffer.BlockCopy(_testPreviousHash, 0, buffer, 0, _testPreviousHash.Length);
-            Buffer.BlockCopy(encryptedBlob, 0, buffer, _testPreviousHash.Length, encryptedBlob.Length);
+            byte[] buffer = new byte[previousHash.Length + encryptedBlob.Length];
+            Buffer.BlockCopy(previousHash, 0, buffer, 0, previousHash.Length);
+            Buffer.BlockCopy(encryptedBlob, 0, buffer, previousHash.Length, encryptedBlob.Length);
 
             byte[] currentHash = sha256.ComputeHash(buffer);
             
             // Save the old previous hash for the DTO
-            string previousHashBase64 = Convert.ToBase64String(_testPreviousHash);
-
-            // Update the local hash anchor for the next log entry
-            Buffer.BlockCopy(currentHash, 0, _testPreviousHash, 0, currentHash.Length);
+            string previousHashBase64 = Convert.ToBase64String(previousHash);
 
             CryptographicOperations.ZeroMemory(logBytes);
 
