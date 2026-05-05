@@ -53,7 +53,7 @@ public partial class AssetEditorWindow : Window
         _totpTimer.Tick += TotpTimer_Tick;
         _totpTimer.Start();
 
-        var httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5117") };
+        var httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5000") };
         _apiClient = new VaultApiClient(httpClient);
         _cryptoService = new VaultCryptoService(new HybridPqcKeyWrapper());
 

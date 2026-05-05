@@ -31,7 +31,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        var httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5117") };
+        var httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5000") };
         _apiClient = new VaultApiClient(httpClient);
         _cryptoService = new VaultCryptoService(new HybridPqcKeyWrapper());
 
@@ -207,7 +207,7 @@ public partial class MainWindow : Window
 
     private void UpdateDataGrid()
     {
-        if (AssetsDataGrid == null) return;
+        if (!this.IsInitialized || AssetsDataGrid == null || _decryptedAssets == null) return;
         
         Guid? parentId = null;
         if (AssetTreeView?.SelectedItem is VaultTreeNode node)
@@ -215,11 +215,8 @@ public partial class MainWindow : Window
             parentId = node.Payload.TransientAssetId;
         }
 
-        var searchTextBox = this.FindControl<Avalonia.Controls.TextBox>("SearchTextBox");
-        var typeFilterComboBox = this.FindControl<Avalonia.Controls.ComboBox>("TypeFilterComboBox");
-
-        string searchText = searchTextBox?.Text?.ToLower() ?? "";
-        string selectedType = (typeFilterComboBox?.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() ?? "Alle Typen";
+        string searchText = SearchTextBox?.Text?.ToLower() ?? "";
+        string selectedType = (TypeFilterComboBox?.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() ?? "Alle Typen";
 
         bool isSearching = !string.IsNullOrWhiteSpace(searchText);
 
@@ -267,14 +264,13 @@ public partial class MainWindow : Window
 
     private void TypeFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (!this.IsInitialized) return;
         UpdateDataGrid();
         
-        var typeFilterComboBox = this.FindControl<Avalonia.Controls.ComboBox>("TypeFilterComboBox");
-        var restoreBtn = this.FindControl<Avalonia.Controls.Button>("RestoreSelectedAssetsButton");
-        if (restoreBtn != null && typeFilterComboBox != null)
+        if (RestoreSelectedAssetsButton != null && TypeFilterComboBox != null)
         {
-            string selectedType = (typeFilterComboBox.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() ?? "Alle Typen";
-            restoreBtn.IsVisible = selectedType == "Papierkorb";
+            string selectedType = (TypeFilterComboBox.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() ?? "Alle Typen";
+            RestoreSelectedAssetsButton.IsVisible = selectedType == "Papierkorb";
         }
     }
 
