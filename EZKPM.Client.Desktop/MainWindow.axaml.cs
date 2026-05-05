@@ -61,7 +61,7 @@ public partial class MainWindow : Window
                     var asset = _decryptedAssets.FirstOrDefault(a => a.TransientAssetId == assetId);
                     if (asset != null)
                     {
-                        var req = _cryptoService.CreateAuditLog(assetId, result.Reason);
+                        var req = _cryptoService.CreateAuditLogRequest(result.Reason);
                         await _apiClient.AppendAuditLogAsync(assetId, req);
                     }
                 }

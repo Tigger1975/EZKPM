@@ -166,6 +166,9 @@ namespace EZKPM.Client.Core.Cryptography
 
             byte[] currentHash = sha256.ComputeHash(buffer);
             
+            // Save the old previous hash for the DTO
+            string previousHashBase64 = Convert.ToBase64String(_testPreviousHash);
+
             // Update the local hash anchor for the next log entry
             Buffer.BlockCopy(currentHash, 0, _testPreviousHash, 0, currentHash.Length);
 
@@ -175,7 +178,7 @@ namespace EZKPM.Client.Core.Cryptography
             {
                 EncryptedLogBlob = Convert.ToBase64String(encryptedBlob),
                 Nonce = Convert.ToBase64String(nonce),
-                PreviousEntryHash = Convert.ToBase64String(_testPreviousHash),
+                PreviousEntryHash = previousHashBase64,
                 CurrentEntryHash = Convert.ToBase64String(currentHash)
             };
         }

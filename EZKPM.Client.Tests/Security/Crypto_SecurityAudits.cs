@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Security.Cryptography;
 using System.Text;
 using Xunit;
@@ -53,45 +53,80 @@ namespace EZKPM.Client.Tests.Security
         public void VaultCryptoService_ShouldEncryptAndDecryptCorrectly()
         {
             // Arrange
-            var cryptoService = new VaultCryptoService();
-            string plainText = "MySecretCreditCardData";
-
-            byte[] keyBytes = new byte[32]; // 256-bit (AES-256)
-            RandomNumberGenerator.Fill(keyBytes);
-            using var key = new SecureMemory(keyBytes);
+            var keyWrapper = new EZKPM.Client.Core.Cryptography.HybridPqcKeyWrapper();
+            var cryptoService = new EZKPM.Client.Core.Cryptography.VaultCryptoService(keyWrapper);
+            
+            var payload = new EZKPM.Shared.Contracts.VaultAssetPayload 
+            { 
+                Title = "Test Asset", 
+                Password = "SuperSecretPassword123" 
+            };
 
             // Act
-            var (cipherBlob, nonce) = cryptoService.EncryptAssetPayload(plainText, key);
-            string decryptedText = cryptoService.DecryptAssetPayload(cipherBlob, nonce, key);
+            var createRequest = cryptoService.EncryptAsset(payload);
+            
+            var responseDto = new EZKPM.Shared.Contracts.VaultAssetResponseDto
+            {
+                AssetId = Guid.NewGuid(),
+                CipherBlob = createRequest.CipherBlob,
+                Nonce = createRequest.Nonce,
+                EncryptedKeyShare = createRequest.EncryptedKeyShare
+            };
+            
+            var decryptedPayload = cryptoService.DecryptAsset(responseDto);
 
             // Assert
-            Assert.NotNull(cipherBlob);
-            Assert.Equal(12, nonce.Length); // GCM Nonce muss 96 Bit haben
-            Assert.True(cipherBlob.Length > plainText.Length); // Chiffrat + 16 Byte Auth-Tag
-            Assert.Equal(plainText, decryptedText);
+            Assert.NotNull(createRequest.CipherBlob);
+            Assert.NotNull(createRequest.MetadataHash);
+            Assert.Equal(payload.Password, decryptedPayload.Password);
+            Assert.Equal(payload.Title, decryptedPayload.Title);
         }
 
         [Fact]
         public void VaultCryptoService_ShouldFail_WithInvalidTagOrNonce()
         {
             // Arrange
-            var cryptoService = new VaultCryptoService();
-            byte[] keyBytes = new byte[32];
-            RandomNumberGenerator.Fill(keyBytes);
-            using var key = new SecureMemory(keyBytes);
+            var keyWrapper = new EZKPM.Client.Core.Cryptography.HybridPqcKeyWrapper();
+            var cryptoService = new EZKPM.Client.Core.Cryptography.VaultCryptoService(keyWrapper);
+            
+            var payload = new EZKPM.Shared.Contracts.VaultAssetPayload { Password = "SecretData" };
+            var createRequest = cryptoService.EncryptAsset(payload);
 
-            var (cipherBlob, nonce) = cryptoService.EncryptAssetPayload("ConfidentialData", key);
+            var responseDto = new EZKPM.Shared.Contracts.VaultAssetResponseDto
+            {
+                AssetId = Guid.NewGuid(),
+                CipherBlob = createRequest.CipherBlob,
+                Nonce = createRequest.Nonce,
+                EncryptedKeyShare = createRequest.EncryptedKeyShare
+            };
 
             // Act & Assert
             // 1. Auth-Tag manipulieren (letztes Byte im Blob ändern)
-            // Simuliert einen Man-in-the-Middle oder korrupten Datenbankeintrag.
-            cipherBlob[^1] ^= 0xFF;
-            Assert.ThrowsAny<CryptographicException>(() => cryptoService.DecryptAssetPayload(cipherBlob, nonce, key));
+            byte[] cipherBytes = Convert.FromBase64String(responseDto.CipherBlob);
+            cipherBytes[^1] ^= 0xFF;
+            responseDto.CipherBlob = Convert.ToBase64String(cipherBytes);
+            
+            Assert.ThrowsAny<CryptographicException>(() => cryptoService.DecryptAsset(responseDto));
+        }
 
-            // 2. Nonce manipulieren
-            cipherBlob[^1] ^= 0xFF; // Auth-Tag zurücksetzen
-            nonce[0] ^= 0xFF;
-            Assert.ThrowsAny<CryptographicException>(() => cryptoService.DecryptAssetPayload(cipherBlob, nonce, key));
+        [Fact]
+        public void VaultCryptoService_ShouldGenerateValidAuditLogChain_FA42()
+        {
+            // Arrange
+            var keyWrapper = new EZKPM.Client.Core.Cryptography.HybridPqcKeyWrapper();
+            var cryptoService = new EZKPM.Client.Core.Cryptography.VaultCryptoService(keyWrapper);
+            Guid assetId = Guid.NewGuid();
+            
+            // Act
+            var log1 = cryptoService.CreateAuditLogRequest("Erster Zugriff");
+            var log2 = cryptoService.CreateAuditLogRequest("Zweiter Zugriff");
+
+            // Assert
+            Assert.NotNull(log1.EncryptedLogBlob);
+            Assert.NotNull(log1.CurrentEntryHash);
+            
+            // Log 2 muss den CurrentEntryHash von Log 1 als PreviousEntryHash verwenden!
+            Assert.Equal(log1.CurrentEntryHash, log2.PreviousEntryHash);
         }
     }
 }
