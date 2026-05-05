@@ -455,6 +455,30 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void DeleteFolderMenuItem_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is MenuItem menuItem && menuItem.DataContext is VaultTreeNode node)
+        {
+            if (node.Payload.TransientAssetId.HasValue)
+            {
+                var dialog = new Views.ConfirmationDialog($"Möchten Sie den Ordner '{node.Title}' wirklich in den Papierkorb verschieben?");
+                var result = await dialog.ShowDialogAsync(this);
+                if (!result) return;
+                
+                try
+                {
+                    await _apiClient.DeleteAssetAsync(node.Payload.TransientAssetId.Value);
+                    ShowStatus($"Ordner '{node.Title}' gelöscht.");
+                    await LoadAssetsAsync();
+                }
+                catch (Exception ex)
+                {
+                    ShowStatus($"Fehler beim Löschen des Ordners: {ex.Message}", isError: true);
+                }
+            }
+        }
+    }
+
 
 
     private void NewFolderButton_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)

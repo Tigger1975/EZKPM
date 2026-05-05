@@ -106,6 +106,7 @@
                                 <StackPanel.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Edit Folder" Click="EditFolderMenuItem_Click" />
+                                        <MenuItem Header="Delete Folder" Click="DeleteFolderMenuItem_Click" Foreground="#EF4444" />
                                     </ContextMenu>
                                 </StackPanel.ContextMenu>
                                 <TextBlock Text="{Binding Icon}" FontSize="18" VerticalAlignment="Center" Foreground="#FACC15"/>
