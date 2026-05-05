@@ -66,7 +66,8 @@ namespace EZKPM.Server.PDP.Controllers
                     Nonce = Convert.ToBase64String(asset.Nonce),
                     PermissionLevel = userAcl.PermissionLevel,
                     EncryptedKeyShare = Convert.ToBase64String(userAcl.EncryptedKeyShare),
-                    IsExpired = DateTime.UtcNow > asset.ExpiresAt
+                    IsExpired = DateTime.UtcNow > asset.ExpiresAt,
+                    IsDeleted = asset.IsDeleted
                 };
             }).ToList();
 
@@ -205,8 +206,27 @@ namespace EZKPM.Server.PDP.Controllers
             if (asset == null) return NotFound();
             if (!asset.Acls.Any() || asset.Acls.First().PermissionLevel < 3) return Forbid(); // Only owner can delete
 
-            _db.VaultAssets.Remove(asset);
+            asset.IsDeleted = true;
             await _db.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpPut("assets/{id}/restore")]
+        public async Task<IActionResult> RestoreAsset(Guid id)
+        {
+            var userSid = GetUserSid();
+            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
+
+            var asset = await _db.VaultAssets
+                .Include(a => a.Acls.Where(acl => acl.AdSid == userSid || acl.AdSid == dummySid))
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (asset == null || !asset.Acls.Any()) return Forbid();
+
+            asset.IsDeleted = false;
+            await _db.SaveChangesAsync();
+
             return Ok();
         }
 

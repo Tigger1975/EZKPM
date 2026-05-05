@@ -1,0 +1,12 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="EZKPM.Client.Desktop.Views.ConfirmationDialog"
+        Title="Bestätigung" Width="400" Height="200" WindowStartupLocation="CenterOwner">
+    <StackPanel Margin="20" Spacing="20">
+        <TextBlock x:Name="MessageTextBlock" TextWrapping="Wrap" />
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+            <Button Content="Ja" Click="YesButton_Click" Background="#EF4444" Foreground="White" />
+            <Button Content="Nein" Click="NoButton_Click" />
+        </StackPanel>
+    </StackPanel>
+</Window>

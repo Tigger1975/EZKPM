@@ -61,7 +61,7 @@ public partial class MainWindow : Window
                     var asset = _decryptedAssets.FirstOrDefault(a => a.TransientAssetId == assetId);
                     if (asset != null)
                     {
-                        var req = _cryptoService.CreateAuditLogRequest(result.Reason);
+                        var req = _cryptoService.CreateAuditLogRequest($"Order: {result.OrderId}, Amount: {result.Amount}");
                         await _apiClient.AppendAuditLogAsync(assetId, req);
                     }
                 }
@@ -225,18 +225,27 @@ public partial class MainWindow : Window
 
         var filtered = _decryptedAssets.Where(a => a.AssetType != "Folder");
 
-        if (!isSearching)
+        if (selectedType == "Papierkorb")
         {
-            filtered = filtered.Where(a => a.ParentFolderId == parentId);
+            filtered = filtered.Where(a => a.IsDeleted);
         }
+        else
+        {
+            filtered = filtered.Where(a => !a.IsDeleted);
+            
+            if (!isSearching)
+            {
+                filtered = filtered.Where(a => a.ParentFolderId == parentId);
+            }
 
-        if (selectedType == "Abgelaufen (Rotation)")
-        {
-            filtered = filtered.Where(a => a.IsExpired);
-        }
-        else if (selectedType != "Alle Typen")
-        {
-            filtered = filtered.Where(a => a.AssetType == selectedType);
+            if (selectedType == "Abgelaufen (Rotation)")
+            {
+                filtered = filtered.Where(a => a.IsExpired);
+            }
+            else if (selectedType != "Alle Typen")
+            {
+                filtered = filtered.Where(a => a.AssetType == selectedType);
+            }
         }
 
         if (isSearching)
@@ -259,27 +268,78 @@ public partial class MainWindow : Window
     private void TypeFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         UpdateDataGrid();
+        
+        var typeFilterComboBox = this.FindControl<Avalonia.Controls.ComboBox>("TypeFilterComboBox");
+        var restoreBtn = this.FindControl<Avalonia.Controls.Button>("RestoreSelectedAssetsButton");
+        if (restoreBtn != null && typeFilterComboBox != null)
+        {
+            string selectedType = (typeFilterComboBox.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() ?? "Alle Typen";
+            restoreBtn.IsVisible = selectedType == "Papierkorb";
+        }
     }
 
     private async void DeleteSelectedAssets_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        if (AssetsDataGrid?.SelectedItems == null) return;
+        if (AssetsDataGrid.SelectedItems.Count == 0) return;
+
+        var items = AssetsDataGrid.SelectedItems.Cast<VaultAssetPayload>().ToList();
         
-        var selected = AssetsDataGrid.SelectedItems.Cast<VaultAssetPayload>().ToList();
-        if (selected.Count == 0) return;
-        
-        foreach (var asset in selected)
+        var dialog = new Views.ConfirmationDialog($"Möchten Sie {items.Count} Asset(s) wirklich in den Papierkorb verschieben?");
+        var result = await dialog.ShowDialogAsync(this);
+        if (!result) return;
+
+        int count = 0;
+        foreach (var item in items)
         {
-            if (asset.TransientAssetId.HasValue)
+            if (item.TransientAssetId.HasValue)
             {
-                try {
-                    await _apiClient.DeleteAssetAsync(asset.TransientAssetId.Value);
-                } catch (Exception ex) {
-                    ShowStatus($"Fehler beim Löschen: {ex.Message}", isError: true);
+                try
+                {
+                    await _apiClient.DeleteAssetAsync(item.TransientAssetId.Value);
+                    count++;
+                }
+                catch (Exception ex)
+                {
+                    ShowStatus($"Fehler beim Löschen von {item.Title}: {ex.Message}");
                 }
             }
         }
-        await LoadAssetsAsync();
+
+        if (count > 0)
+        {
+            ShowStatus($"{count} Asset(s) in den Papierkorb verschoben.");
+            await LoadAssetsAsync();
+        }
+    }
+
+    private async void RestoreSelectedAssets_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (AssetsDataGrid.SelectedItems.Count == 0) return;
+
+        var items = AssetsDataGrid.SelectedItems.Cast<VaultAssetPayload>().ToList();
+        
+        int count = 0;
+        foreach (var item in items)
+        {
+            if (item.TransientAssetId.HasValue)
+            {
+                try
+                {
+                    await _apiClient.RestoreAssetAsync(item.TransientAssetId.Value);
+                    count++;
+                }
+                catch (Exception ex)
+                {
+                    ShowStatus($"Fehler beim Wiederherstellen von {item.Title}: {ex.Message}");
+                }
+            }
+        }
+
+        if (count > 0)
+        {
+            ShowStatus($"{count} Asset(s) wiederhergestellt.");
+            await LoadAssetsAsync();
+        }
     }
 
     private async void ImportKeePass_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -288,11 +348,12 @@ public partial class MainWindow : Window
         {
             var files = await this.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
             {
-                Title = "KeePass XML Datei auswählen",
+                Title = "KeePass / CSV Datei auswählen",
                 AllowMultiple = false,
                 FileTypeFilter = new[]
                 {
                     new FilePickerFileType("KeePass XML") { Patterns = new[] { "*.xml" } },
+                    new FilePickerFileType("CSV Datei") { Patterns = new[] { "*.csv" } },
                     new FilePickerFileType("Alle Dateien") { Patterns = new[] { "*.*" } }
                 }
             });
@@ -302,7 +363,10 @@ public partial class MainWindow : Window
                 var file = files[0];
                 await using var stream = await file.OpenReadAsync();
                 
-                var importer = new KeePassXmlImporter();
+                IPasswordDbImporter importer = file.Name.EndsWith(".csv", StringComparison.OrdinalIgnoreCase) 
+                    ? new CsvImporter() 
+                    : new KeePassXmlImporter();
+
                 var importedPayloads = await importer.ImportAsync(stream);
 
                 int successCount = 0;

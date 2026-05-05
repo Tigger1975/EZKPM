@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore;
 
 namespace EZKPM.Server.PDP.Data
@@ -86,6 +86,8 @@ namespace EZKPM.Server.PDP.Data
         /// Der Server weigert sich, den Blob nach Ablauf auszuliefern.
         /// </summary>
         public DateTime ExpiresAt { get; set; }
+
+        public bool IsDeleted { get; set; } // Soft-Delete flag (Papierkorb)
 
         public ICollection<AssetAcl> Acls { get; set; }
     }

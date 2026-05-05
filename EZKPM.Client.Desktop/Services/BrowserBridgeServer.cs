@@ -105,6 +105,7 @@ namespace EZKPM.Client.Desktop.Services
                     {
                         if (a.AssetType != "Login" || string.IsNullOrEmpty(a.Url)) return false;
                         if (a.IsExpired) return false; // FA 30: Block expired assets from autofill
+                        if (a.IsDeleted) return false; // Papierkorb assets should not be autofilled
                         
                         // Parse requested URL (Browser)
                         string reqUrl = url.StartsWith("http") ? url : "https://" + url;

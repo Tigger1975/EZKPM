@@ -200,7 +200,7 @@ public partial class AssetEditorWindow : Window
         _acls.Clear();
         
         // Automatischer Owner = Ersteller (Echte AD SID)
-        var currentUser = AdSearchService.GetCurrentUser();
+        var currentUser = Services.AdSearchService.GetCurrentUser();
         _acls.Add(new AclEntryDto { 
             AdSid = currentUser.Sid, 
             DisplayName = currentUser.DisplayName,

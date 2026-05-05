@@ -59,6 +59,12 @@ namespace EZKPM.Client.Core.Services
             response.EnsureSuccessStatusCode();
         }
 
+        public async Task RestoreAssetAsync(Guid id)
+        {
+            var response = await _httpClient.PutAsync($"/api/v1/vault/assets/{id}/restore", null);
+            response.EnsureSuccessStatusCode();
+        }
+
         public async Task<bool> AppendAuditLogAsync(Guid assetId, AuditLogRequestDto logRequest)
         {
             var response = await _httpClient.PostAsJsonAsync($"/api/v1/vault/assets/{assetId}/audit", logRequest);

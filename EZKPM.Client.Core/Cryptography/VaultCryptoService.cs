@@ -58,6 +58,7 @@ namespace EZKPM.Client.Core.Cryptography
             {
                 payload.TransientAssetId = assetDto.AssetId;
                 payload.IsExpired = assetDto.IsExpired;
+                payload.IsDeleted = assetDto.IsDeleted;
             }
             return payload;
         }

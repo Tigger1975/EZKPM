@@ -10,6 +10,7 @@ namespace EZKPM.Shared.Contracts
         public int PermissionLevel { get; set; }
         public string EncryptedKeyShare { get; set; }
         public bool IsExpired { get; set; }
+        public bool IsDeleted { get; set; }
     }
 
     public class CreateAssetRequestDto
@@ -87,6 +88,9 @@ namespace EZKPM.Shared.Contracts
         
         [System.Text.Json.Serialization.JsonIgnore]
         public bool IsExpired { get; set; } // Indicates if the server flagged it as expired
+        
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool IsDeleted { get; set; } // Indicates if it is in the trash
         
         [System.Text.Json.Serialization.JsonIgnore]
         public string FullPath { get; set; } // Computed path for display

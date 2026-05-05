@@ -137,6 +137,7 @@
                             <ComboBox x:Name="TypeFilterComboBox" Width="150" SelectedIndex="0" SelectionChanged="TypeFilterComboBox_SelectionChanged">
                                 <ComboBoxItem Content="Alle Typen" />
                                 <ComboBoxItem Content="Abgelaufen (Rotation)" />
+                                <ComboBoxItem Content="Papierkorb" />
                                 <ComboBoxItem Content="Login" />
                                 <ComboBoxItem Content="Passkey" />
                                 <ComboBoxItem Content="Payment" />
@@ -147,6 +148,7 @@
                                 <ComboBoxItem Content="Authenticator" />
                             </ComboBox>
                             <Button Content="📥 Importieren" Classes="outline" Click="ImportKeePass_Click" />
+                            <Button x:Name="RestoreSelectedAssetsButton" Content="🔄 Wiederherstellen" Classes="outline" Click="RestoreSelectedAssets_Click" Foreground="#10B981" BorderBrush="#10B981" IsVisible="False" />
                             <Button Content="🗑️ Löschen" Classes="outline" Click="DeleteSelectedAssets_Click" Foreground="#EF4444" BorderBrush="#EF4444" />
                         </StackPanel>
 
