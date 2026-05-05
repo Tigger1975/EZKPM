@@ -9,9 +9,11 @@
   </PropertyGroup>
   <ItemGroup>
     <AvaloniaXaml Remove="Views\AuditDialog.axaml" />
+    <AvaloniaXaml Remove="Views\LoginWindow.axaml" />
   </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="Views\AuditDialog.axaml" />
+    <AvaloniaResource Include="Views\LoginWindow.axaml" />
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
@@ -26,6 +28,7 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="10.0.7" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.7" />
   </ItemGroup>
 
   <ItemGroup>

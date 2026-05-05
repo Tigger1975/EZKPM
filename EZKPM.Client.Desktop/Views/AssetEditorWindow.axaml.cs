@@ -71,6 +71,16 @@ public partial class AssetEditorWindow : Window
 
         if (payload != null)
         {
+            // Auto-Inheritance for NEW assets created inside a folder
+            if (payload.TransientAssetId == null && payload.ParentFolderId != null && allAssets != null)
+            {
+                var parentFolder = allAssets.FirstOrDefault(a => a.TransientAssetId == payload.ParentFolderId);
+                if (parentFolder != null && parentFolder.Acls != null && parentFolder.Acls.Count > 0)
+                {
+                    payload.Acls = parentFolder.Acls.Select(a => new AclEntryDto { AdSid = a.AdSid, DisplayName = a.DisplayName, PermissionLevel = a.PermissionLevel }).ToList();
+                }
+            }
+
             _currentEditingAssetId = payload.TransientAssetId;
             
             var expiredPanel = this.FindControl<Avalonia.Controls.Border>("ExpiredWarningPanel");
@@ -110,6 +120,14 @@ public partial class AssetEditorWindow : Window
             {
                 _acls.Clear(); // remove default owner for existing payload
                 foreach (var acl in payload.Acls) _acls.Add(acl);
+            }
+
+            // Set IsInheriting status
+            var isInheritingBox = this.FindControl<CheckBox>("IsInheritingCheckBox");
+            if (isInheritingBox != null)
+            {
+                isInheritingBox.IsVisible = payload.ParentFolderId != null;
+                isInheritingBox.IsChecked = payload.IsInheriting;
             }
 
             // Select parent folder if any
@@ -206,6 +224,13 @@ public partial class AssetEditorWindow : Window
             DisplayName = currentUser.DisplayName,
             PermissionLevel = 3 // Owner
         });
+
+        var isInheritingBox = this.FindControl<CheckBox>("IsInheritingCheckBox");
+        if (isInheritingBox != null)
+        {
+            isInheritingBox.IsVisible = false;
+            isInheritingBox.IsChecked = true;
+        }
 
         if (keepFolderId != null && ParentFolderComboBox.ItemsSource is List<FolderSelectionItem> flist)
         {
@@ -469,7 +494,8 @@ public partial class AssetEditorWindow : Window
 
                 Attachments = _attachments.ToList(),
                 CustomFields = _customFields.ToList(),
-                Acls = _acls.ToList()
+                Acls = _acls.ToList(),
+                IsInheriting = this.FindControl<CheckBox>("IsInheritingCheckBox")?.IsChecked == true
             };
 
             // 1. Encrypt Payload locally
@@ -480,6 +506,14 @@ public partial class AssetEditorWindow : Window
             {
                 await _apiClient.UpdateAssetAsync(_currentEditingAssetId.Value, requestDto);
                 ShowStatus("Updated successfully!");
+
+                // Check for inheritance
+                var applyToChildren = this.FindControl<CheckBox>("ApplyToChildrenCheckBox")?.IsChecked == true;
+                if (applyToChildren && payload.AssetType == "Folder")
+                {
+                    ShowStatus("Vererbe Rechte an untergeordnete Elemente...");
+                    await ApplyAclsToChildrenAsync(_currentEditingAssetId.Value, payload.Acls);
+                }
             }
             else
             {
@@ -738,6 +772,54 @@ public partial class AssetEditorWindow : Window
         }
     }
 
+    private async void IsInheritingCheckBox_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is CheckBox cb)
+        {
+            if (cb.IsChecked == false)
+            {
+                // Prompt user
+                var dialog = new ConfirmationDialog("Möchten Sie die bisher geerbten Rechte als explizite Rechte kopieren? (Wenn Nein, werden sie entfernt)");
+                var result = await dialog.ShowDialogAsync(this);
+                if (result)
+                {
+                    foreach (var acl in _acls.Where(a => a.IsInherited))
+                    {
+                        acl.IsInherited = false;
+                    }
+                }
+                else
+                {
+                    var inherited = _acls.Where(a => a.IsInherited).ToList();
+                    foreach (var a in inherited) _acls.Remove(a);
+                }
+                // Refresh list
+                var items = _acls.ToList();
+                _acls.Clear();
+                foreach (var i in items) _acls.Add(i);
+            }
+            else
+            {
+                // Re-inherit
+                var parentFolderId = (ParentFolderComboBox.SelectedItem as FolderSelectionItem)?.Id;
+                if (parentFolderId.HasValue && ParentFolderComboBox.ItemsSource is List<FolderSelectionItem> flist)
+                {
+                    var parentNode = flist.FirstOrDefault(f => f.Id == parentFolderId.Value);
+                    if (parentNode != null && parentNode.OriginalPayload.Acls != null)
+                    {
+                        foreach (var pacl in parentNode.OriginalPayload.Acls)
+                        {
+                            if (!_acls.Any(a => a.AdSid == pacl.AdSid))
+                            {
+                                _acls.Add(new AclEntryDto { AdSid = pacl.AdSid, DisplayName = pacl.DisplayName, PermissionLevel = pacl.PermissionLevel, IsInherited = true });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private async void AdSidAutoCompleteBox_Populating(object sender, Avalonia.Controls.PopulatingEventArgs e)
     {
         if (sender is AutoCompleteBox autoCompleteBox)
@@ -775,7 +857,36 @@ public partial class AssetEditorWindow : Window
                 var index = _acls.IndexOf(acl);
                 if (index >= 0)
                 {
-                    _acls[index] = new AclEntryDto { AdSid = result.ToString(), PermissionLevel = acl.PermissionLevel };
+                    if (result.Type == "Group")
+                    {
+                        // Flache die AD-Gruppe auf und füge alle Mitglieder einzeln hinzu
+                        ShowStatus($"Löse AD-Gruppe '{result.DisplayName}' auf...", isWarning: true);
+                        var members = await EZKPM.Client.Desktop.Services.AdSearchService.GetGroupMembersAsync(result.Sid);
+                        
+                        _acls.RemoveAt(index); // Remove the empty/placeholder entry
+                        
+                        if (members.Count == 0)
+                        {
+                            ShowStatus($"Warnung: Die AD-Gruppe '{result.DisplayName}' ist leer.", isWarning: true);
+                        }
+                        else
+                        {
+                            foreach (var member in members)
+                            {
+                                // Avoid duplicates
+                                if (!_acls.Any(a => a.AdSid == member.ToString()))
+                                {
+                                    _acls.Add(new AclEntryDto { AdSid = member.ToString(), DisplayName = member.DisplayName, PermissionLevel = acl.PermissionLevel });
+                                }
+                            }
+                            ShowStatus($"Gruppe aufgelöst: {members.Count} Nutzer hinzugefügt.");
+                        }
+                    }
+                    else
+                    {
+                        // Single User
+                        _acls[index] = new AclEntryDto { AdSid = result.ToString(), DisplayName = result.DisplayName, PermissionLevel = acl.PermissionLevel };
+                    }
                 }
             }
         }
@@ -801,9 +912,74 @@ private void AssetTypeComboBox_SelectionChanged(object sender, SelectionChangedE
                 else if (type == "Payment") PasswordLabel.Text = PaymentSubTypeComboBox?.SelectedIndex == 1 ? "Service Password" : "Card PIN";
                 else PasswordLabel.Text = "Password";
             }
+            
+            var applyCb = this.FindControl<CheckBox>("ApplyToChildrenCheckBox");
+            if (applyCb != null) applyCb.IsVisible = (type == "Folder");
         }
     }
 
+    private async Task ApplyAclsToChildrenAsync(Guid folderId, List<AclEntryDto> parentAcls)
+    {
+        try
+        {
+            var serverAssets = await _apiClient.GetAllAssetsAsync();
+            var allDecrypted = new List<VaultAssetPayload>();
+            foreach (var dto in serverAssets) 
+            {
+                 allDecrypted.Add(_cryptoService.DecryptAsset(dto));
+            }
+
+            var childrenToUpdate = GetDescendantsRespectingInheritance(folderId, allDecrypted);
+            if (childrenToUpdate.Count == 0) return;
+
+            foreach (var child in childrenToUpdate)
+            {
+                // Remove old inherited ACLs
+                child.Acls.RemoveAll(a => a.IsInherited);
+
+                // Add new inherited ACLs from parent
+                foreach (var pAcl in parentAcls)
+                {
+                    // If child does not have an EXPLICIT rule for this SID, inherit it
+                    if (!child.Acls.Any(a => a.AdSid == pAcl.AdSid && !a.IsInherited))
+                    {
+                        child.Acls.Add(new AclEntryDto 
+                        { 
+                            AdSid = pAcl.AdSid, 
+                            DisplayName = pAcl.DisplayName, 
+                            PermissionLevel = pAcl.PermissionLevel, 
+                            IsInherited = true 
+                        });
+                    }
+                }
+
+                var req = _cryptoService.EncryptAsset(child);
+                await _apiClient.UpdateAssetAsync(child.TransientAssetId.Value, req);
+            }
+            ShowStatus($"Vererbung abgeschlossen: {childrenToUpdate.Count} Elemente aktualisiert.");
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Fehler bei Vererbung: {ex.Message}", isError: true);
+        }
+    }
+
+    private List<VaultAssetPayload> GetDescendantsRespectingInheritance(Guid parentId, List<VaultAssetPayload> allAssets)
+    {
+        var result = new List<VaultAssetPayload>();
+        var children = allAssets.Where(a => a.ParentFolderId == parentId).ToList();
+        foreach (var c in children)
+        {
+            if (!c.IsInheriting) continue; // Vererbung gebrochen -> Hier stoppen
+
+            result.Add(c);
+            if (c.AssetType == "Folder" && c.TransientAssetId.HasValue)
+            {
+                result.AddRange(GetDescendantsRespectingInheritance(c.TransientAssetId.Value, allAssets));
+            }
+        }
+        return result;
+    }
 private void PaymentSubTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (CardDetailsPanel != null)

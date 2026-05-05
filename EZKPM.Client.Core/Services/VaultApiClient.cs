@@ -85,5 +85,31 @@ namespace EZKPM.Client.Core.Services
             }
             return new byte[32]; // Fallback genesis hash
         }
+
+        public async Task SetupRecoveryAsync(SetupRecoveryDto request)
+        {
+            var response = await _httpClient.PostAsJsonAsync("/api/v1/recovery/setup", request);
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task RequestRecoveryAsync(InitiateRecoveryRequestDto request)
+        {
+            var response = await _httpClient.PostAsJsonAsync("/api/v1/recovery/request", request);
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task ApproveRecoveryAsync(ProvideRecoveryShareDto request)
+        {
+            var response = await _httpClient.PostAsJsonAsync("/api/v1/recovery/approve", request);
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task<RecoveryStatusResponseDto?> GetRecoveryStatusAsync(string adSid)
+        {
+            var response = await _httpClient.GetAsync($"/api/v1/recovery/status/{adSid}");
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<RecoveryStatusResponseDto>();
+        }
     }
 }

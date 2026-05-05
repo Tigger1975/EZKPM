@@ -30,8 +30,16 @@ namespace EZKPM.Shared.Contracts
     {
         public string AdSid { get; set; } = "";
         public string DisplayName { get; set; } = "";
-        public int PermissionLevel { get; set; } // 1=Execute, 2=Read, 3=Owner
+        public int PermissionLevel { get; set; } // -1=Deny, 0=None, 1=Execute, 2=Read, 3=Owner
         public string EncryptedKeyShare { get; set; } = "";
+        public bool IsInherited { get; set; } = false;
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public int UiPermissionIndex
+        {
+            get => PermissionLevel switch { -1 => 0, 0 => 1, 1 => 2, 2 => 3, 3 => 4, _ => 1 };
+            set => PermissionLevel = value switch { 0 => -1, 1 => 0, 2 => 1, 3 => 2, 4 => 3, _ => 0 };
+        }
     }
 
     public class AuditLogRequestDto
@@ -96,6 +104,7 @@ namespace EZKPM.Shared.Contracts
         public string FullPath { get; set; } // Computed path for display
 
         public Guid? ParentFolderId { get; set; } // Für die Tree-Struktur
+        public bool IsInheriting { get; set; } = true; // Ob Rechte vom ParentFolderId geerbt werden
 
         public string AssetType { get; set; } // Folder, Login, Payment, SecureNote
         public string Title { get; set; }

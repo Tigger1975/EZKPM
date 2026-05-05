@@ -247,6 +247,8 @@
                         <TabItem Header="Permissions (ACL)">
                             <StackPanel Spacing="10" Margin="10">
                                 <TextBlock Text="Verwalte Benutzer, die Zugriff auf dieses Asset/diesen Ordner haben." Foreground="#6B7280"/>
+                                <CheckBox x:Name="IsInheritingCheckBox" Content="Vererbung vom übergeordneten Ordner aktivieren" IsVisible="False" Foreground="#2563EB" FontWeight="SemiBold" Click="IsInheritingCheckBox_Click"/>
+                                
                                 <Grid ColumnDefinitions="*, Auto, 130, Auto" Margin="0,10,0,5">
                                     <TextBlock Grid.Column="0" Text="Benutzer / SID" FontWeight="SemiBold" Foreground="#374151"/>
                                     <TextBlock Grid.Column="2" Text="Rolle" FontWeight="SemiBold" Foreground="#374151"/>
@@ -256,21 +258,27 @@
                                     <ListBox.ItemTemplate>
                                         <DataTemplate DataType="contracts:AclEntryDto">
                                             <Grid ColumnDefinitions="*, Auto, 130, Auto" Margin="0,2">
-                                                <AutoCompleteBox Grid.Column="0" Text="{Binding AdSid}" Margin="0,0,5,0" Watermark="SID oder Username..." MinimumPrefixLength="2" Populating="AdSidAutoCompleteBox_Populating" />
+                                                <Grid Grid.Column="0" Margin="0,0,5,0">
+                                                    <AutoCompleteBox Text="{Binding AdSid}" Watermark="SID oder Username..." MinimumPrefixLength="2" Populating="AdSidAutoCompleteBox_Populating" />
+                                                    <TextBlock Text="[Geerbt]" IsVisible="{Binding IsInherited}" Foreground="#9CA3AF" FontSize="11" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,2,25,0" IsHitTestVisible="False"/>
+                                                </Grid>
                                                 <Button Grid.Column="1" Content="🔍" Classes="outline" Padding="8,4" Margin="0,0,10,0" Click="OpenAdPickerButton_Click" ToolTip.Tip="AD Benutzer/Gruppen suchen"/>
-                                                <ComboBox Grid.Column="2" SelectedIndex="{Binding PermissionLevel}" Margin="0,0,10,0" HorizontalAlignment="Stretch">
+                                                <ComboBox Grid.Column="2" SelectedIndex="{Binding UiPermissionIndex}" Margin="0,0,10,0" HorizontalAlignment="Stretch">
+                                                    <ComboBoxItem Content="Deny (-1)" Foreground="Red"/>
                                                     <ComboBoxItem Content="Keine Rechte (0)" />
                                                     <ComboBoxItem Content="Execute (1)" />
                                                     <ComboBoxItem Content="Read (2)" />
                                                     <ComboBoxItem Content="Owner (3)" />
                                                 </ComboBox>
-                                                <Button Grid.Column="2" Content="❌" Foreground="Red" Classes="outline" HorizontalAlignment="Center" Click="RemoveAclButton_Click"/>
+                                                <Button Grid.Column="3" Content="❌" Foreground="Red" Classes="outline" HorizontalAlignment="Center" Click="RemoveAclButton_Click"/>
                                             </Grid>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>
                                 
                                 <Button Classes="outline" Content="➕" ToolTip.Tip="Benutzer/Gruppe hinzufügen" Click="AddAclButton_Click" HorizontalAlignment="Left"/>
+                                
+                                <CheckBox x:Name="ApplyToChildrenCheckBox" Content="Zugriffsrechte (ACL) an alle untergeordneten Assets vererben (Überschreibt bestehende Rechte)" IsVisible="False" Foreground="#6B7280" Margin="0,10,0,0"/>
                             </StackPanel>
                         </TabItem>
                         <TabItem Header="Attachments">

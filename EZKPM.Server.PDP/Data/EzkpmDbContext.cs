@@ -13,6 +13,9 @@ namespace EZKPM.Server.PDP.Data
         public DbSet<VaultAsset> VaultAssets { get; set; }
         public DbSet<AssetAcl> AssetAcls { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<UserProfile> UserProfiles { get; set; }
+        public DbSet<VaultRecoveryRequest> VaultRecoveryRequests { get; set; }
+        public DbSet<VaultRecoveryShare> VaultRecoveryShares { get; set; }
 
         public EzkpmDbContext(DbContextOptions<EzkpmDbContext> options) : base(options) { }
 
@@ -54,6 +57,26 @@ namespace EZKPM.Server.PDP.Data
                       .WithMany()
                       .HasForeignKey(e => e.AssetId)
                       .OnDelete(DeleteBehavior.Restrict); // Logs dürfen NICHT gelöscht werden
+            });
+
+            // --- Recovery Configuration ---
+            modelBuilder.Entity<UserProfile>(entity =>
+            {
+                entity.HasKey(e => e.AdSid);
+            });
+
+            modelBuilder.Entity<VaultRecoveryRequest>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasMany(e => e.ProvidedShares)
+                      .WithOne()
+                      .HasForeignKey(s => s.RecoveryRequestId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<VaultRecoveryShare>(entity =>
+            {
+                entity.HasKey(e => e.Id);
             });
         }
     }
@@ -147,5 +170,31 @@ namespace EZKPM.Server.PDP.Data
         public byte[] CurrentEntryHash { get; set; }
 
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    }
+
+    public class UserProfile
+    {
+        public string AdSid { get; set; }
+        public string EncryptedMasterKeyBackup { get; set; }
+    }
+
+    public class VaultRecoveryRequest
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string AdSid { get; set; } 
+        public string EphemeralUserPubKey { get; set; } 
+        public int RequiredShares { get; set; } = 2; // e.g. 2-of-5 threshold
+        public bool IsCompleted { get; set; }
+        public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
+
+        public ICollection<VaultRecoveryShare> ProvidedShares { get; set; } = new List<VaultRecoveryShare>();
+    }
+
+    public class VaultRecoveryShare
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public Guid RecoveryRequestId { get; set; }
+        public string AdminSid { get; set; }
+        public string EncryptedShareBlob { get; set; }
     }
 }

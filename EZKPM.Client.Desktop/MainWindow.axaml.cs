@@ -394,6 +394,24 @@ public partial class MainWindow : Window
                 var idMap = new Dictionary<Guid, Guid>();
 
                 var currentUserSid = Services.AdSearchService.GetCurrentUser().Sid;
+                
+                // Prompt for Target Folder
+                var inputDialog = new Views.InputDialog("Ziel-Ordner für Import (Leer lassen für Root-Verzeichnis):", "Import " + DateTime.Now.ToString("yyyy-MM-dd"));
+                string targetFolderName = await inputDialog.ShowDialogAsync(this);
+                
+                Guid? rootImportFolderId = null;
+                if (!string.IsNullOrWhiteSpace(targetFolderName))
+                {
+                    // Create Root Folder
+                    var rootFolderPayload = new VaultAssetPayload
+                    {
+                        Title = targetFolderName,
+                        AssetType = "Folder",
+                        Acls = new List<AclEntryDto> { new AclEntryDto { AdSid = currentUserSid, PermissionLevel = 3 } }
+                    };
+                    var rootRequestDto = _cryptoService.EncryptAsset(rootFolderPayload);
+                    rootImportFolderId = await _apiClient.CreateAssetAsync(rootRequestDto);
+                }
 
                 foreach (var payload in importedPayloads)
                 {
@@ -402,6 +420,11 @@ public partial class MainWindow : Window
                         if (payload.ParentFolderId.HasValue && idMap.TryGetValue(payload.ParentFolderId.Value, out var realParentId))
                         {
                             payload.ParentFolderId = realParentId;
+                        }
+                        else if (!payload.ParentFolderId.HasValue && rootImportFolderId.HasValue)
+                        {
+                            // Assign root level imported items to our new Target Folder
+                            payload.ParentFolderId = rootImportFolderId;
                         }
 
                         // Ensure we have owner ACLs, otherwise the server rejects it or it becomes invisible
@@ -587,6 +610,12 @@ public partial class MainWindow : Window
                 s_draggedNode = null;
                 
                 draggedNode.Payload.ParentFolderId = targetNode.Payload.TransientAssetId;
+                
+                // Auto-Inheritance on Move
+                if (targetNode.Payload.Acls != null && targetNode.Payload.Acls.Count > 0)
+                {
+                    draggedNode.Payload.Acls = targetNode.Payload.Acls.Select(a => new AclEntryDto { AdSid = a.AdSid, DisplayName = a.DisplayName, PermissionLevel = a.PermissionLevel }).ToList();
+                }
 
                 try
                 {
@@ -596,7 +625,7 @@ public partial class MainWindow : Window
                         await _apiClient.UpdateAssetAsync(draggedNode.Payload.TransientAssetId.Value, requestDto);
                         
                         await LoadAssetsAsync();
-                        ShowStatus($"'{draggedNode.Title}' in '{targetNode.Title}' verschoben!");
+                        ShowStatus($"'{draggedNode.Title}' in '{targetNode.Title}' verschoben (Rechte geerbt)!");
                     }
                 }
                 catch (Exception ex)

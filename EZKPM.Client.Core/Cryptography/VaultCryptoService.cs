@@ -10,16 +10,29 @@ namespace EZKPM.Client.Core.Cryptography
     {
         private readonly HybridPqcKeyWrapper _keyWrapper;
         
-        // Mock private keys for test mode (in reality, bound to FIDO2/TPM)
-        private readonly SecureMemory _testPrivateKeyX25519;
-        private readonly SecureMemory _testPrivateKeyKyber;
+        // True private keys securely loaded via DPAPI (bound to Windows Login)
+        private readonly SecureMemory _myPrivateKeyX25519;
+        private readonly SecureMemory _myPrivateKeyKyber;
         private readonly byte[] _testPreviousHash = new byte[32]; // Genesis block
 
         public VaultCryptoService(HybridPqcKeyWrapper keyWrapper)
         {
             _keyWrapper = keyWrapper;
-            _testPrivateKeyX25519 = new SecureMemory(new byte[32]);
-            _testPrivateKeyKyber = new SecureMemory(new byte[32]);
+            
+            byte[] masterKeyMaterial = DpapiMasterKeyStore.GetOrGenerateMasterKey();
+            
+            // Split the 64-byte master key material into two 32-byte private keys
+            byte[] x25519Material = new byte[32];
+            byte[] kyberMaterial = new byte[32];
+            Buffer.BlockCopy(masterKeyMaterial, 0, x25519Material, 0, 32);
+            Buffer.BlockCopy(masterKeyMaterial, 32, kyberMaterial, 0, 32);
+            
+            _myPrivateKeyX25519 = new SecureMemory(x25519Material);
+            _myPrivateKeyKyber = new SecureMemory(kyberMaterial);
+            
+            CryptographicOperations.ZeroMemory(masterKeyMaterial);
+            CryptographicOperations.ZeroMemory(x25519Material);
+            CryptographicOperations.ZeroMemory(kyberMaterial);
         }
 
         public VaultAssetPayload DecryptAsset(VaultAssetResponseDto assetDto)
@@ -27,7 +40,7 @@ namespace EZKPM.Client.Core.Cryptography
             byte[] encryptedKeyShare = Convert.FromBase64String(assetDto.EncryptedKeyShare);
             
             // 1. Unwrap the Asset Key using HybridPqcKeyWrapper
-            using var assetKey = _keyWrapper.UnwrapAssetKey(encryptedKeyShare, _testPrivateKeyX25519, _testPrivateKeyKyber);
+            using var assetKey = _keyWrapper.UnwrapAssetKey(encryptedKeyShare, _myPrivateKeyX25519, _myPrivateKeyKyber);
 
             // 2. Decrypt the CipherBlob using AesGcm
             byte[] cipherBlob = Convert.FromBase64String(assetDto.CipherBlob);

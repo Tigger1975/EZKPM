@@ -98,4 +98,63 @@ public static class AdSearchService
             return results.OrderBy(r => r.DisplayName).ToList();
         });
     }
+
+    public static async Task<List<AdPrincipal>> GetGroupMembersAsync(string groupSid)
+    {
+        return await Task.Run(() =>
+        {
+            var results = new List<AdPrincipal>();
+            if (string.IsNullOrWhiteSpace(groupSid)) return results;
+
+            try
+            {
+                using var context = new PrincipalContext(ContextType.Domain);
+                var group = GroupPrincipal.FindByIdentity(context, IdentityType.Sid, groupSid);
+                
+                if (group != null)
+                {
+                    // GetMembers(true) recursively resolves nested groups!
+                    foreach (var p in group.GetMembers(true))
+                    {
+                        if (p is UserPrincipal user)
+                        {
+                            results.Add(new AdPrincipal 
+                            { 
+                                DisplayName = user.DisplayName ?? user.Name, 
+                                Sid = user.Sid?.Value ?? "", 
+                                Type = "User" 
+                            });
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Fallback local machine
+                try
+                {
+                    using var localContext = new PrincipalContext(ContextType.Machine);
+                    var group = GroupPrincipal.FindByIdentity(localContext, IdentityType.Sid, groupSid);
+                    if (group != null)
+                    {
+                        foreach (var p in group.GetMembers(true))
+                        {
+                            if (p is UserPrincipal user)
+                            {
+                                results.Add(new AdPrincipal 
+                                { 
+                                    DisplayName = user.DisplayName ?? user.Name, 
+                                    Sid = user.Sid?.Value ?? "", 
+                                    Type = "User" 
+                                });
+                            }
+                        }
+                    }
+                }
+                catch { /* Ignore errors */ }
+            }
+
+            return results;
+        });
+    }
 }

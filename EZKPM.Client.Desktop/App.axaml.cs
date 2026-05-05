@@ -25,11 +25,27 @@ namespace EZKPM.Client.Desktop
                 // Im Extension-Modus bleibt die App komplett unsichtbar im Hintergrund!
                 if (!isExtensionMode)
                 {
-                    var splash = new Views.SplashScreenWindow();
-                    desktop.MainWindow = splash;
-                    
-                    // MainWindow starts loading, will swap itself and close splash when ready
-                    var main = new MainWindow(splash);
+                    desktop.ShutdownMode = Avalonia.Controls.ShutdownMode.OnExplicitShutdown;
+
+                    var login = new Views.LoginWindow();
+                    login.Closed += (s, e) =>
+                    {
+                        if (login.IsAuthenticated)
+                        {
+                            desktop.ShutdownMode = Avalonia.Controls.ShutdownMode.OnLastWindowClose;
+                            var splash = new Views.SplashScreenWindow();
+                            desktop.MainWindow = splash;
+                            splash.Show();
+                            
+                            // MainWindow starts loading, will swap itself and close splash when ready
+                            var main = new MainWindow(splash);
+                        }
+                        else
+                        {
+                            desktop.Shutdown(0);
+                        }
+                    };
+                    desktop.MainWindow = login;
                 }
             }
 
