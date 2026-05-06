@@ -16,7 +16,11 @@ namespace EZKPM.Client.Desktop.Views
 
         public ConfirmationDialog(string message) : this()
         {
-            this.FindControl<TextBlock>("MessageTextBlock").Text = message;
+            var textBlock = this.FindControl<TextBlock>("MessageTextBlock");
+            if (textBlock != null)
+            {
+                textBlock.Text = message;
+            }
         }
 
         private void InitializeComponent()
