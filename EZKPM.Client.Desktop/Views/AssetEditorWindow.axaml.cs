@@ -84,6 +84,7 @@ public partial class AssetEditorWindow : Window
     private readonly ObservableCollection<AclEntryDto> _acls = new();
     private readonly ObservableCollection<AclGroupItemViewModel> _displayAcls = new();
     private Avalonia.Threading.DispatcherTimer? _totpTimer;
+    private readonly List<VaultAssetPayload> _allAssets;
 
     public event EventHandler? AssetSaved;
 
@@ -91,6 +92,7 @@ public partial class AssetEditorWindow : Window
     public AssetEditorWindow(VaultAssetPayload? payload = null, List<VaultAssetPayload>? allAssets = null)
     {
         InitializeComponent();
+        _allAssets = allAssets ?? new List<VaultAssetPayload>();
         
         _totpTimer = new Avalonia.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _totpTimer.Tick += TotpTimer_Tick;
@@ -1087,8 +1089,46 @@ public partial class AssetEditorWindow : Window
         }
     }
 
+    private bool IsCurrentlyInPrivateFolder()
+    {
+        string pName = EZKPM.Client.Desktop.Resources.AppStrings.Main_PrivateFolder ?? "Private";
+        
+        string currentType = (AssetTypeComboBox.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() ?? "Login";
+        string currentTitle = TitleTextBox.Text ?? "";
+        if (currentType == "Folder" && (currentTitle == "Privat" || currentTitle == "Private" || currentTitle == pName))
+        {
+            return true;
+        }
+
+        Guid? parentId = null;
+        if (ParentFolderComboBox.SelectedItem is FolderSelectionItem fItem)
+        {
+            parentId = fItem.Id;
+        }
+
+        while (parentId != null)
+        {
+            var parentFolder = _allAssets?.FirstOrDefault(a => a.TransientAssetId == parentId);
+            if (parentFolder == null) break;
+            
+            if (parentFolder.AssetType == "Folder" && (parentFolder.Title == "Privat" || parentFolder.Title == "Private" || parentFolder.Title == pName))
+            {
+                return true;
+            }
+            parentId = parentFolder.ParentFolderId;
+        }
+
+        return false;
+    }
+
     private async void AddAclButton_Click(object sender, RoutedEventArgs e)
     {
+        if (IsCurrentlyInPrivateFolder())
+        {
+            ShowStatus("Private Assets können nicht freigegeben werden. Bitte verschieben Sie das Asset zuvor in einen öffentlichen Ordner.", isWarning: true);
+            return;
+        }
+
         var picker = new AdPickerWindow();
         var result = await picker.ShowDialog<EZKPM.Client.Desktop.Services.AdPrincipal>(this);
         if (result != null)
