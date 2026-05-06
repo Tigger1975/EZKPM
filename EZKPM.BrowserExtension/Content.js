@@ -688,9 +688,21 @@ document.addEventListener('submit', (e) => {
         const formInputs = form.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="password"])');
         userField = Array.from(formInputs).find(el => el.value);
     }
+    let username = userField ? userField.value : "";
+
+    if (!pwdField) {
+        // Möglicherweise Schritt 1 eines 2-Schritt-Logins (nur Username eingetippt)
+        if (username) {
+            sessionStorage.setItem('ezkpm_last_typed_user', username);
+        }
+        return;
+    }
     
     if (pwdField && pwdField.value) {
-        const username = userField ? userField.value : "";
+        if (!username) {
+            // Versuche Username aus Schritt 1 wiederherzustellen, falls auf dieser Seite keiner ist
+            username = sessionStorage.getItem('ezkpm_last_typed_user') || "";
+        }
         const password = pwdField.value;
         
         // Anti-Loop: Dont save if we injected it recently
