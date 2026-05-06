@@ -48,9 +48,7 @@ public class AclGroupItemViewModel : System.ComponentModel.INotifyPropertyChange
 
     public bool IsDirectGroup => UnderlyingAcls.FirstOrDefault()?.SourceGroupName == "GROUP_MARKER";
     public string Icon => (IsDirectGroup || !string.IsNullOrEmpty(SourceGroupSid)) ? "👥" : "👤";
-    public string NameWithSource => (!string.IsNullOrEmpty(SourceGroupSid) && !IsDirectGroup)
-        ? $"{DisplayName} (via Gruppe)" 
-        : DisplayName;
+    public string NameWithSource => string.IsNullOrWhiteSpace(DisplayName) ? "Ersteller / Besitzer" : DisplayName;
 
     public System.Collections.Generic.List<EZKPM.Shared.Contracts.AclEntryDto> UnderlyingAcls { get; set; } = new();
 
