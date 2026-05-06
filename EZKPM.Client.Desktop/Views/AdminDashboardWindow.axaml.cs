@@ -38,12 +38,45 @@ public partial class AdminDashboardWindow : Window
 
     private async void SearchAdminButton_Click(object sender, RoutedEventArgs e)
     {
-        var picker = new AdPickerWindow();
+        var picker = new AdPickerWindow(EZKPM.Client.Desktop.Services.AdPickerFilterMode.ActiveOnly);
         await picker.ShowDialog(this);
 
         if (picker.SelectedPrincipal != null)
         {
             AdminSearchResultsList.ItemsSource = new[] { picker.SelectedPrincipal };
+        }
+    }
+
+    private async void SearchDisabledUserButton_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new AdPickerWindow(EZKPM.Client.Desktop.Services.AdPickerFilterMode.DisabledOnly);
+        await picker.ShowDialog(this);
+
+        if (picker.SelectedPrincipal != null)
+        {
+            TargetUserSidTextBox.Text = picker.SelectedPrincipal.Sid;
+        }
+    }
+
+    private async void PickSourcePersonButton_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new AdPickerWindow(EZKPM.Client.Desktop.Services.AdPickerFilterMode.ActiveOnly);
+        await picker.ShowDialog(this);
+        if (picker.SelectedPrincipal != null)
+        {
+            _sourcePerson = picker.SelectedPrincipal;
+            SourcePersonText.Text = $"{_sourcePerson.DisplayName} ({_sourcePerson.Sid})";
+        }
+    }
+
+    private async void PickTargetPersonButton_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new AdPickerWindow(EZKPM.Client.Desktop.Services.AdPickerFilterMode.ActiveOnly);
+        await picker.ShowDialog(this);
+        if (picker.SelectedPrincipal != null)
+        {
+            _targetPerson = picker.SelectedPrincipal;
+            TargetPersonText.Text = $"{_targetPerson.DisplayName} ({_targetPerson.Sid})";
         }
     }
 
@@ -168,28 +201,6 @@ public partial class AdminDashboardWindow : Window
 
     private EZKPM.Client.Desktop.Services.AdPrincipal _sourcePerson;
     private EZKPM.Client.Desktop.Services.AdPrincipal _targetPerson;
-
-    private async void PickSourcePersonButton_Click(object sender, RoutedEventArgs e)
-    {
-        var picker = new AdPickerWindow();
-        await picker.ShowDialog(this);
-        if (picker.SelectedPrincipal != null)
-        {
-            _sourcePerson = picker.SelectedPrincipal;
-            SourcePersonText.Text = $"{_sourcePerson.DisplayName} ({_sourcePerson.Sid})";
-        }
-    }
-
-    private async void PickTargetPersonButton_Click(object sender, RoutedEventArgs e)
-    {
-        var picker = new AdPickerWindow();
-        await picker.ShowDialog(this);
-        if (picker.SelectedPrincipal != null)
-        {
-            _targetPerson = picker.SelectedPrincipal;
-            TargetPersonText.Text = $"{_targetPerson.DisplayName} ({_targetPerson.Sid})";
-        }
-    }
 
     private async void LinkPersonsButton_Click(object sender, RoutedEventArgs e)
     {

@@ -11,16 +11,25 @@ namespace EZKPM.Client.Desktop.Views;
 public partial class AdPickerWindow : Window
 {
     public AdPrincipal? SelectedPrincipal { get; private set; }
+    private readonly AdPickerFilterMode _filterMode;
 
     public AdPickerWindow()
     {
         InitializeComponent();
+        _filterMode = AdPickerFilterMode.All;
+        _ = PerformSearch(""); // initial load
+    }
+
+    public AdPickerWindow(AdPickerFilterMode filterMode)
+    {
+        InitializeComponent();
+        _filterMode = filterMode;
         _ = PerformSearch(""); // initial load
     }
 
     private async System.Threading.Tasks.Task PerformSearch(string query)
     {
-        var results = await AdSearchService.SearchAsync(query);
+        var results = await AdSearchService.SearchAsync(query, _filterMode);
         ResultsListBox.ItemsSource = results;
     }
 

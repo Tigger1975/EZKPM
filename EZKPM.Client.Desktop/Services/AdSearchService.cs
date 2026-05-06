@@ -6,13 +6,22 @@ using System.Threading.Tasks;
 
 namespace EZKPM.Client.Desktop.Services;
 
+public enum AdPickerFilterMode
+{
+    All,
+    ActiveOnly,
+    DisabledOnly
+}
+
 public class AdPrincipal
 {
     public string DisplayName { get; set; } = "";
+    public string SamAccountName { get; set; } = "";
     public string Sid { get; set; } = "";
     public string Type { get; set; } = "User"; // "User" or "Group"
+    public bool IsAccountDisabled { get; set; } = false;
     
-    public override string ToString() => $"{DisplayName} ({Sid})";
+    public override string ToString() => $"{DisplayName} ({SamAccountName})";
 }
 
 public static class AdSearchService
@@ -23,6 +32,7 @@ public static class AdSearchService
         {
             var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
             string displayName = identity.Name;
+            string samAccountName = identity.Name.Split('\\').LastOrDefault() ?? identity.Name;
             
             try 
             {
@@ -33,6 +43,7 @@ public static class AdSearchService
                     if (user != null && !string.IsNullOrWhiteSpace(user.DisplayName))
                     {
                         displayName = user.DisplayName;
+                        samAccountName = user.SamAccountName;
                     }
                 }
             }
@@ -41,6 +52,7 @@ public static class AdSearchService
             return new AdPrincipal 
             { 
                 DisplayName = displayName, 
+                SamAccountName = samAccountName,
                 Sid = identity.User?.Value ?? Environment.UserDomainName + "\\" + Environment.UserName, 
                 Type = "User" 
             };
@@ -50,13 +62,14 @@ public static class AdSearchService
             return new AdPrincipal 
             { 
                 DisplayName = Environment.UserName, 
+                SamAccountName = Environment.UserName,
                 Sid = Environment.UserDomainName + "\\" + Environment.UserName, 
                 Type = "User" 
             };
         }
     }
 
-    public static async Task<List<AdPrincipal>> SearchAsync(string query)
+    public static async Task<List<AdPrincipal>> SearchAsync(string query, AdPickerFilterMode filterMode = AdPickerFilterMode.All)
     {
         return await Task.Run(() =>
         {
@@ -71,19 +84,41 @@ public static class AdSearchService
                 // 1. Search Users (Limit to 15)
                 using var userPrincipal = new UserPrincipal(context) { Name = $"*{query}*" };
                 using var userSearcher = new PrincipalSearcher(userPrincipal);
-                var users = userSearcher.FindAll().Take(15);
-                foreach (var p in users)
+                var users = userSearcher.FindAll().OfType<UserPrincipal>();
+                
+                foreach (var u in users)
                 {
-                    results.Add(new AdPrincipal { DisplayName = p.DisplayName ?? p.Name, Sid = p.Sid?.Value ?? "", Type = "User" });
+                    bool isEnabled = u.Enabled ?? true;
+                    if (filterMode == AdPickerFilterMode.ActiveOnly && !isEnabled) continue;
+                    if (filterMode == AdPickerFilterMode.DisabledOnly && isEnabled) continue;
+
+                    results.Add(new AdPrincipal 
+                    { 
+                        DisplayName = u.DisplayName ?? u.Name, 
+                        SamAccountName = u.SamAccountName,
+                        Sid = u.Sid?.Value ?? "", 
+                        Type = "User",
+                        IsAccountDisabled = !isEnabled
+                    });
+                    if (results.Count >= 15) break;
                 }
 
                 // 2. Search Groups (Limit to 15)
-                using var groupPrincipal = new GroupPrincipal(context) { Name = $"*{query}*" };
-                using var groupSearcher = new PrincipalSearcher(groupPrincipal);
-                var groups = groupSearcher.FindAll().Take(15);
-                foreach (var p in groups)
+                if (filterMode != AdPickerFilterMode.DisabledOnly)
                 {
-                    results.Add(new AdPrincipal { DisplayName = p.DisplayName ?? p.Name, Sid = p.Sid?.Value ?? "", Type = "Group" });
+                    using var groupPrincipal = new GroupPrincipal(context) { Name = $"*{query}*" };
+                    using var groupSearcher = new PrincipalSearcher(groupPrincipal);
+                    var groups = groupSearcher.FindAll().OfType<GroupPrincipal>().Take(15);
+                    foreach (var p in groups)
+                    {
+                        results.Add(new AdPrincipal 
+                        { 
+                            DisplayName = p.DisplayName ?? p.Name, 
+                            SamAccountName = p.SamAccountName,
+                            Sid = p.Sid?.Value ?? "", 
+                            Type = "Group" 
+                        });
+                    }
                 }
             }
             catch (Exception)
@@ -94,18 +129,33 @@ public static class AdSearchService
                     using var localContext = new PrincipalContext(ContextType.Machine);
                     using var userPrincipal = new UserPrincipal(localContext) { Name = $"*{query}*" };
                     using var userSearcher = new PrincipalSearcher(userPrincipal);
-                    var users = userSearcher.FindAll().Take(15);
-                    foreach (var p in users)
+                    var users = userSearcher.FindAll().OfType<UserPrincipal>();
+                    foreach (var u in users)
                     {
-                        results.Add(new AdPrincipal { DisplayName = p.DisplayName ?? p.Name, Sid = p.Sid?.Value ?? "", Type = "User" });
+                        bool isEnabled = u.Enabled ?? true;
+                        if (filterMode == AdPickerFilterMode.ActiveOnly && !isEnabled) continue;
+                        if (filterMode == AdPickerFilterMode.DisabledOnly && isEnabled) continue;
+
+                        results.Add(new AdPrincipal 
+                        { 
+                            DisplayName = u.DisplayName ?? u.Name, 
+                            SamAccountName = u.SamAccountName,
+                            Sid = u.Sid?.Value ?? "", 
+                            Type = "User",
+                            IsAccountDisabled = !isEnabled
+                        });
+                        if (results.Count >= 15) break;
                     }
                     
-                    using var groupPrincipal = new GroupPrincipal(localContext) { Name = $"*{query}*" };
-                    using var groupSearcher = new PrincipalSearcher(groupPrincipal);
-                    var groups = groupSearcher.FindAll().Take(15);
-                    foreach (var p in groups)
+                    if (filterMode != AdPickerFilterMode.DisabledOnly)
                     {
-                        results.Add(new AdPrincipal { DisplayName = p.DisplayName ?? p.Name, Sid = p.Sid?.Value ?? "", Type = "Group" });
+                        using var groupPrincipal = new GroupPrincipal(localContext) { Name = $"*{query}*" };
+                        using var groupSearcher = new PrincipalSearcher(groupPrincipal);
+                        var groups = groupSearcher.FindAll().Take(15);
+                        foreach (var p in groups)
+                        {
+                            results.Add(new AdPrincipal { DisplayName = p.DisplayName ?? p.Name, SamAccountName = p.Name, Sid = p.Sid?.Value ?? "", Type = "Group" });
+                        }
                     }
                 }
                 catch { /* Ignore errors */ }

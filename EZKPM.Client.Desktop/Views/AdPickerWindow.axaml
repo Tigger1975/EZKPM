@@ -22,7 +22,13 @@
                         <TextBlock Text="👤" IsVisible="{Binding Type, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='User'}" VerticalAlignment="Center"/>
                         <TextBlock Text="👥" IsVisible="{Binding Type, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Group'}" VerticalAlignment="Center"/>
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding SamAccountName, StringFormat='({0})'}" Foreground="#6B7280" VerticalAlignment="Center" />
+                                <Border Background="#EF4444" CornerRadius="3" Padding="3,1" IsVisible="{Binding IsAccountDisabled}" VerticalAlignment="Center">
+                                    <TextBlock Text="Gesperrt" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                </Border>
+                            </StackPanel>
                             <TextBlock Text="{Binding Sid}" FontSize="11" Foreground="#6B7280" />
                         </StackPanel>
                     </StackPanel>

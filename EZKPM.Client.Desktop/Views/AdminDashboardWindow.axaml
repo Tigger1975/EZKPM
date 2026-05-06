@@ -70,6 +70,7 @@
                         <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
                             <TextBlock Text="Ziel-User SID:" VerticalAlignment="Center"/>
                             <TextBox x:Name="TargetUserSidTextBox" Width="200" Watermark="S-1-5-21-..."/>
+                            <Button Content="Suchen..." Click="SearchDisabledUserButton_Click" />
                         </StackPanel>
                     </StackPanel>
                     
