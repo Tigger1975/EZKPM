@@ -412,6 +412,150 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die 🗑️ Clean Up ähnelt.
+        /// </summary>
+        public static string Main_BtnClean {
+            get {
+                return ResourceManager.GetString("Main_BtnClean", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Permanently deletes all orphaned assets ähnelt.
+        /// </summary>
+        public static string Main_BtnCleanTooltip {
+            get {
+                return ResourceManager.GetString("Main_BtnCleanTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die 🗑️ Delete ähnelt.
+        /// </summary>
+        public static string Main_BtnDelete {
+            get {
+                return ResourceManager.GetString("Main_BtnDelete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die 📥 Import ähnelt.
+        /// </summary>
+        public static string Main_BtnImport {
+            get {
+                return ResourceManager.GetString("Main_BtnImport", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die 🔄 Restore ähnelt.
+        /// </summary>
+        public static string Main_BtnRestore {
+            get {
+                return ResourceManager.GetString("Main_BtnRestore", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Description ähnelt.
+        /// </summary>
+        public static string Main_ColDesc {
+            get {
+                return ResourceManager.GetString("Main_ColDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Name ähnelt.
+        /// </summary>
+        public static string Main_ColName {
+            get {
+                return ResourceManager.GetString("Main_ColName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Path ähnelt.
+        /// </summary>
+        public static string Main_ColPath {
+            get {
+                return ResourceManager.GetString("Main_ColPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Type ähnelt.
+        /// </summary>
+        public static string Main_ColType {
+            get {
+                return ResourceManager.GetString("Main_ColType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die All Types ähnelt.
+        /// </summary>
+        public static string Main_FilterAll {
+            get {
+                return ResourceManager.GetString("Main_FilterAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Expired (Rotation) ähnelt.
+        /// </summary>
+        public static string Main_FilterExpired {
+            get {
+                return ResourceManager.GetString("Main_FilterExpired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Recycle Bin ähnelt.
+        /// </summary>
+        public static string Main_FilterTrash {
+            get {
+                return ResourceManager.GetString("Main_FilterTrash", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die EXPIRED ähnelt.
+        /// </summary>
+        public static string Main_LblExpired {
+            get {
+                return ResourceManager.GetString("Main_LblExpired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Settings &amp; Change Server ähnelt.
+        /// </summary>
+        public static string Main_MenuSettings {
+            get {
+                return ResourceManager.GetString("Main_MenuSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Search... ähnelt.
+        /// </summary>
+        public static string Main_SearchWatermark {
+            get {
+                return ResourceManager.GetString("Main_SearchWatermark", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die 🗂️ Assets ähnelt.
+        /// </summary>
+        public static string Main_TabAssets {
+            get {
+                return ResourceManager.GetString("Main_TabAssets", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Cancel ähnelt.
         /// </summary>
         public static string PwdPrompt_BtnCancel {

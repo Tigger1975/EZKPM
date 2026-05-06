@@ -290,9 +290,57 @@
   <data name="AssetEditor_AclApplyChildren" xml:space="preserve">
     <value>Propagate access rights (ACL) to all child assets (Overwrites existing rights)</value>
   </data>
-
   <data name="ServerConfig_BtnCancel" xml:space="preserve">
     <value>Cancel</value>
+  </data>
+
+  <data name="Main_MenuSettings" xml:space="preserve">
+    <value>Settings &amp; Change Server</value>
+  </data>
+  <data name="Main_TabAssets" xml:space="preserve">
+    <value>🗂️ Assets</value>
+  </data>
+  <data name="Main_SearchWatermark" xml:space="preserve">
+    <value>Search...</value>
+  </data>
+  <data name="Main_FilterAll" xml:space="preserve">
+    <value>All Types</value>
+  </data>
+  <data name="Main_FilterExpired" xml:space="preserve">
+    <value>Expired (Rotation)</value>
+  </data>
+  <data name="Main_FilterTrash" xml:space="preserve">
+    <value>Recycle Bin</value>
+  </data>
+  <data name="Main_BtnImport" xml:space="preserve">
+    <value>📥 Import</value>
+  </data>
+  <data name="Main_BtnClean" xml:space="preserve">
+    <value>🗑️ Clean Up</value>
+  </data>
+  <data name="Main_BtnCleanTooltip" xml:space="preserve">
+    <value>Permanently deletes all orphaned assets</value>
+  </data>
+  <data name="Main_BtnRestore" xml:space="preserve">
+    <value>🔄 Restore</value>
+  </data>
+  <data name="Main_BtnDelete" xml:space="preserve">
+    <value>🗑️ Delete</value>
+  </data>
+  <data name="Main_ColType" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Main_ColName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Main_LblExpired" xml:space="preserve">
+    <value>EXPIRED</value>
+  </data>
+  <data name="Main_ColPath" xml:space="preserve">
+    <value>Path</value>
+  </data>
+  <data name="Main_ColDesc" xml:space="preserve">
+    <value>Description</value>
   </data>
 
 </root>

@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:contracts="clr-namespace:EZKPM.Shared.Contracts;assembly=EZKPM.Shared.Contracts"
         xmlns:local="clr-namespace:EZKPM.Client.Desktop"
+        xmlns:res="using:EZKPM.Client.Desktop.Resources"
         Width="1200" Height="800"
         WindowStartupLocation="CenterScreen"
         FontFamily="Inter, sans-serif"
@@ -122,7 +123,7 @@
                 <Grid Grid.Row="2" ColumnDefinitions="*, *, Auto" Margin="0,20,0,0">
                     <Button Grid.Column="0" Classes="success" Content="+ Asset" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,5,0" Click="NewAssetButton_Click"/>
                     <Button Grid.Column="1" Classes="outline" Content="+ Folder" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="5,0,5,0" Click="NewFolderButton_Click"/>
-                    <Button Grid.Column="2" Classes="outline" Content="⚙️" ToolTip.Tip="Einstellungen &amp; Server wechseln" Click="ChangeServerMenuItem_Click" />
+                    <Button Grid.Column="2" Classes="outline" Content="⚙️" ToolTip.Tip="{x:Static res:AppStrings.Main_MenuSettings}" Click="ChangeServerMenuItem_Click" />
                 </Grid>
             </Grid>
         </Border>
@@ -131,15 +132,15 @@
         <!-- Main Area -->
         <Grid Grid.Column="1" RowDefinitions="*, Auto">
             <TabControl Grid.Row="0" x:Name="MainTabControl" Margin="10">
-                <TabItem Header="🗂️ Assets" x:Name="AssetListTab">
+                <TabItem Header="{x:Static res:AppStrings.Main_TabAssets}" x:Name="AssetListTab">
                     <Grid RowDefinitions="Auto, *">
                         <!-- Toolbar -->
                         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10" Spacing="10">
-                            <TextBox x:Name="SearchTextBox" PlaceholderText="Suchen..." Width="250" TextChanged="SearchTextBox_TextChanged" />
+                            <TextBox x:Name="SearchTextBox" PlaceholderText="{x:Static res:AppStrings.Main_SearchWatermark}" Width="250" TextChanged="SearchTextBox_TextChanged" />
                             <ComboBox x:Name="TypeFilterComboBox" Width="150" SelectedIndex="0" SelectionChanged="TypeFilterComboBox_SelectionChanged">
-                                <ComboBoxItem Content="Alle Typen" />
-                                <ComboBoxItem Content="Abgelaufen (Rotation)" />
-                                <ComboBoxItem Content="Papierkorb" />
+                                <ComboBoxItem Content="{x:Static res:AppStrings.Main_FilterAll}" />
+                                <ComboBoxItem Content="{x:Static res:AppStrings.Main_FilterExpired}" />
+                                <ComboBoxItem Content="{x:Static res:AppStrings.Main_FilterTrash}" />
                                 <ComboBoxItem Content="Login" />
                                 <ComboBoxItem Content="Passkey" />
                                 <ComboBoxItem Content="Payment" />
@@ -149,15 +150,15 @@
                                 <ComboBoxItem Content="API Key" />
                                 <ComboBoxItem Content="Authenticator" />
                             </ComboBox>
-                            <Button Content="📥 Importieren" Classes="outline" Click="ImportKeePass_Click" />
-                            <Button Content="🗑️ Bereinigen" Classes="outline" Click="CleanOrphans_Click" ToolTip.Tip="Löscht endgültig alle Assets ohne Owner (Datenmüll)" />
-                            <Button x:Name="RestoreSelectedAssetsButton" Content="🔄 Wiederherstellen" Classes="outline" Click="RestoreSelectedAssets_Click" Foreground="#10B981" BorderBrush="#10B981" IsVisible="False" />
-                            <Button Content="🗑️ Löschen" Classes="outline" Click="DeleteSelectedAssets_Click" Foreground="#EF4444" BorderBrush="#EF4444" />
+                            <Button Content="{x:Static res:AppStrings.Main_BtnImport}" Classes="outline" Click="ImportKeePass_Click" />
+                            <Button Content="{x:Static res:AppStrings.Main_BtnClean}" Classes="outline" Click="CleanOrphans_Click" ToolTip.Tip="{x:Static res:AppStrings.Main_BtnCleanTooltip}" />
+                            <Button x:Name="RestoreSelectedAssetsButton" Content="{x:Static res:AppStrings.Main_BtnRestore}" Classes="outline" Click="RestoreSelectedAssets_Click" Foreground="#10B981" BorderBrush="#10B981" IsVisible="False" />
+                            <Button Content="{x:Static res:AppStrings.Main_BtnDelete}" Classes="outline" Click="DeleteSelectedAssets_Click" Foreground="#EF4444" BorderBrush="#EF4444" />
                         </StackPanel>
 
                         <DataGrid Grid.Row="1" x:Name="AssetsDataGrid" x:DataType="contracts:VaultAssetPayload" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All" BorderThickness="1" BorderBrush="#E5E7EB" DoubleTapped="AssetsDataGrid_DoubleTapped" Background="White" SelectionMode="Extended" CanUserSortColumns="True">
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="Typ" Width="60" SortMemberPath="AssetType">
+                                <DataGridTemplateColumn Header="{x:Static res:AppStrings.Main_ColType}" Width="60" SortMemberPath="AssetType">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="contracts:VaultAssetPayload">
                                             <TextBlock Text="{Binding AssetType, Converter={StaticResource IconConverter}}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -165,21 +166,21 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="Name" Width="2*" SortMemberPath="Title">
+                                <DataGridTemplateColumn Header="{x:Static res:AppStrings.Main_ColName}" Width="2*" SortMemberPath="Title">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="contracts:VaultAssetPayload">
                                             <StackPanel Orientation="Horizontal" Spacing="5" Margin="5,0" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
                                                 <Border Background="#EF4444" CornerRadius="3" Padding="4,2" VerticalAlignment="Center" IsVisible="{Binding IsExpired}">
-                                                    <TextBlock Text="ABGELAUFEN" Foreground="White" FontSize="10" FontWeight="Bold" />
+                                                    <TextBlock Text="{x:Static res:AppStrings.Main_LblExpired}" Foreground="White" FontSize="10" FontWeight="Bold" />
                                                 </Border>
                                             </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Pfad" Binding="{Binding FullPath}" Width="2*" Foreground="#6B7280" />
+                                <DataGridTextColumn Header="{x:Static res:AppStrings.Main_ColPath}" Binding="{Binding FullPath}" Width="2*" Foreground="#6B7280" />
 
-                                <DataGridTemplateColumn Header="Beschreibung" Width="3*" SortMemberPath="DetailedDescription">
+                                <DataGridTemplateColumn Header="{x:Static res:AppStrings.Main_ColDesc}" Width="3*" SortMemberPath="DetailedDescription">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="contracts:VaultAssetPayload">
                                             <TextBlock Text="{Binding DetailedDescription}" TextWrapping="Wrap" MaxLines="3" TextTrimming="CharacterEllipsis" Margin="5" VerticalAlignment="Center" />
