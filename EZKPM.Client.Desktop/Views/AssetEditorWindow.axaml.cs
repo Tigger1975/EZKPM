@@ -225,7 +225,7 @@ public partial class AssetEditorWindow : Window
 
             if (payload.AutoType != null)
             {
-                AutoTypePatternTextBox.Text = payload.AutoType.Pattern ?? "{USERNAME}{TAB}{PASSWORD}{ENTER}";
+                AutoTypePatternTextBox.Text = payload.AutoType.Pattern ?? "";
                 AutoTypeModeComboBox.SelectedIndex = payload.AutoType.Mode == 2 ? 1 : (payload.AutoType.Mode == 3 ? 2 : 0);
                 
                 var tbTitle = this.FindControl<TextBox>("TargetWindowTitleTextBox");
@@ -332,7 +332,7 @@ public partial class AssetEditorWindow : Window
         DomNextTextBox.Text = "";
         DomSubmitTextBox.Text = "";
 
-        AutoTypePatternTextBox.Text = "{USERNAME}{TAB}{PASSWORD}{ENTER}";
+        AutoTypePatternTextBox.Text = "";
         AutoTypeModeComboBox.SelectedIndex = 0;
         
         var tbTitle = this.FindControl<TextBox>("TargetWindowTitleTextBox");
@@ -619,7 +619,7 @@ public partial class AssetEditorWindow : Window
 
                 AutoType = new AutoTypeConfig
                 {
-                    Pattern = AutoTypePatternTextBox.Text ?? "{USERNAME}{TAB}{PASSWORD}{ENTER}",
+                    Pattern = AutoTypePatternTextBox.Text ?? "",
                     Mode = AutoTypeModeComboBox.SelectedIndex + 1,
                     TargetWindowTitle = this.FindControl<TextBox>("TargetWindowTitleTextBox")?.Text ?? "",
                     TargetProcessName = this.FindControl<TextBox>("TargetProcessNameTextBox")?.Text ?? "",
@@ -779,6 +779,22 @@ public partial class AssetEditorWindow : Window
         }
     }
 
+    private void PlaceholderButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Content is string placeholder)
+        {
+            var textBox = AutoTypePatternTextBox;
+            if (textBox == null) return;
+
+            int caretIndex = textBox.CaretIndex;
+            string text = textBox.Text ?? "";
+            
+            textBox.Text = text.Insert(caretIndex, placeholder);
+            textBox.CaretIndex = caretIndex + placeholder.Length;
+            textBox.Focus();
+        }
+    }
+
     private async void PerformAutoTypeButton_Click(object sender, RoutedEventArgs e)
     {
         if (!Services.SessionManager.EnsureAuthenticated("Auto-Type ausführen")) return;
@@ -786,7 +802,7 @@ public partial class AssetEditorWindow : Window
         // Hide window temporarily so focus goes back to the underlying app
         this.WindowState = WindowState.Minimized;
         
-        string pattern = AutoTypePatternTextBox.Text ?? "{USERNAME}{TAB}{PASSWORD}{ENTER}";
+        string pattern = AutoTypePatternTextBox.Text ?? "";
         int mode = AutoTypeModeComboBox.SelectedIndex + 1; // 1 = RandomChunks, 2 = FullBlock, 3 = Keystrokes
         string username = UsernameTextBox.Text ?? "";
         string password = PasswordTextBox.Text ?? "";

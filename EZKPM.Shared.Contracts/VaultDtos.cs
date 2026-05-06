@@ -90,7 +90,7 @@ namespace EZKPM.Shared.Contracts
 
     public class AutoTypeConfig
     {
-        public string Pattern { get; set; } = "{USERNAME}{TAB}{PASSWORD}{ENTER}";
+        public string Pattern { get; set; } = "";
         // Modes: 1 = RandomChunks, 2 = FullBlock, 3 = Keystrokes
         public int Mode { get; set; } = 1; 
 
@@ -158,6 +158,6 @@ namespace EZKPM.Shared.Contracts
         public AutoTypeConfig AutoType { get; set; } = new AutoTypeConfig();
 
         [System.Text.Json.Serialization.JsonIgnore]
-        public bool HasAutoTypeConfigured => AssetType != "Folder" && AutoType != null && (!string.IsNullOrEmpty(AutoType.TargetWindowTitle) || !string.IsNullOrEmpty(AutoType.TargetProcessName));
+        public bool HasAutoTypeConfigured => AssetType != "Folder" && AutoType != null && !string.IsNullOrEmpty(AutoType.Pattern);
     }
 }
