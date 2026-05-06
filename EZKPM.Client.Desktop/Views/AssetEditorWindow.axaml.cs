@@ -46,10 +46,11 @@ public class AclGroupItemViewModel : System.ComponentModel.INotifyPropertyChange
     public bool IsInherited { get; set; } = false;
     public string SourceGroupSid { get; set; } = "";
 
-    public string Icon => string.IsNullOrEmpty(SourceGroupSid) ? "👤" : "👥";
-    public string NameWithSource => string.IsNullOrEmpty(SourceGroupSid) 
-        ? DisplayName 
-        : $"{DisplayName} (via Gruppe)";
+    public bool IsDirectGroup => UnderlyingAcls.FirstOrDefault()?.SourceGroupName == "GROUP_MARKER";
+    public string Icon => (IsDirectGroup || !string.IsNullOrEmpty(SourceGroupSid)) ? "👥" : "👤";
+    public string NameWithSource => (!string.IsNullOrEmpty(SourceGroupSid) && !IsDirectGroup)
+        ? $"{DisplayName} (via Gruppe)" 
+        : DisplayName;
 
     public System.Collections.Generic.List<EZKPM.Shared.Contracts.AclEntryDto> UnderlyingAcls { get; set; } = new();
 
@@ -176,6 +177,12 @@ public partial class AssetEditorWindow : Window
             {
                 isInheritingBox.IsVisible = payload.ParentFolderId != null;
                 isInheritingBox.IsChecked = payload.IsInheriting;
+            }
+            
+            var applyToChildrenBox = this.FindControl<CheckBox>("ApplyToChildrenCheckBox");
+            if (applyToChildrenBox != null)
+            {
+                applyToChildrenBox.IsChecked = payload.PropagateAclsToChildren;
             }
 
             // Select parent folder if any
@@ -590,6 +597,8 @@ public partial class AssetEditorWindow : Window
                 TotpSecret = this.FindControl<TextBox>("TotpSecretTextBox")?.Text ?? "",
                 PasswordValidityDays = (int)ValidityDaysControl.Value.GetValueOrDefault(365),
                 RequiresAuditLog = RequiresAuditLogCheckBox.IsChecked == true,
+                IsInheriting = this.FindControl<CheckBox>("IsInheritingCheckBox")?.IsChecked ?? true,
+                PropagateAclsToChildren = this.FindControl<CheckBox>("ApplyToChildrenCheckBox")?.IsChecked == true,
                 
                 PaymentSubType = PaymentSubTypeComboBox.SelectedIndex == 1 ? "Service" : "Card",
                 CardHolder = CardHolderTextBox.Text ?? "",
@@ -629,54 +638,14 @@ public partial class AssetEditorWindow : Window
                 },
 
                 Attachments = _attachments.ToList(),
-                CustomFields = _customFields.ToList(),
-                IsInheriting = this.FindControl<CheckBox>("IsInheritingCheckBox")?.IsChecked == true
+                CustomFields = _customFields.ToList()
             }; // End of payload initializer
 
-            // AD Group Resolution (AGDLP) - "Auflösung erst beim Speicher machen"
             var rawAcls = _acls.Where(a => !string.IsNullOrWhiteSpace(a.AdSid)).ToList();
-            var expandedAcls = new List<EZKPM.Shared.Contracts.AclEntryDto>();
-
-            foreach (var a in rawAcls)
-            {
-                var cleanSid = a.AdSid;
-                if (cleanSid.Contains("(") && cleanSid.Contains(")"))
-                {
-                    var start = cleanSid.LastIndexOf("(") + 1;
-                    var end = cleanSid.LastIndexOf(")");
-                    if (end > start) cleanSid = cleanSid.Substring(start, end - start);
-                }
-
-                // Check if it's a group by trying to get members
-                var members = await Services.AdSearchService.GetGroupMembersAsync(cleanSid);
-                if (members != null && members.Count > 0)
-                {
-                    // It's a group, add all recursive members
-                    foreach (var m in members)
-                    {
-                        expandedAcls.Add(new EZKPM.Shared.Contracts.AclEntryDto 
-                        { 
-                            AdSid = m.Sid, 
-                            PermissionLevel = a.PermissionLevel, 
-                            EncryptedKeyShare = a.EncryptedKeyShare 
-                        });
-                    }
-                }
-                else
-                {
-                    // It's a user (or group with no members)
-                    expandedAcls.Add(new EZKPM.Shared.Contracts.AclEntryDto 
-                    { 
-                        AdSid = cleanSid, 
-                        PermissionLevel = a.PermissionLevel, 
-                        EncryptedKeyShare = a.EncryptedKeyShare 
-                    });
-                }
-            }
 
             // Apply priority resolution for overlapping group memberships
             // Deny (-1) -> None (0) -> Execute (1) -> Read (2) -> Owner (3)
-            payload.Acls = expandedAcls
+            payload.Acls = rawAcls
                 .GroupBy(a => a.AdSid)
                 .Select(g => 
                 {
@@ -1085,6 +1054,12 @@ public partial class AssetEditorWindow : Window
                 SourceGroupSid = first.SourceGroupSid,
                 UnderlyingAcls = g.ToList()
             };
+            
+            if (first.SourceGroupName == "GROUP_MARKER")
+            {
+                vm.DisplayName = first.DisplayName;
+            }
+
             _displayAcls.Add(vm);
         }
     }
@@ -1133,44 +1108,21 @@ public partial class AssetEditorWindow : Window
         var result = await picker.ShowDialog<EZKPM.Client.Desktop.Services.AdPrincipal>(this);
         if (result != null)
         {
-            if (result.Type == "Group")
+            if (!_acls.Any(a => a.AdSid == result.Sid))
             {
-                ShowStatus($"Löse AD-Gruppe '{result.DisplayName}' auf...", isWarning: true);
-                var members = await EZKPM.Client.Desktop.Services.AdSearchService.GetGroupMembersAsync(result.Sid);
+                var newAcl = new AclEntryDto
+                {
+                    AdSid = result.Sid,
+                    DisplayName = result.DisplayName,
+                    PermissionLevel = 3 // Standard Besitzer
+                };
                 
-                if (members.Count == 0)
+                if (result.Type == "Group")
                 {
-                    ShowStatus($"Warnung: Die AD-Gruppe '{result.DisplayName}' ist leer.", isWarning: true);
+                    newAcl.SourceGroupName = "GROUP_MARKER";
                 }
-                else
-                {
-                    foreach (var member in members)
-                    {
-                        if (!_acls.Any(a => a.AdSid == member.Sid && a.SourceGroupSid == result.Sid))
-                        {
-                            _acls.Add(new AclEntryDto 
-                            { 
-                                AdSid = member.Sid, 
-                                DisplayName = member.DisplayName, 
-                                PermissionLevel = 1, // Default Execute
-                                SourceGroupSid = result.Sid,
-                                SourceGroupName = result.DisplayName
-                            });
-                        }
-                    }
-                    ShowStatus($"Gruppe aufgelöst: {members.Count} Nutzer hinzugefügt.");
-                }
-            }
-            else
-            {
-                if (!_acls.Any(a => a.AdSid == result.Sid))
-                {
-                    _acls.Add(new AclEntryDto { 
-                        AdSid = result.Sid, 
-                        DisplayName = result.DisplayName, 
-                        PermissionLevel = 1 
-                    });
-                }
+                
+                _acls.Add(newAcl);
             }
             RefreshDisplayAcls();
         }

@@ -120,6 +120,7 @@ namespace EZKPM.Shared.Contracts
 
         public Guid? ParentFolderId { get; set; } // Für die Tree-Struktur
         public bool IsInheriting { get; set; } = true; // Ob Rechte vom ParentFolderId geerbt werden
+        public bool PropagateAclsToChildren { get; set; } = false; // Ob Rechte an untergeordnete Elemente weitergegeben werden
 
         public string AssetType { get; set; } // Folder, Login, Payment, SecureNote
         public string Title { get; set; }
