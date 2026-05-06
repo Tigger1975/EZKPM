@@ -15,13 +15,13 @@ namespace EZKPM.Client.Desktop.Services
     {
         private static void Log(string msg) => File.AppendAllText(@"C:\Users\adm-kh\ezkpm_bridge_server.log", $"[{DateTime.Now:HH:mm:ss}] {msg}\n");
         private readonly Func<IEnumerable<VaultAssetPayload>> _getDecryptedAssetsFunc;
-        private readonly Func<Guid, Task<bool>> _requestAuditFunc;
+        private readonly Func<Guid, bool, string, Task<bool>> _requestAuditFunc;
         private CancellationTokenSource _cts;
 
         public Action<string> OnCredentialProvided { get; set; }
         public Action<VaultAssetPayload> OnSaveNewCredentialRequested { get; set; }
 
-        public BrowserBridgeServer(Func<IEnumerable<VaultAssetPayload>> getDecryptedAssetsFunc, Func<Guid, Task<bool>> requestAuditFunc)
+        public BrowserBridgeServer(Func<IEnumerable<VaultAssetPayload>> getDecryptedAssetsFunc, Func<Guid, bool, string, Task<bool>> requestAuditFunc)
         {
             _getDecryptedAssetsFunc = getDecryptedAssetsFunc;
             _requestAuditFunc = requestAuditFunc;
@@ -174,9 +174,14 @@ namespace EZKPM.Client.Desktop.Services
                             bool isApproved = true;
 
                             // FA 22: Audit Log enforcing ONLY for Payment assets!
+                            // New: Silent Audit Logging for assets flagged with RequiresAuditLog
                             if (asset.AssetType == "Payment")
                             {
-                                isApproved = await _requestAuditFunc(assetId);
+                                isApproved = await _requestAuditFunc(assetId, true, null);
+                            }
+                            else if (asset.RequiresAuditLog)
+                            {
+                                isApproved = await _requestAuditFunc(assetId, false, "Autofill / Password fetch via Browser Extension");
                             }
                             
                             if (isApproved)

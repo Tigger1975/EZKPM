@@ -112,37 +112,55 @@ public partial class MainWindow : Window
         });
     }
 
-    private async Task<bool> RequestAuditAsync(Guid assetId)
+    private async Task<bool> RequestAuditAsync(Guid assetId, bool requireInteractive, string silentReason = "Auto-Logged Access")
     {
         var tcs = new TaskCompletionSource<bool>();
-        Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+        var asset = _decryptedAssets.FirstOrDefault(a => a.TransientAssetId == assetId);
+        if (asset == null) return false;
+
+        if (requireInteractive)
         {
-            try
+            Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
             {
-                var dialog = new Views.AuditDialog();
-                // If MainWindow is visible, show as dialog, else just show it
-                var result = await dialog.ShowAuditPromptAsync();
-                
-                if (result.IsAuthorized)
+                try
                 {
-                    // Update AuditLog on server (FA 22)
-                    var asset = _decryptedAssets.FirstOrDefault(a => a.TransientAssetId == assetId);
-                    if (asset != null)
+                    var dialog = new Views.AuditDialog();
+                    // If MainWindow is visible, show as dialog, else just show it
+                    var result = await dialog.ShowAuditPromptAsync();
+                    
+                    if (result.IsAuthorized)
                     {
+                        // Update AuditLog on server (FA 22)
                         byte[] previousHash = await _apiClient.GetLatestAuditHashAsync(assetId);
                         var req = _cryptoService.CreateAuditLogRequest($"Order: {result.OrderId}, Amount: {result.Amount}", previousHash);
                         await _apiClient.AppendAuditLogAsync(assetId, req);
                     }
+                    
+                    tcs.SetResult(result.IsAuthorized);
                 }
-                
-                tcs.SetResult(result.IsAuthorized);
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Audit Request Error: {ex.Message}");
+                    tcs.SetResult(false);
+                }
+            });
+        }
+        else
+        {
+            try
+            {
+                byte[] previousHash = await _apiClient.GetLatestAuditHashAsync(assetId);
+                var req = _cryptoService.CreateAuditLogRequest(silentReason, previousHash);
+                await _apiClient.AppendAuditLogAsync(assetId, req);
+                tcs.SetResult(true);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Audit Request Error: {ex.Message}");
+                Console.WriteLine($"Silent Audit Logging Error: {ex.Message}");
                 tcs.SetResult(false);
             }
-        });
+        }
+        
         return await tcs.Task;
     }
 

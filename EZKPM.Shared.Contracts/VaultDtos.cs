@@ -119,7 +119,7 @@ namespace EZKPM.Shared.Contracts
         public string TotpSecret { get; set; } // Base32 Secret für Authenticator
 
         public int PasswordValidityDays { get; set; } = 365; // Max 1 Jahr
-
+        public bool RequiresAuditLog { get; set; } = false; // Whether access requires an audit log entry
         // Payment fields
         public string PaymentSubType { get; set; } = "Card"; // "Card" or "Service"
         public string CardHolder { get; set; }

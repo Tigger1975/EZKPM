@@ -458,4 +458,208 @@ Bitte schreiben Sie es auf! Einloggen in 8 Sekunden...</value>
   <data name="Main_PrivateFolder" xml:space="preserve">
     <value>Privat</value>
   </data>
+  <data name="AssetEditor_ComboTwo" xml:space="preserve">
+    <value>TwoStep (Benutzername -&gt; Weiter -&gt; Passwort)</value>
+  </data>
+  <data name="AssetEditor_PhNoFile" xml:space="preserve">
+    <value>Keine Datei ausgewählt...</value>
+  </data>
+  <data name="AssetEditor_ChkLower" xml:space="preserve">
+    <value>Kleinbuchstaben (a-z)</value>
+  </data>
+  <data name="AssetEditor_Duplicate" xml:space="preserve">
+    <value>Doppeltes Asset</value>
+  </data>
+  <data name="AssetEditor_LblDetailedDesc" xml:space="preserve">
+    <value>Detaillierte Beschreibung</value>
+  </data>
+  <data name="AssetEditor_AclRead" xml:space="preserve">
+    <value>Lesen (2)</value>
+  </data>
+  <data name="AssetEditor_HdrAuto" xml:space="preserve">
+    <value>Login-Automatisierungseinstellungen (Browsererweiterung)</value>
+  </data>
+  <data name="AssetEditor_PayCard" xml:space="preserve">
+    <value>Kredit-/Debitkarte</value>
+  </data>
+  <data name="AssetEditor_TabSettings" xml:space="preserve">
+    <value>Einstellungen &amp; Ablauf</value>
+  </data>
+  <data name="AssetEditor_TabVars" xml:space="preserve">
+    <value>Benutzerdefinierte Variablen</value>
+  </data>
+  <data name="AssetEditor_PhTitle" xml:space="preserve">
+    <value>z.B. Mein Bankkonto</value>
+  </data>
+  <data name="AssetEditor_ChkNumbers" xml:space="preserve">
+    <value>Zahlen (0-9)</value>
+  </data>
+  <data name="AssetEditor_TabGeneral" xml:space="preserve">
+    <value>Allgemeines und Hinweise</value>
+  </data>
+  <data name="AssetEditor_TipRmSel" xml:space="preserve">
+    <value>Ausgewählte entfernen</value>
+  </data>
+  <data name="AssetEditor_TabAcl" xml:space="preserve">
+    <value>Berechtigungen (ACL)</value>
+  </data>
+  <data name="AssetEditor_PhUserSel" xml:space="preserve">
+    <value>Feldauswahl für Benutzernamen</value>
+  </data>
+  <data name="AssetEditor_TitleDetails" xml:space="preserve">
+    <value>Asset-Details</value>
+  </data>
+  <data name="AssetEditor_PayService" xml:space="preserve">
+    <value>Zahlungsdienst (z. B. PayPal)</value>
+  </data>
+  <data name="AssetEditor_ChkShowSecret" xml:space="preserve">
+    <value>Geheimnis anzeigen</value>
+  </data>
+  <data name="AssetEditor_HdrGenerator" xml:space="preserve">
+    <value>Einstellungen des Passwortgenerators</value>
+  </data>
+  <data name="AssetEditor_LblCardHolder" xml:space="preserve">
+    <value>Karteninhaber/Kontoname</value>
+  </data>
+  <data name="AssetEditor_LblPrimaryFile" xml:space="preserve">
+    <value>Primärdatei (Zertifikat/Schlüssel/Container)</value>
+  </data>
+  <data name="AssetEditor_LblSecureNotes" xml:space="preserve">
+    <value>Sichere Notizen</value>
+  </data>
+  <data name="AssetEditor_LblPaymentMethod" xml:space="preserve">
+    <value>Zahlungsmethode</value>
+  </data>
+  <data name="AssetEditor_ChkSymbols" xml:space="preserve">
+    <value>Symbole (!@#$)</value>
+  </data>
+  <data name="AssetEditor_PhNextSel" xml:space="preserve">
+    <value>Schaltflächenauswahl „Weiter“.</value>
+  </data>
+  <data name="AssetEditor_TipAddFile" xml:space="preserve">
+    <value>Datei(en) hinzufügen...</value>
+  </data>
+  <data name="AssetEditor_SaveNew" xml:space="preserve">
+    <value>Speichern und Neu</value>
+  </data>
+  <data name="AssetEditor_LblUsername" xml:space="preserve">
+    <value>Benutzername / E-Mail</value>
+  </data>
+  <data name="AssetEditor_LblValidity" xml:space="preserve">
+    <value>Passwortgültigkeit (Tage, max. 365)</value>
+  </data>
+  <data name="AssetEditor_TipGenerate" xml:space="preserve">
+    <value>Erzeugen</value>
+  </data>
+  <data name="AssetEditor_LblSecondaryFile" xml:space="preserve">
+    <value>Sekundärdatei (z. B. öffentlicher Schlüssel/Zertifikat)</value>
+  </data>
+  <data name="AssetEditor_TipClear" xml:space="preserve">
+    <value>Klar</value>
+  </data>
+  <data name="AssetEditor_PhUsername" xml:space="preserve">
+    <value>user@example.com</value>
+  </data>
+  <data name="AssetEditor_PhSubSel" xml:space="preserve">
+    <value>Schaltflächenauswahl „Senden“.</value>
+  </data>
+  <data name="AssetEditor_AclDeny" xml:space="preserve">
+    <value>Ablehnen (-1)</value>
+  </data>
+  <data name="AssetEditor_LblTitle" xml:space="preserve">
+    <value>Titel</value>
+  </data>
+  <data name="AssetEditor_LblCurrentCode" xml:space="preserve">
+    <value>Aktueller Code:</value>
+  </data>
+  <data name="AssetEditor_ComboBasic" xml:space="preserve">
+    <value>BasicAuth</value>
+  </data>
+  <data name="AssetEditor_AclOwner" xml:space="preserve">
+    <value>Besitzer (3)</value>
+  </data>
+  <data name="AssetEditor_LblMethod" xml:space="preserve">
+    <value>Anmeldemethode</value>
+  </data>
+  <data name="AssetEditor_TipCopy" xml:space="preserve">
+    <value>Kopie</value>
+  </data>
+  <data name="AssetEditor_AclExec" xml:space="preserve">
+    <value>Ausführen (1)</value>
+  </data>
+  <data name="AssetEditor_ComboAuto" xml:space="preserve">
+    <value>AutoLearn</value>
+  </data>
+  <data name="AssetEditor_TipDlSel" xml:space="preserve">
+    <value>Ausgewählte herunterladen</value>
+  </data>
+  <data name="AssetEditor_LblExpiry" xml:space="preserve">
+    <value>Ablauf (MM/JJ)</value>
+  </data>
+  <data name="AssetEditor_SaveClose" xml:space="preserve">
+    <value>Speichern und schließen</value>
+  </data>
+  <data name="AssetEditor_PhUserPrompt" xml:space="preserve">
+    <value>(Benutzeraufforderung)</value>
+  </data>
+  <data name="AssetEditor_LblType" xml:space="preserve">
+    <value>Asset-Typ</value>
+  </data>
+  <data name="AssetEditor_ChkAutoLearn" xml:space="preserve">
+    <value>AutoLearn-Modus aktivieren (DOM beobachten)</value>
+  </data>
+  <data name="AssetEditor_LblParent" xml:space="preserve">
+    <value>Übergeordneter Ordner</value>
+  </data>
+  <data name="AssetEditor_LblLength" xml:space="preserve">
+    <value>Länge</value>
+  </data>
+  <data name="AssetEditor_PhNotes" xml:space="preserve">
+    <value>Weitere Informationen...</value>
+  </data>
+  <data name="AssetEditor_LblDom" xml:space="preserve">
+    <value>DOM-Selektoren gelernt</value>
+  </data>
+  <data name="AssetEditor_LblCvc" xml:space="preserve">
+    <value>CVC/PIN</value>
+  </data>
+  <data name="AssetEditor_PhPassSel" xml:space="preserve">
+    <value>Passwortfeldauswahl</value>
+  </data>
+  <data name="AssetEditor_PhCardHolder" xml:space="preserve">
+    <value>Max Mustermann</value>
+  </data>
+  <data name="AssetEditor_LblLoginUrl" xml:space="preserve">
+    <value>Anmelde-URL</value>
+  </data>
+  <data name="AssetEditor_PopOut" xml:space="preserve">
+    <value>Pop-Out-Editor</value>
+  </data>
+  <data name="AssetEditor_ComboOne" xml:space="preserve">
+    <value>OneStep (Benutzername und Passwort)</value>
+  </data>
+  <data name="AssetEditor_TabAttachments" xml:space="preserve">
+    <value>Anhänge</value>
+  </data>
+  <data name="AssetEditor_TipBrowse" xml:space="preserve">
+    <value>Durchsuchen...</value>
+  </data>
+  <data name="AssetEditor_ShowPassword" xml:space="preserve">
+    <value>Passwort anzeigen</value>
+  </data>
+  <data name="AssetEditor_LblPassword" xml:space="preserve">
+    <value>Passwort</value>
+  </data>
+  <data name="AssetEditor_TipAddVar" xml:space="preserve">
+    <value>Variable hinzufügen</value>
+  </data>
+  <data name="AssetEditor_LblTotpSecret" xml:space="preserve">
+    <value>Geheimer TOTP-Schlüssel (Base32)</value>
+  </data>
+  <data name="AssetEditor_TipDownload" xml:space="preserve">
+    <value>Herunterladen</value>
+  </data>
+  <data name="AssetEditor_ChkUpper" xml:space="preserve">
+    <value>Großbuchstaben (A-Z)</value>
+  </data>
 </root>

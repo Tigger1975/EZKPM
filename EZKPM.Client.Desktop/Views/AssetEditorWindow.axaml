@@ -312,6 +312,8 @@
                                 <TextBlock Classes="label" Text="{x:Static res:AppStrings.AssetEditor_LblValidity}"/>
                                 <NumericUpDown x:Name="ValidityDaysControl" Value="365" Minimum="1" Maximum="365" Width="150" HorizontalAlignment="Left" CornerRadius="4"/>
                                 
+                                <CheckBox x:Name="RequiresAuditLogCheckBox" Content="{x:Static res:AppStrings.AssetEditor_ChkAuditLog}" Foreground="#4B5563" ToolTip.Tip="{x:Static res:AppStrings.AssetEditor_TipAuditLog}"/>
+                                
                                 <Expander Header="{x:Static res:AppStrings.AssetEditor_HdrAuto}" HorizontalAlignment="Stretch" CornerRadius="4" Background="White" BorderBrush="#E5E7EB">
                                     <StackPanel Spacing="12" Margin="10">
                                         <TextBlock Classes="label" Text="{x:Static res:AppStrings.AssetEditor_LblMethod}"/>

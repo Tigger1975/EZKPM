@@ -138,6 +138,8 @@ public partial class AssetEditorWindow : Window
             
             var totpSecretBox = this.FindControl<TextBox>("TotpSecretTextBox");
             if (totpSecretBox != null) totpSecretBox.Text = payload.TotpSecret ?? "";
+            
+            RequiresAuditLogCheckBox.IsChecked = payload.RequiresAuditLog;
 
             // Find Asset Type
             foreach (Avalonia.Controls.ComboBoxItem item in AssetTypeComboBox.Items)
@@ -270,6 +272,7 @@ public partial class AssetEditorWindow : Window
         
         DetailedDescriptionTextBox.Text = "";
         ValidityDaysControl.Value = 365;
+        RequiresAuditLogCheckBox.IsChecked = false;
         _customFields.Clear();
         _attachments.Clear();
         _acls.Clear();
@@ -333,6 +336,17 @@ public partial class AssetEditorWindow : Window
         {
             await clipboard.SetTextAsync(PasswordTextBox.Text ?? "");
             ShowStatus("Passwort in die Zwischenablage kopiert!");
+            
+            if (_currentEditingAssetId.HasValue && RequiresAuditLogCheckBox.IsChecked == true)
+            {
+                try
+                {
+                    byte[] previousHash = await _apiClient.GetLatestAuditHashAsync(_currentEditingAssetId.Value);
+                    var req = _cryptoService.CreateAuditLogRequest("Password copied to clipboard manually", previousHash);
+                    await _apiClient.AppendAuditLogAsync(_currentEditingAssetId.Value, req);
+                }
+                catch { }
+            }
         }
     }
 
@@ -352,6 +366,17 @@ public partial class AssetEditorWindow : Window
             
             await clipboard.SetTextAsync(text.Trim());
             ShowStatus("Gesamte Asset-Details in die Zwischenablage kopiert!");
+            
+            if (_currentEditingAssetId.HasValue && RequiresAuditLogCheckBox.IsChecked == true)
+            {
+                try
+                {
+                    byte[] previousHash = await _apiClient.GetLatestAuditHashAsync(_currentEditingAssetId.Value);
+                    var req = _cryptoService.CreateAuditLogRequest("All asset details copied to clipboard manually", previousHash);
+                    await _apiClient.AppendAuditLogAsync(_currentEditingAssetId.Value, req);
+                }
+                catch { }
+            }
         }
     }
 
@@ -534,6 +559,7 @@ public partial class AssetEditorWindow : Window
                 DetailedDescription = DetailedDescriptionTextBox.Text ?? "",
                 TotpSecret = this.FindControl<TextBox>("TotpSecretTextBox")?.Text ?? "",
                 PasswordValidityDays = (int)ValidityDaysControl.Value.GetValueOrDefault(365),
+                RequiresAuditLog = RequiresAuditLogCheckBox.IsChecked == true,
                 
                 PaymentSubType = PaymentSubTypeComboBox.SelectedIndex == 1 ? "Service" : "Card",
                 CardHolder = CardHolderTextBox.Text ?? "",
