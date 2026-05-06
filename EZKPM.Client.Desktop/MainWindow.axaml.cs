@@ -41,6 +41,27 @@ public partial class MainWindow : Window
 
         _bridgeServer = new BrowserBridgeServer(() => _decryptedAssets, RequestAuditAsync);
         _bridgeServer.OnCredentialProvided = (assetTitle) => ShowNotification(assetTitle);
+        _bridgeServer.OnSaveNewCredentialRequested = (url, username, password) => {
+            Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => {
+                this.Show();
+                this.Activate();
+                this.Topmost = true;
+                this.Topmost = false;
+
+                var payload = new VaultAssetPayload
+                {
+                    AssetType = "Login",
+                    Title = string.IsNullOrEmpty(url) ? "New Login" : url + " Login",
+                    Url = url,
+                    Username = username,
+                    Password = password
+                };
+
+                var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList());
+                editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
+                editor.Show();
+            });
+        };
 
         _localBroker = new LocalCredentialsBroker(() => _decryptedAssets, RequestLocalAppApprovalAsync);
         _ssoSyncClient = new SsoSyncClient(ShowSsoApprovalDialogAsync);

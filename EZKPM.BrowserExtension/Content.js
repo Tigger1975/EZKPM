@@ -60,6 +60,9 @@ function scanForForms() {
     } else {
         console.log("EZKPM: No inputs found, skipping autofill request.");
     }
+    
+    // Feature: Password Generator
+    injectGeneratorIcon();
 }
 
 let pendingInjectionUsername = null; // Speichert den Username, während wir auf Passwort warten
@@ -486,6 +489,7 @@ const observer = new MutationObserver((mutations) => {
                     // Trigger scanForForms to request autofill for the newly added fields
                     scanForForms();
                 }
+                injectGeneratorIcon();
                 break;
             }
         }
@@ -493,3 +497,101 @@ const observer = new MutationObserver((mutations) => {
 });
 
 observer.observe(document.body, { childList: true, subtree: true });
+
+// ==========================================
+// FEATURE: Password Generator & Save New Credentials
+// ==========================================
+
+function injectGeneratorIcon() {
+    const passwordFields = document.querySelectorAll('input[type="password"]');
+    passwordFields.forEach(field => {
+        // Skip if already has generator or already filled by EZKPM
+        if (field.hasAttribute('data-ezkpm-gen') || field.value) return;
+        
+        field.setAttribute('data-ezkpm-gen', 'true');
+        
+        const icon = document.createElement('div');
+        icon.innerHTML = '🔑';
+        icon.style.position = 'absolute';
+        icon.style.cursor = 'pointer';
+        icon.style.zIndex = '9998';
+        icon.title = 'EZKPM: Sicheres Passwort generieren';
+        icon.style.fontSize = '16px';
+        icon.style.userSelect = 'none';
+        
+        const updatePos = () => {
+            const rect = field.getBoundingClientRect();
+            icon.style.left = (rect.right - 55 + window.scrollX) + 'px';
+            icon.style.top = (rect.top + rect.height / 2 - 10 + window.scrollY) + 'px';
+        };
+        window.addEventListener('scroll', updatePos);
+        window.addEventListener('resize', updatePos);
+        setTimeout(updatePos, 100);
+        
+        document.body.appendChild(icon);
+        
+        icon.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            let minLen = field.getAttribute('minlength') || 16;
+            minLen = Math.max(16, parseInt(minLen));
+            
+            const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
+            let pwd = "";
+            const array = new Uint32Array(minLen);
+            window.crypto.getRandomValues(array);
+            for (let i = 0; i < minLen; i++) {
+                pwd += chars[array[i] % chars.length];
+            }
+            
+            const allEmptyPwd = document.querySelectorAll('input[type="password"]');
+            allEmptyPwd.forEach(p => {
+                if (!p.value) {
+                    p.value = pwd;
+                    p.dispatchEvent(new Event('input', { bubbles: true }));
+                    p.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+            
+            icon.innerHTML = '✅';
+            setTimeout(() => icon.innerHTML = '🔑', 2000);
+            sessionStorage.setItem('ezkpm_generated_pwd', pwd);
+        });
+    });
+}
+
+document.addEventListener('submit', (e) => {
+    const form = e.target;
+    const pwdField = form.querySelector('input[type="password"]');
+    
+    const explicitUserFields = form.querySelectorAll('input[name*="user" i], input[name*="login" i], input[name*="alias" i], input[name*="account" i], input[id*="user" i], input[id*="login" i], input[type="email"]');
+    let userField = Array.from(explicitUserFields).find(el => el.value);
+    if (!userField) {
+        const formInputs = form.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="password"])');
+        userField = Array.from(formInputs).find(el => el.value);
+    }
+    
+    if (pwdField && pwdField.value) {
+        const username = userField ? userField.value : "";
+        const password = pwdField.value;
+        
+        // Anti-Loop: Dont save if we injected it recently
+        const lastAutofill = sessionStorage.getItem('ezkpm_active_autofill');
+        if (lastAutofill) {
+            const parsed = JSON.parse(lastAutofill);
+            if (parsed.Password === password) return; 
+        }
+        
+        try {
+            chrome.runtime.sendMessage({
+                type: "SAVE_NEW_CREDENTIAL",
+                url: window.location.hostname,
+                username: username,
+                password: password
+            });
+        } catch (err) {
+            console.error("EZKPM: Failed to send SAVE_NEW_CREDENTIAL", err);
+        }
+    }
+}, true);

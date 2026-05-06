@@ -440,4 +440,19 @@ Bitte schreiben Sie es auf! Einloggen in 8 Sekunden...</value>
   <data name="Startup_StatusDecryptAsset" xml:space="preserve">
     <value>Asset {0} von {1} wird entschlüsselt...</value>
   </data>
+  <data name="AssetEditor_ColUser" xml:space="preserve">
+    <value>Benutzer / Gruppe</value>
+  </data>
+  <data name="Main_BtnNewAsset" xml:space="preserve">
+    <value>+ Eintrag</value>
+  </data>
+  <data name="Main_BtnNewFolder" xml:space="preserve">
+    <value>+ Ordner</value>
+  </data>
+  <data name="Main_MenuEditFolder" xml:space="preserve">
+    <value>Ordner bearbeiten</value>
+  </data>
+  <data name="Main_MenuDeleteFolder" xml:space="preserve">
+    <value>Ordner löschen</value>
+  </data>
 </root>

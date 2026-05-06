@@ -19,7 +19,15 @@ function setExtensionIcon(state) {
     }
     
     try {
-        chrome.action.setIcon({ path: path });
+        // In Manifest V3, we must use absolute paths or a dictionary, and sometimes path alone fails if it's not well-formed
+        // Using a dictionary of sizes is the safest approach.
+        chrome.action.setIcon({ 
+            path: {
+                "16": path,
+                "48": path,
+                "128": path
+            }
+        });
         chrome.action.setTitle({ title: title });
     } catch (e) {
         console.error("Failed to set icon", e);
@@ -95,6 +103,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             nativePort.postMessage({
                 Type: "REQUEST_CREDENTIAL_DATA",
                 AssetId: request.assetId
+            });
+        }
+    } else if (request.type === "SAVE_NEW_CREDENTIAL") {
+        if (!nativePort) connectToNativeHost();
+        if (nativePort) {
+            nativePort.postMessage({
+                Type: "SAVE_NEW_CREDENTIAL",
+                Url: request.url,
+                Username: request.username,
+                Password: request.password
             });
         }
     }

@@ -19,6 +19,7 @@ namespace EZKPM.Client.Desktop.Services
         private CancellationTokenSource _cts;
 
         public Action<string> OnCredentialProvided { get; set; }
+        public Action<string, string, string> OnSaveNewCredentialRequested { get; set; }
 
         public BrowserBridgeServer(Func<IEnumerable<VaultAssetPayload>> getDecryptedAssetsFunc, Func<Guid, Task<bool>> requestAuditFunc)
         {
@@ -166,6 +167,15 @@ namespace EZKPM.Client.Desktop.Services
                         }
                         return JsonSerializer.Serialize(new { Type = "AUDIT_REJECTED" });
                     }
+                }
+                else if (action == "SAVE_NEW_CREDENTIAL")
+                {
+                    string url = root.TryGetProperty("Url", out var urlProp) ? urlProp.GetString() : "";
+                    string username = root.TryGetProperty("Username", out var userProp) ? userProp.GetString() : "";
+                    string password = root.TryGetProperty("Password", out var pwdProp) ? pwdProp.GetString() : "";
+                    
+                    OnSaveNewCredentialRequested?.Invoke(url, username, password);
+                    return JsonSerializer.Serialize(new { Type = "ACK" });
                 }
 
                 return JsonSerializer.Serialize(new { error = "Unknown action" });
