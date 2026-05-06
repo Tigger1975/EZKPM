@@ -464,6 +464,8 @@ function performStealthInjection(username, password, customFields = [], totpCode
             strictObserver.observe(passField, { attributes: true, attributeFilter: ['type'] });
         }
 
+        // 2. Auto-Submit: Formular automatisch absenden
+        setTimeout(() => {
             // Auto-Submit Logic
             let submitted = false;
             
