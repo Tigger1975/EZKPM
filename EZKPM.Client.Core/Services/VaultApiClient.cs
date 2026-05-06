@@ -53,10 +53,28 @@ namespace EZKPM.Client.Core.Services
             response.EnsureSuccessStatusCode();
         }
 
-        public async Task DeleteAssetAsync(Guid id)
+        public async Task DeleteAssetAsync(Guid id, bool forceAdmin = false)
         {
-            var response = await _httpClient.DeleteAsync($"/api/v1/vault/assets/{id}");
+            var url = $"/api/v1/vault/assets/{id}";
+            if (forceAdmin) url += "?forceAdmin=true";
+            
+            var response = await _httpClient.DeleteAsync(url);
+            
+            if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                throw new UnauthorizedAccessException("FORBIDDEN_NOT_OWNER");
+            }
+            
             response.EnsureSuccessStatusCode();
+        }
+
+        public async Task<int> CleanOrphanedAssetsAsync()
+        {
+            var response = await _httpClient.DeleteAsync("/api/v1/vault/maintenance/orphans");
+            response.EnsureSuccessStatusCode();
+            
+            var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            return result.GetProperty("deletedCount").GetInt32();
         }
 
         public async Task RestoreAssetAsync(Guid id)

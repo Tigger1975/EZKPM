@@ -18,6 +18,8 @@ namespace EZKPM.Client.Desktop.Services
         private readonly Func<Guid, Task<bool>> _requestAuditFunc;
         private CancellationTokenSource _cts;
 
+        public Action<string> OnCredentialProvided { get; set; }
+
         public BrowserBridgeServer(Func<IEnumerable<VaultAssetPayload>> getDecryptedAssetsFunc, Func<Guid, Task<bool>> requestAuditFunc)
         {
             _getDecryptedAssetsFunc = getDecryptedAssetsFunc;
@@ -151,6 +153,7 @@ namespace EZKPM.Client.Desktop.Services
                             
                             if (isApproved)
                             {
+                                OnCredentialProvided?.Invoke(asset.Title);
                                 return JsonSerializer.Serialize(new {
                                     Type = "CREDENTIAL_DATA_RESPONSE",
                                     Password = asset.Password,

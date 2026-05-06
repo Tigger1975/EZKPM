@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using System.Threading.Tasks;
 using System;
 using System.Linq;
 
@@ -27,29 +28,75 @@ namespace EZKPM.Client.Desktop
                 {
                     desktop.ShutdownMode = Avalonia.Controls.ShutdownMode.OnExplicitShutdown;
 
-                    var login = new Views.LoginWindow();
-                    login.Closed += (s, e) =>
-                    {
-                        if (login.IsAuthenticated)
-                        {
-                            desktop.ShutdownMode = Avalonia.Controls.ShutdownMode.OnLastWindowClose;
-                            var splash = new Views.SplashScreenWindow();
-                            desktop.MainWindow = splash;
-                            splash.Show();
-                            
-                            // MainWindow starts loading, will swap itself and close splash when ready
-                            var main = new MainWindow(splash);
-                        }
-                        else
-                        {
-                            desktop.Shutdown(0);
-                        }
-                    };
-                    desktop.MainWindow = login;
+                    // Load CLI and File Config
+                    Services.ConfigurationManager.LoadConfig(args);
+                    
+                    // Fire-and-forget initialization
+                    _ = InitializeAppAsync(desktop);
                 }
             }
 
             base.OnFrameworkInitializationCompleted();
+        }
+
+        private async Task InitializeAppAsync(IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            var startup = new Views.StartupWindow();
+            startup.Closed += (s, e) =>
+            {
+                if (!startup.IsAuthenticated)
+                {
+                    desktop.Shutdown(0);
+                }
+            };
+            desktop.MainWindow = startup;
+            
+            SetupTrayIcon(desktop);
+
+            if (!Program.IsAutoStart)
+            {
+                startup.Show();
+            }
+        }
+
+        private void SetupTrayIcon(IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            try
+            {
+                var trayIcon = new Avalonia.Controls.TrayIcon
+                {
+                    Icon = new Avalonia.Controls.WindowIcon(Avalonia.Platform.AssetLoader.Open(new Uri("avares://EZKPM.Client.Desktop/Assets/icon.ico"))),
+                    ToolTipText = "Ironclad Vault (EZKPM)",
+                    IsVisible = true
+                };
+
+                var menu = new Avalonia.Controls.NativeMenu();
+                var openItem = new Avalonia.Controls.NativeMenuItem { Header = "Tresor öffnen" };
+                openItem.Click += (s, e) => ShowCurrentWindow(desktop);
+
+                var exitItem = new Avalonia.Controls.NativeMenuItem { Header = "Beenden" };
+                exitItem.Click += (s, e) => Environment.Exit(0);
+
+                menu.Items.Add(openItem);
+                menu.Items.Add(exitItem);
+
+                trayIcon.Menu = menu;
+                trayIcon.Clicked += (s, e) => ShowCurrentWindow(desktop);
+            }
+            catch (Exception ex)
+            {
+                Program.LogDebug($"Failed to create TrayIcon: {ex.Message}");
+            }
+        }
+
+        private void ShowCurrentWindow(IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            if (desktop.MainWindow != null)
+            {
+                desktop.MainWindow.Show();
+                desktop.MainWindow.WindowState = Avalonia.Controls.WindowState.Normal;
+                desktop.MainWindow.Activate();
+            }
         }
     }
 }

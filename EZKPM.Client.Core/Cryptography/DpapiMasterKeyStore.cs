@@ -12,15 +12,22 @@ namespace EZKPM.Client.Core.Cryptography
     public static class DpapiMasterKeyStore
     {
         private const string AppFolderName = "EZKPM";
-        private const string KeyFileName = "masterkey.dat";
+        private const string KeyFileName = "machinesecret.dat";
 
-        public static byte[] GetOrGenerateMasterKey()
+        public static bool HasMachineSecret()
+        {
+            if (!OperatingSystem.IsWindows()) return true; // Mock true for non-windows
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            return File.Exists(Path.Combine(appData, AppFolderName, KeyFileName));
+        }
+
+        public static byte[] GetOrGenerateMachineSecret()
         {
             if (!OperatingSystem.IsWindows())
             {
                 // Fallback für nicht-Windows (z. B. macOS/Linux in der Entwicklung)
                 // Hier würde man den Keychain verwenden. Für den Moment mocken wir das.
-                return new byte[64];
+                return new byte[16];
             }
 
             var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -35,7 +42,7 @@ namespace EZKPM.Client.Core.Cryptography
                     // Unprotect entschlüsselt mit dem Windows-Passwort (Current User)
                     byte[] decryptedKey = ProtectedData.Unprotect(encryptedKey, null, DataProtectionScope.CurrentUser);
                     
-                    if (decryptedKey.Length == 64)
+                    if (decryptedKey.Length == 64 || decryptedKey.Length == 16)
                     {
                         return decryptedKey;
                     }
@@ -49,15 +56,15 @@ namespace EZKPM.Client.Core.Cryptography
             }
 
             // Wenn wir hier sind, existiert kein Key oder er ist defekt. Wir generieren einen neuen.
-            byte[] newMasterKey = new byte[64];
-            RandomNumberGenerator.Fill(newMasterKey);
+            byte[] newMachineSecret = new byte[16];
+            RandomNumberGenerator.Fill(newMachineSecret);
 
-            SaveMasterKey(newMasterKey);
+            SaveMachineSecret(newMachineSecret);
 
-            return newMasterKey;
+            return newMachineSecret;
         }
 
-        public static void SaveMasterKey(byte[] key)
+        public static void SaveMachineSecret(byte[] key)
         {
             if (!OperatingSystem.IsWindows()) return;
 

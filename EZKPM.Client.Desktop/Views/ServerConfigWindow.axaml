@@ -1,0 +1,67 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="EZKPM.Client.Desktop.Views.ServerConfigWindow"
+        Title="EZKPM Server Konfiguration"
+        Width="450" SizeToContent="Height"
+        WindowStartupLocation="CenterScreen"
+        Background="#111827"
+        ExtendClientAreaToDecorationsHint="True"
+        CanResize="False"
+        RequestedThemeVariant="Dark">
+
+    <Border BorderBrush="#1F2937" BorderThickness="1" CornerRadius="20" Background="#111827" Margin="10" BoxShadow="0 10 30 0 #000000">
+        <StackPanel Margin="30" Spacing="20">
+            <TextBlock Text="Server-Verbindung einrichten" 
+                       FontSize="20" 
+                       FontWeight="Bold" 
+                       Foreground="White" 
+                       HorizontalAlignment="Center" />
+
+            <TextBlock Text="Bitte geben Sie die Adresse des EZKPM Servers (PDP) ein. (z.B. https://ezkpm.firma.local:5000)" 
+                       Foreground="#9CA3AF" 
+                       TextWrapping="Wrap" 
+                       TextAlignment="Center" />
+
+            <TextBox x:Name="UrlTextBox" 
+                     Watermark="Server URL (IP/FQDN : Port)" 
+                     Background="#1F2937" 
+                     Foreground="White" 
+                     BorderBrush="#374151" 
+                     Padding="12" />
+
+            <CheckBox x:Name="AutostartCheckBox" 
+                      Content="Bei Windows-Start automatisch im Hintergrund laden (System-Tray)" 
+                      Foreground="White" 
+                      Margin="0,10,0,0" />
+
+            <TextBlock x:Name="StatusText" 
+                       Foreground="Red" 
+                       IsVisible="False" 
+                       TextWrapping="Wrap" 
+                       HorizontalAlignment="Center" />
+            
+            <ProgressBar x:Name="TestProgress" 
+                         IsIndeterminate="True" 
+                         IsVisible="False" 
+                         Height="4" 
+                         Foreground="#3B82F6" />
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="15" Margin="0,10,0,0">
+                <Button x:Name="CancelButton" 
+                        Content="Abbrechen" 
+                        Click="CancelButton_Click" 
+                        Background="Transparent" 
+                        Foreground="#9CA3AF" 
+                        Padding="20,10" />
+                <Button x:Name="SaveButton" 
+                        Content="Verbinden &amp; Speichern" 
+                        Click="SaveButton_Click" 
+                        Background="#3B82F6" 
+                        Foreground="White" 
+                        FontWeight="Bold" 
+                        Padding="20,10" 
+                        CornerRadius="8" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

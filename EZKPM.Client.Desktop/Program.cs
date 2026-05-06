@@ -30,12 +30,21 @@ namespace EZKPM.Client.Desktop
             try { File.AppendAllText(@"C:\Users\adm-kh\ezkpm_nativehost.log", $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}\n"); } catch { }
         }
 
+        public static bool IsAutoStart = false;
+
         [STAThread]
         public static void Main(string[] args)
         {
             InitializeKillSwitch();
 
             LogDebug($"App started. Arguments: {string.Join(" ", args)}");
+
+            if (args.Any(a => a.Equals("autostart", StringComparison.OrdinalIgnoreCase) || a.Equals("--autostart", StringComparison.OrdinalIgnoreCase)))
+            {
+                IsAutoStart = true;
+                RegisterAutostart();
+                LogDebug("Running in autostart mode.");
+            }
 
             if (args.Any(a => a.StartsWith("chrome-extension://") || a.StartsWith("ms-browser-extension://")))
             {
@@ -82,6 +91,27 @@ namespace EZKPM.Client.Desktop
                 LogDebug("Kill switch activated by MSBuild! Shutting down gracefully for overwrite.");
                 Environment.Exit(0); // Instantly frees the .exe lock for Visual Studio
             };
+        }
+
+        private static void RegisterAutostart()
+        {
+            try
+            {
+                string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+                if (!string.IsNullOrEmpty(exePath))
+                {
+                    using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+                    if (key != null)
+                    {
+                        key.SetValue("EZKPM_Client", $"\"{exePath}\" --autostart");
+                        LogDebug("Successfully registered autostart in registry.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogDebug($"Failed to register autostart: {ex.Message}");
+            }
         }
 
         private static async Task RunNativeHostProxyAsync()

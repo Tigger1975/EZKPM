@@ -22,9 +22,25 @@ public static class AdSearchService
         try
         {
             var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+            string displayName = identity.Name;
+            
+            try 
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    using var context = new PrincipalContext(ContextType.Domain);
+                    using var user = UserPrincipal.FindByIdentity(context, identity.Name);
+                    if (user != null && !string.IsNullOrWhiteSpace(user.DisplayName))
+                    {
+                        displayName = user.DisplayName;
+                    }
+                }
+            }
+            catch { }
+
             return new AdPrincipal 
             { 
-                DisplayName = identity.Name, 
+                DisplayName = displayName, 
                 Sid = identity.User?.Value ?? Environment.UserDomainName + "\\" + Environment.UserName, 
                 Type = "User" 
             };

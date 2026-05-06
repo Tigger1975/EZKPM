@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
@@ -9,11 +10,9 @@
   </PropertyGroup>
   <ItemGroup>
     <AvaloniaXaml Remove="Views\AuditDialog.axaml" />
-    <AvaloniaXaml Remove="Views\LoginWindow.axaml" />
   </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="Views\AuditDialog.axaml" />
-    <AvaloniaResource Include="Views\LoginWindow.axaml" />
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
@@ -27,8 +26,10 @@
       <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.7" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="10.0.7" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.7" />
+    <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>

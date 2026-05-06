@@ -26,22 +26,76 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<VaultTreeNode> _treeNodes = new();
     private readonly HashSet<Guid> _expandedFolderIds = new();
     private readonly BrowserBridgeServer _bridgeServer;
+    private readonly LocalCredentialsBroker _localBroker;
+    private readonly SsoSyncClient _ssoSyncClient;
     
-    public MainWindow(Views.SplashScreenWindow? splash = null)
+    public MainWindow(VaultCryptoService cryptoService, Views.StartupWindow? splash = null)
     {
         InitializeComponent();
 
-        var httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5000") };
+        var httpClient = new HttpClient { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) };
         _apiClient = new VaultApiClient(httpClient);
-        _cryptoService = new VaultCryptoService(new HybridPqcKeyWrapper());
+        _cryptoService = cryptoService;
 
         AssetTreeView.ItemsSource = _treeNodes;
 
         _bridgeServer = new BrowserBridgeServer(() => _decryptedAssets, RequestAuditAsync);
+        _bridgeServer.OnCredentialProvided = (assetTitle) => ShowNotification(assetTitle);
+
+        _localBroker = new LocalCredentialsBroker(() => _decryptedAssets, RequestLocalAppApprovalAsync);
+        _ssoSyncClient = new SsoSyncClient(ShowSsoApprovalDialogAsync);
+        
+        // FA 14: Session Timer (Initialized in LoginWindow)
+        this.AddHandler(Avalonia.Input.InputElement.PointerMovedEvent, (s, e) => Services.SessionManager.RegisterActivity(), Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        this.AddHandler(Avalonia.Input.InputElement.KeyDownEvent, (s, e) => Services.SessionManager.RegisterActivity(), Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        this.PropertyChanged += (s, e) => {
+            if (e.Property.Name == nameof(WindowState))
+            {
+                Services.SessionManager.HandleWindowStateChanged(this.WindowState);
+            }
+        };
+
         _bridgeServer.Start();
+        _localBroker.Start();
 
         // Auto-load assets on startup
         _ = LoadAssetsAndShowAsync(splash);
+
+        this.Closing += MainWindow_Closing;
+    }
+
+    private void MainWindow_Closing(object? sender, Avalonia.Controls.WindowClosingEventArgs e)
+    {
+        // Cancel the close operation and just hide the window,
+        // so it can be restored from the system tray.
+        e.Cancel = true;
+        this.Hide();
+    }
+
+    private void ShowNotification(string assetTitle)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            try
+            {
+                var notifyIcon = new System.Windows.Forms.NotifyIcon
+                {
+                    Icon = System.Drawing.SystemIcons.Information,
+                    Visible = true,
+                    BalloonTipTitle = "EZKPM Autofill",
+                    BalloonTipText = $"Anmeldedaten für '{assetTitle}' an Browser übertragen.",
+                    BalloonTipIcon = System.Windows.Forms.ToolTipIcon.Info
+                };
+                notifyIcon.ShowBalloonTip(3000);
+
+                // Auto-dispose the icon after the tip is gone to prevent ghost icons
+                Task.Delay(5000).ContinueWith(_ => notifyIcon.Dispose());
+            }
+            catch (Exception ex)
+            {
+                Program.LogDebug($"Failed to show notification: {ex.Message}");
+            }
+        });
     }
 
     private async Task<bool> RequestAuditAsync(Guid assetId)
@@ -78,7 +132,31 @@ public partial class MainWindow : Window
         return await tcs.Task;
     }
 
-    private async Task LoadAssetsAndShowAsync(Views.SplashScreenWindow? splash)
+    private async Task<LocalAppApprovalResult> RequestLocalAppApprovalAsync(string processName, string assetTitle, string warningText)
+    {
+        var tcs = new TaskCompletionSource<LocalAppApprovalResult>();
+        Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+        {
+            var dialog = new Views.LocalAppApprovalDialog(processName, assetTitle, warningText);
+            await dialog.ShowDialog(this);
+            tcs.SetResult(new Services.LocalAppApprovalResult { IsApproved = dialog.Result.IsApproved, RememberTrust = dialog.Result.RememberTrust });
+        });
+        return await tcs.Task;
+    }
+
+    private async Task<bool> ShowSsoApprovalDialogAsync(string requestId, string appId, string originServerUrl)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+        Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+        {
+            var dialog = new Views.SsoApprovalDialog(appId, originServerUrl);
+            var result = await dialog.ShowDialogAsync(this);
+            tcs.SetResult(result);
+        });
+        return await tcs.Task;
+    }
+
+    private async Task LoadAssetsAndShowAsync(Views.StartupWindow? splash)
     {
         if (splash != null) splash.UpdateStatus("Verbinde mit Vault Server...", 20);
         await Task.Delay(500); // Artificial delay to let the splash screen render
@@ -94,12 +172,19 @@ public partial class MainWindow : Window
             {
                 desktop.MainWindow = this;
             }
-            this.Show();
+            if (!Program.IsAutoStart)
+            {
+                this.Show();
+            }
             splash.Close();
         }
+
+        // Starte SSO SignalR Verbindung
+        var userSid = EZKPM.Client.Desktop.Services.AdSearchService.GetCurrentUser()?.Sid ?? "S-1-5-21-DUMMY-TEST-USER";
+        _ = _ssoSyncClient.ConnectAsync(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl, userSid);
     }
 
-    private async Task LoadAssetsAsync(Views.SplashScreenWindow? splash = null)
+    private async Task LoadAssetsAsync(Views.StartupWindow? splash = null)
     {
         try
         {
@@ -164,6 +249,7 @@ public partial class MainWindow : Window
 
             if (node.Payload.ParentFolderId.HasValue && nodesMap.TryGetValue(node.Payload.ParentFolderId.Value, out var parent))
             {
+                node.Parent = parent;
                 parent.Children.Add(node);
             }
             else
@@ -221,7 +307,7 @@ public partial class MainWindow : Window
 
         bool isSearching = !string.IsNullOrWhiteSpace(searchText);
 
-        var filtered = _decryptedAssets.Where(a => a.AssetType != "Folder");
+        var filtered = _decryptedAssets.AsEnumerable();
 
         if (selectedType == "Papierkorb")
         {
@@ -243,6 +329,11 @@ public partial class MainWindow : Window
             else if (selectedType != "Alle Typen")
             {
                 filtered = filtered.Where(a => a.AssetType == selectedType);
+            }
+            else if (!isSearching)
+            {
+                // In "Alle Typen" (ohne Suche) zeigen wir standardmäßig Assets UND Ordner des aktuellen Pfads.
+                // Wenn wir allerdings NICHT im Root sind, wollen wir die Verzeichnisse sehen.
             }
         }
 
@@ -280,8 +371,12 @@ public partial class MainWindow : Window
         if (AssetsDataGrid.SelectedItems.Count == 0) return;
 
         var items = AssetsDataGrid.SelectedItems.Cast<VaultAssetPayload>().ToList();
-        
-        var dialog = new Views.ConfirmationDialog($"Möchten Sie {items.Count} Asset(s) wirklich in den Papierkorb verschieben?");
+        var isPapierkorb = (TypeFilterComboBox.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() == "Papierkorb";
+        string msg = isPapierkorb 
+            ? $"Möchten Sie {items.Count} Asset(s) wirklich unwiderruflich löschen?" 
+            : $"Möchten Sie {items.Count} Asset(s) wirklich in den Papierkorb verschieben?";
+            
+        var dialog = new Views.ConfirmationDialog(msg);
         var result = await dialog.ShowDialogAsync(this);
         if (!result) return;
 
@@ -294,6 +389,16 @@ public partial class MainWindow : Window
                 {
                     await _apiClient.DeleteAssetAsync(item.TransientAssetId.Value);
                     count++;
+                }
+                catch (UnauthorizedAccessException ex) when (ex.Message == "FORBIDDEN_NOT_OWNER")
+                {
+                    var overrideDialog = new Views.ConfirmationDialog($"Sie sind kein Owner von '{item.Title}'. Möchten Sie als Administrator das Asset trotzdem hart löschen (Datenmüll bereinigen)?");
+                    var overrideResult = await overrideDialog.ShowDialogAsync(this);
+                    if (overrideResult)
+                    {
+                        await _apiClient.DeleteAssetAsync(item.TransientAssetId.Value, forceAdmin: true);
+                        count++;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -339,6 +444,24 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void CleanOrphans_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var dialog = new Views.ConfirmationDialog("Möchten Sie wirklich alle herrenlosen Assets (ohne Owner) endgültig aus der Datenbank löschen?");
+        var result = await dialog.ShowDialogAsync(this);
+        if (!result) return;
+
+        try
+        {
+            int deleted = await _apiClient.CleanOrphanedAssetsAsync();
+            ShowStatus($"Datenbankbereinigung abgeschlossen. {deleted} herrenlose(s) Asset(s) entfernt.");
+            await LoadAssetsAsync();
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Fehler bei der Bereinigung: {ex.Message}", isError: true);
+        }
+    }
+
     private async void ImportKeePass_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         try
@@ -365,7 +488,45 @@ public partial class MainWindow : Window
                 
                 if (file.Name.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
                 {
-                    importer = new CsvImporter();
+                    // Read headers first
+                    using var headerStream = await file.OpenReadAsync();
+                    
+                    System.Text.Encoding encoding = System.Text.Encoding.UTF8;
+                    try 
+                    {
+                        using var testReader = new System.IO.StreamReader(headerStream, new System.Text.UTF8Encoding(false, true), true, 1024, true);
+                        await testReader.ReadToEndAsync();
+                    }
+                    catch (System.Text.DecoderFallbackException)
+                    {
+                        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+                        encoding = System.Text.Encoding.GetEncoding(1252);
+                    }
+                    headerStream.Position = 0;
+
+                    using var reader = new System.IO.StreamReader(headerStream, encoding);
+                    string headerLine = await reader.ReadLineAsync();
+                    if (string.IsNullOrWhiteSpace(headerLine))
+                    {
+                        ShowStatus("Die CSV-Datei ist leer.");
+                        return;
+                    }
+                    char delimiter = headerLine.Contains(';') ? ';' : ',';
+                    var headers = headerLine.Split(delimiter).Select(h => h.Trim('"')).ToList();
+
+                    // Open Mapping Window
+                    var mappingWindow = new Views.CsvMappingWindow(headers);
+                    await mappingWindow.ShowDialog(this);
+
+                    if (!mappingWindow.IsConfirmed)
+                    {
+                        ShowStatus("Import abgebrochen.");
+                        return;
+                    }
+
+                    var csvImporter = new CsvImporter();
+                    csvImporter.Mapping = mappingWindow.Mapping;
+                    importer = csvImporter;
                 }
                 else if (file.Name.EndsWith(".kdbx", StringComparison.OrdinalIgnoreCase))
                 {
@@ -463,10 +624,50 @@ public partial class MainWindow : Window
     {
         if (sender is DataGrid grid && grid.SelectedItem is VaultAssetPayload payload)
         {
-            var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList());
-            editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
-            editor.Show();
+            if (payload.AssetType == "Folder")
+            {
+                // In den Ordner navigieren (analog Windows Explorer)
+                var node = FindTreeNode(_treeNodes, payload.TransientAssetId.GetValueOrDefault());
+                if (node != null)
+                {
+                    // Expand the folder itself
+                    node.IsExpanded = true;
+                    
+                    // Expand all parents so it becomes visible
+                    var parentNode = node.Parent;
+                    while (parentNode != null)
+                    {
+                        parentNode.IsExpanded = true;
+                        parentNode = parentNode.Parent;
+                    }
+                    
+                    AssetTreeView.SelectedItem = node;
+                    
+                    // Clear the search box to exit search mode and show the folder's contents
+                    if (SearchTextBox != null && !string.IsNullOrWhiteSpace(SearchTextBox.Text))
+                    {
+                        SearchTextBox.Text = ""; 
+                    }
+                }
+            }
+            else
+            {
+                var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList());
+                editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
+                editor.Show();
+            }
         }
+    }
+
+    private VaultTreeNode? FindTreeNode(IEnumerable<VaultTreeNode> nodes, Guid id)
+    {
+        foreach (var n in nodes)
+        {
+            if (n.Payload.TransientAssetId == id) return n;
+            var child = FindTreeNode(n.Children, id);
+            if (child != null) return child;
+        }
+        return null;
     }
 
     private void EditFolderMenuItem_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -483,22 +684,53 @@ public partial class MainWindow : Window
     {
         if (sender is MenuItem menuItem && menuItem.DataContext is VaultTreeNode node)
         {
-            if (node.Payload.TransientAssetId.HasValue)
+            if (node.Children.Any())
             {
-                var dialog = new Views.ConfirmationDialog($"Möchten Sie den Ordner '{node.Title}' und alle seine Inhalte wirklich in den Papierkorb verschieben?");
-                var result = await dialog.ShowDialogAsync(this);
-                if (!result) return;
-                
+                ShowStatus("Ordner ist nicht leer und kann nicht gelöscht werden.", isError: true);
+                return;
+            }
+
+            var dialog = new Views.ConfirmationDialog("Diesen Ordner wirklich löschen?");
+            var result = await dialog.ShowDialogAsync(this);
+            if (result)
+            {
                 try
                 {
-                    await DeleteAssetRecursiveAsync(node.Payload.TransientAssetId.Value);
-                    ShowStatus($"Ordner '{node.Title}' gelöscht.");
+                    await _apiClient.DeleteAssetAsync(node.Payload.TransientAssetId.GetValueOrDefault());
+                    ShowStatus("Ordner gelöscht.");
                     await LoadAssetsAsync();
                 }
                 catch (Exception ex)
                 {
-                    ShowStatus($"Fehler beim Löschen des Ordners: {ex.Message}", isError: true);
+                    ShowStatus($"Fehler beim Löschen: {ex.Message}", isError: true);
                 }
+            }
+        }
+    }
+
+    private async void ChangeServerMenuItem_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var configWindow = new Views.ServerConfigWindow(Services.ConfigurationManager.CurrentConfig.ServerUrl);
+        await configWindow.ShowDialog(this);
+        if (configWindow.IsConfirmed)
+        {
+            Services.ConfigurationManager.CurrentConfig.ServerUrl = configWindow.SelectedUrl;
+            Services.ConfigurationManager.SaveConfig();
+            
+            // Re-instantiate the API client with the new URL
+            var httpClient = new HttpClient { BaseAddress = new Uri(Services.ConfigurationManager.CurrentConfig.ServerUrl) };
+            var newApiClient = new VaultApiClient(httpClient);
+            
+            // To properly apply the new API client to this window, we can just restart the application or swap it
+            // For now, swapping the reference in MainWindow might not cover other components (like AssetEditor)
+            // But we can inform the user to restart or attempt to reload. A restart is safest.
+            var dialog = new Views.ConfirmationDialog("Server erfolgreich geändert. Die App wird nun neu gestartet.");
+            await dialog.ShowDialogAsync(this);
+            
+            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                // Note: The kill switch handles external restarts, but here we can just exit.
+                Environment.Exit(0);
             }
         }
     }
@@ -612,9 +844,27 @@ public partial class MainWindow : Window
                 draggedNode.Payload.ParentFolderId = targetNode.Payload.TransientAssetId;
                 
                 // Auto-Inheritance on Move
-                if (targetNode.Payload.Acls != null && targetNode.Payload.Acls.Count > 0)
+                if (draggedNode.Payload.IsInheriting && targetNode.Payload.Acls != null)
                 {
-                    draggedNode.Payload.Acls = targetNode.Payload.Acls.Select(a => new AclEntryDto { AdSid = a.AdSid, DisplayName = a.DisplayName, PermissionLevel = a.PermissionLevel }).ToList();
+                    // Remove old inherited ACLs
+                    draggedNode.Payload.Acls.RemoveAll(a => a.IsInherited);
+                    
+                    // Add new inherited ACLs from target
+                    foreach (var pacl in targetNode.Payload.Acls)
+                    {
+                        if (!draggedNode.Payload.Acls.Any(a => a.AdSid == pacl.AdSid && !a.IsInherited))
+                        {
+                            draggedNode.Payload.Acls.Add(new AclEntryDto 
+                            { 
+                                AdSid = pacl.AdSid, 
+                                DisplayName = pacl.DisplayName, 
+                                PermissionLevel = pacl.PermissionLevel, 
+                                IsInherited = true,
+                                SourceGroupSid = pacl.SourceGroupSid,
+                                SourceGroupName = pacl.SourceGroupName
+                            });
+                        }
+                    }
                 }
 
                 try

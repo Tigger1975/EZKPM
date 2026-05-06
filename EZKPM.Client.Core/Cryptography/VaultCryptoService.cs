@@ -10,29 +10,71 @@ namespace EZKPM.Client.Core.Cryptography
     {
         private readonly HybridPqcKeyWrapper _keyWrapper;
         
-        // True private keys securely loaded via DPAPI (bound to Windows Login)
-        private readonly SecureMemory _myPrivateKeyX25519;
-        private readonly SecureMemory _myPrivateKeyKyber;
+        // True private keys securely loaded via DPAPI + Password (Argon2id)
+        private SecureMemory _myPrivateKeyX25519;
+        private SecureMemory _myPrivateKeyKyber;
         private readonly byte[] _testPreviousHash = new byte[32]; // Genesis block
 
         public VaultCryptoService(HybridPqcKeyWrapper keyWrapper)
         {
             _keyWrapper = keyWrapper;
+        }
+
+        public bool Initialize(string masterPassword)
+        {
+            byte[] machineSecret = DpapiMasterKeyStore.GetOrGenerateMachineSecret();
             
-            byte[] masterKeyMaterial = DpapiMasterKeyStore.GetOrGenerateMasterKey();
+            // Argon2 does not accept empty passwords. If seamless SSO is used (empty string), use a static fallback.
+            string effectivePassword = string.IsNullOrEmpty(masterPassword) ? "EZKPM_DPAPI_SEAMLESS_SSO" : masterPassword;
+
+            // FA 13: Password + Machine-bound token (DPAPI secret)
+            using var argon2 = new Konscious.Security.Cryptography.Argon2id(Encoding.UTF8.GetBytes(effectivePassword))
+            {
+                Salt = machineSecret,
+                DegreeOfParallelism = 4,
+                Iterations = 3,
+                MemorySize = 65536 // 64 MB
+            };
+            
+            byte[] derivedMaterial = argon2.GetBytes(64);
             
             // Split the 64-byte master key material into two 32-byte private keys
             byte[] x25519Material = new byte[32];
             byte[] kyberMaterial = new byte[32];
-            Buffer.BlockCopy(masterKeyMaterial, 0, x25519Material, 0, 32);
-            Buffer.BlockCopy(masterKeyMaterial, 32, kyberMaterial, 0, 32);
+            Buffer.BlockCopy(derivedMaterial, 0, x25519Material, 0, 32);
+            Buffer.BlockCopy(derivedMaterial, 32, kyberMaterial, 0, 32);
+
+            // Verify key check
+            string appDir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EZKPM");
+            string keyCheckPath = System.IO.Path.Combine(appDir, "keycheck.dat");
+
+            using var sha256 = SHA256.Create();
+            byte[] hash = sha256.ComputeHash(derivedMaterial);
+
+            if (System.IO.File.Exists(keyCheckPath))
+            {
+                byte[] storedHash = System.IO.File.ReadAllBytes(keyCheckPath);
+                if (!System.Linq.Enumerable.SequenceEqual(hash, storedHash))
+                {
+                    CryptographicOperations.ZeroMemory(derivedMaterial);
+                    return false; // Wrong password
+                }
+            }
+            else
+            {
+                if (!System.IO.Directory.Exists(appDir)) System.IO.Directory.CreateDirectory(appDir);
+                System.IO.File.WriteAllBytes(keyCheckPath, hash);
+            }
             
             _myPrivateKeyX25519 = new SecureMemory(x25519Material);
             _myPrivateKeyKyber = new SecureMemory(kyberMaterial);
             
-            CryptographicOperations.ZeroMemory(masterKeyMaterial);
+            CryptographicOperations.ZeroMemory(machineSecret);
+            CryptographicOperations.ZeroMemory(derivedMaterial);
             CryptographicOperations.ZeroMemory(x25519Material);
             CryptographicOperations.ZeroMemory(kyberMaterial);
+
+            return true;
         }
 
         public VaultAssetPayload DecryptAsset(VaultAssetResponseDto assetDto)

@@ -119,9 +119,10 @@
                     </TreeView.ItemTemplate>
                 </TreeView>
                 
-                <Grid Grid.Row="2" ColumnDefinitions="*, *" Margin="0,20,0,0">
+                <Grid Grid.Row="2" ColumnDefinitions="*, *, Auto" Margin="0,20,0,0">
                     <Button Grid.Column="0" Classes="success" Content="+ Asset" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,5,0" Click="NewAssetButton_Click"/>
-                    <Button Grid.Column="1" Classes="outline" Content="+ Folder" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="5,0,0,0" Click="NewFolderButton_Click"/>
+                    <Button Grid.Column="1" Classes="outline" Content="+ Folder" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="5,0,5,0" Click="NewFolderButton_Click"/>
+                    <Button Grid.Column="2" Classes="outline" Content="⚙️" ToolTip.Tip="Einstellungen &amp; Server wechseln" Click="ChangeServerMenuItem_Click" />
                 </Grid>
             </Grid>
         </Border>
@@ -149,6 +150,7 @@
                                 <ComboBoxItem Content="Authenticator" />
                             </ComboBox>
                             <Button Content="📥 Importieren" Classes="outline" Click="ImportKeePass_Click" />
+                            <Button Content="🗑️ Bereinigen" Classes="outline" Click="CleanOrphans_Click" ToolTip.Tip="Löscht endgültig alle Assets ohne Owner (Datenmüll)" />
                             <Button x:Name="RestoreSelectedAssetsButton" Content="🔄 Wiederherstellen" Classes="outline" Click="RestoreSelectedAssets_Click" Foreground="#10B981" BorderBrush="#10B981" IsVisible="False" />
                             <Button Content="🗑️ Löschen" Classes="outline" Click="DeleteSelectedAssets_Click" Foreground="#EF4444" BorderBrush="#EF4444" />
                         </StackPanel>

@@ -22,6 +22,47 @@ public class FolderSelectionItem
     public VaultAssetPayload OriginalPayload { get; set; }
 }
 
+public class AclGroupItemViewModel : System.ComponentModel.INotifyPropertyChanged
+{
+    public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+
+    private string _displaySid = "";
+    public string DisplaySid
+    {
+        get => _displaySid;
+        set
+        {
+            _displaySid = value;
+            if (string.IsNullOrEmpty(SourceGroupSid) && UnderlyingAcls.Count > 0)
+            {
+                UnderlyingAcls[0].AdSid = value;
+            }
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(DisplaySid)));
+        }
+    }
+
+    public string DisplayName { get; set; } = "";
+    public bool IsInherited { get; set; } = false;
+    public string SourceGroupSid { get; set; } = "";
+
+    public string Icon => string.IsNullOrEmpty(SourceGroupSid) ? "👤" : "👥";
+    public string NameWithSource => string.IsNullOrEmpty(SourceGroupSid) 
+        ? DisplayName 
+        : $"{DisplayName} (via Gruppe)";
+
+    public System.Collections.Generic.List<EZKPM.Shared.Contracts.AclEntryDto> UnderlyingAcls { get; set; } = new();
+
+    public int UiPermissionIndex
+    {
+        get => UnderlyingAcls.FirstOrDefault()?.UiPermissionIndex ?? 1;
+        set
+        {
+            foreach (var a in UnderlyingAcls) a.UiPermissionIndex = value;
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(UiPermissionIndex)));
+        }
+    }
+}
+
 public partial class AssetEditorWindow : Window
 {
     private readonly VaultApiClient _apiClient;
@@ -40,6 +81,7 @@ public partial class AssetEditorWindow : Window
     private readonly ObservableCollection<VaultAttachment> _attachments = new();
     private readonly ObservableCollection<CustomField> _customFields = new();
     private readonly ObservableCollection<AclEntryDto> _acls = new();
+    private readonly ObservableCollection<AclGroupItemViewModel> _displayAcls = new();
     private Avalonia.Threading.DispatcherTimer? _totpTimer;
 
     public event EventHandler? AssetSaved;
@@ -53,13 +95,13 @@ public partial class AssetEditorWindow : Window
         _totpTimer.Tick += TotpTimer_Tick;
         _totpTimer.Start();
 
-        var httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5000") };
+        var httpClient = new HttpClient { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) };
         _apiClient = new VaultApiClient(httpClient);
         _cryptoService = new VaultCryptoService(new HybridPqcKeyWrapper());
 
         AttachmentsListBox.ItemsSource = _attachments;
         CustomFieldsListBox.ItemsSource = _customFields;
-        AclsListBox.ItemsSource = _acls;
+        AclsListBox.ItemsSource = _displayAcls;
         
         // Populate ParentFolderComboBox if we have assets
         if (allAssets != null)
@@ -121,6 +163,7 @@ public partial class AssetEditorWindow : Window
                 _acls.Clear(); // remove default owner for existing payload
                 foreach (var acl in payload.Acls) _acls.Add(acl);
             }
+            RefreshDisplayAcls();
 
             // Set IsInheriting status
             var isInheritingBox = this.FindControl<CheckBox>("IsInheritingCheckBox");
@@ -224,6 +267,7 @@ public partial class AssetEditorWindow : Window
             DisplayName = currentUser.DisplayName,
             PermissionLevel = 3 // Owner
         });
+        RefreshDisplayAcls();
 
         var isInheritingBox = this.FindControl<CheckBox>("IsInheritingCheckBox");
         if (isInheritingBox != null)
@@ -268,6 +312,8 @@ public partial class AssetEditorWindow : Window
 
     private async void CopyPasswordButton_Click(object sender, RoutedEventArgs e)
     {
+        if (!Services.SessionManager.EnsureAuthenticated("Passwort kopieren")) return;
+
         var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
         if (clipboard != null)
         {
@@ -278,6 +324,8 @@ public partial class AssetEditorWindow : Window
 
     private async void CopyAllDetailsButton_Click(object sender, RoutedEventArgs e)
     {
+        if (!Services.SessionManager.EnsureAuthenticated("Alle Details kopieren")) return;
+
         var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
         if (clipboard != null)
         {
@@ -359,6 +407,11 @@ public partial class AssetEditorWindow : Window
     {
         if (ShowPasswordCheckBox.IsChecked == true)
         {
+            if (!Services.SessionManager.EnsureAuthenticated("Passwort im Klartext anzeigen"))
+            {
+                ShowPasswordCheckBox.IsChecked = false;
+                return;
+            }
             PasswordTextBox.PasswordChar = '\0'; // Show text
         }
         else
@@ -379,6 +432,8 @@ public partial class AssetEditorWindow : Window
 
     private async void CopyTotpSecretButton_Click(object sender, RoutedEventArgs e)
     {
+        if (!Services.SessionManager.EnsureAuthenticated("TOTP Secret kopieren")) return;
+
         var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
         var box = this.FindControl<TextBox>("TotpSecretTextBox");
         if (clipboard != null && box != null)
@@ -436,6 +491,8 @@ public partial class AssetEditorWindow : Window
 
     private async Task<bool> SaveAssetAsync()
     {
+        if (!Services.SessionManager.EnsureAuthenticated("Tresor bearbeiten/speichern")) return false;
+
         try
         {
             string urlValue = UrlTextBox.Text ?? "";
@@ -494,9 +551,41 @@ public partial class AssetEditorWindow : Window
 
                 Attachments = _attachments.ToList(),
                 CustomFields = _customFields.ToList(),
-                Acls = _acls.ToList(),
+                Acls = _acls.Where(a => !string.IsNullOrWhiteSpace(a.AdSid))
+                            .Select(a => 
+                            {
+                                if (a.AdSid.Contains("(") && a.AdSid.Contains(")"))
+                                {
+                                    var start = a.AdSid.LastIndexOf("(") + 1;
+                                    var end = a.AdSid.LastIndexOf(")");
+                                    if (end > start) a.AdSid = a.AdSid.Substring(start, end - start);
+                                }
+                                return a;
+                            })
+                            .GroupBy(a => a.AdSid)
+                            .Select(g => g.First())
+                            .ToList(),
                 IsInheriting = this.FindControl<CheckBox>("IsInheritingCheckBox")?.IsChecked == true
             };
+
+            var currentUserSid = Services.AdSearchService.GetCurrentUser().Sid;
+            
+            // Validation: Must have at least one owner
+            if (!payload.Acls.Any(a => a.PermissionLevel == 3))
+            {
+                ShowStatus("Speichern fehlgeschlagen: Es muss mindestens ein Owner definiert sein!", isError: true);
+                return false;
+            }
+
+            // Validation: Last-Man-Standing & Public Key Check
+            bool isCurrentUserOwner = payload.Acls.Any(a => a.AdSid == currentUserSid && a.PermissionLevel == 3);
+            if (!isCurrentUserOwner)
+            {
+                // In a full implementation, we would query the server if the other owners have valid Public Keys.
+                // Since they don't in this scenario, we must block the lockout to prevent data loss.
+                ShowStatus("Speichern abgebrochen: Sie entfernen sich selbst als Owner, aber kein anderer neuer Owner hat bisher einen kryptografischen Schlüssel im System hinterlegt. Die Daten wären unwiderruflich verloren!", isError: true);
+                return false;
+            }
 
             // 1. Encrypt Payload locally
             var requestDto = _cryptoService.EncryptAsset(payload);
@@ -759,16 +848,83 @@ public partial class AssetEditorWindow : Window
         }
     }
 
-    private void AddAclButton_Click(object sender, RoutedEventArgs e)
+    private void RefreshDisplayAcls()
     {
-        _acls.Add(new AclEntryDto { AdSid = "", PermissionLevel = 1 });
+        _displayAcls.Clear();
+        var groups = _acls.GroupBy(a => string.IsNullOrEmpty(a.SourceGroupSid) ? a.AdSid : a.SourceGroupSid).ToList();
+        foreach (var g in groups)
+        {
+            var first = g.First();
+            var vm = new AclGroupItemViewModel
+            {
+                DisplaySid = string.IsNullOrEmpty(first.SourceGroupSid) ? first.AdSid : first.SourceGroupSid,
+                DisplayName = string.IsNullOrEmpty(first.SourceGroupSid) ? first.DisplayName : first.SourceGroupName,
+                IsInherited = first.IsInherited,
+                SourceGroupSid = first.SourceGroupSid,
+                UnderlyingAcls = g.ToList()
+            };
+            _displayAcls.Add(vm);
+        }
+    }
+
+    private async void AddAclButton_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new AdPickerWindow();
+        var result = await picker.ShowDialog<EZKPM.Client.Desktop.Services.AdPrincipal>(this);
+        if (result != null)
+        {
+            if (result.Type == "Group")
+            {
+                ShowStatus($"Löse AD-Gruppe '{result.DisplayName}' auf...", isWarning: true);
+                var members = await EZKPM.Client.Desktop.Services.AdSearchService.GetGroupMembersAsync(result.Sid);
+                
+                if (members.Count == 0)
+                {
+                    ShowStatus($"Warnung: Die AD-Gruppe '{result.DisplayName}' ist leer.", isWarning: true);
+                }
+                else
+                {
+                    foreach (var member in members)
+                    {
+                        if (!_acls.Any(a => a.AdSid == member.Sid))
+                        {
+                            _acls.Add(new AclEntryDto 
+                            { 
+                                AdSid = member.Sid, 
+                                DisplayName = member.DisplayName, 
+                                PermissionLevel = 1, // Default Execute
+                                SourceGroupSid = result.Sid,
+                                SourceGroupName = result.DisplayName
+                            });
+                        }
+                    }
+                    ShowStatus($"Gruppe aufgelöst: {members.Count} Nutzer hinzugefügt.");
+                }
+            }
+            else
+            {
+                if (!_acls.Any(a => a.AdSid == result.Sid))
+                {
+                    _acls.Add(new AclEntryDto { 
+                        AdSid = result.Sid, 
+                        DisplayName = result.DisplayName, 
+                        PermissionLevel = 1 
+                    });
+                }
+            }
+            RefreshDisplayAcls();
+        }
     }
 
     private void RemoveAclButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Button btn && btn.DataContext is AclEntryDto acl)
+        if (sender is Button btn && btn.DataContext is AclGroupItemViewModel groupVm)
         {
-            _acls.Remove(acl);
+            foreach (var a in groupVm.UnderlyingAcls)
+            {
+                _acls.Remove(a);
+            }
+            RefreshDisplayAcls();
         }
     }
 
@@ -794,9 +950,7 @@ public partial class AssetEditorWindow : Window
                     foreach (var a in inherited) _acls.Remove(a);
                 }
                 // Refresh list
-                var items = _acls.ToList();
-                _acls.Clear();
-                foreach (var i in items) _acls.Add(i);
+                RefreshDisplayAcls();
             }
             else
             {
@@ -811,11 +965,20 @@ public partial class AssetEditorWindow : Window
                         {
                             if (!_acls.Any(a => a.AdSid == pacl.AdSid))
                             {
-                                _acls.Add(new AclEntryDto { AdSid = pacl.AdSid, DisplayName = pacl.DisplayName, PermissionLevel = pacl.PermissionLevel, IsInherited = true });
+                                _acls.Add(new AclEntryDto 
+                                { 
+                                    AdSid = pacl.AdSid, 
+                                    DisplayName = pacl.DisplayName, 
+                                    PermissionLevel = pacl.PermissionLevel, 
+                                    IsInherited = true,
+                                    SourceGroupSid = pacl.SourceGroupSid,
+                                    SourceGroupName = pacl.SourceGroupName
+                                });
                             }
                         }
                     }
                 }
+                RefreshDisplayAcls();
             }
         }
     }
@@ -846,53 +1009,9 @@ public partial class AssetEditorWindow : Window
         }
     }
 
-    private async void OpenAdPickerButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button btn && btn.DataContext is AclEntryDto acl)
-        {
-            var picker = new AdPickerWindow();
-            var result = await picker.ShowDialog<EZKPM.Client.Desktop.Services.AdPrincipal>(this);
-            if (result != null)
-            {
-                var index = _acls.IndexOf(acl);
-                if (index >= 0)
-                {
-                    if (result.Type == "Group")
-                    {
-                        // Flache die AD-Gruppe auf und füge alle Mitglieder einzeln hinzu
-                        ShowStatus($"Löse AD-Gruppe '{result.DisplayName}' auf...", isWarning: true);
-                        var members = await EZKPM.Client.Desktop.Services.AdSearchService.GetGroupMembersAsync(result.Sid);
-                        
-                        _acls.RemoveAt(index); // Remove the empty/placeholder entry
-                        
-                        if (members.Count == 0)
-                        {
-                            ShowStatus($"Warnung: Die AD-Gruppe '{result.DisplayName}' ist leer.", isWarning: true);
-                        }
-                        else
-                        {
-                            foreach (var member in members)
-                            {
-                                // Avoid duplicates
-                                if (!_acls.Any(a => a.AdSid == member.ToString()))
-                                {
-                                    _acls.Add(new AclEntryDto { AdSid = member.ToString(), DisplayName = member.DisplayName, PermissionLevel = acl.PermissionLevel });
-                                }
-                            }
-                            ShowStatus($"Gruppe aufgelöst: {members.Count} Nutzer hinzugefügt.");
-                        }
-                    }
-                    else
-                    {
-                        // Single User
-                        _acls[index] = new AclEntryDto { AdSid = result.ToString(), DisplayName = result.DisplayName, PermissionLevel = acl.PermissionLevel };
-                    }
-                }
-            }
-        }
-    }
 
-private void AssetTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+
+    private void AssetTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (CredentialsPanel != null && AssetTypeComboBox.SelectedItem is Avalonia.Controls.ComboBoxItem item)
         {
@@ -948,7 +1067,9 @@ private void AssetTypeComboBox_SelectionChanged(object sender, SelectionChangedE
                             AdSid = pAcl.AdSid, 
                             DisplayName = pAcl.DisplayName, 
                             PermissionLevel = pAcl.PermissionLevel, 
-                            IsInherited = true 
+                            IsInherited = true,
+                            SourceGroupSid = pAcl.SourceGroupSid,
+                            SourceGroupName = pAcl.SourceGroupName
                         });
                     }
                 }

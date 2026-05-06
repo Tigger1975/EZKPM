@@ -34,7 +34,19 @@ FA 11: Rollenbasiertes Rechtesystem (RBAC) auf Basis von AD-SIDs.
 
 FA 12: Unterstützung von Execute-Only (Benutzen ohne Einsehen), Read und Owner Berechtigungen.
 
-FA 13: Hardware-gebundener Login via FIDO2 (hmac-secret) oder lokalem TPM zur Ableitung des Master-Keys.
+FA 13: Seamless Enterprise SSO & Hardware-Bindung:
+In einer Windows-AD-Umgebung erfolgt der reguläre App-Start nahtlos und ohne Passwort-Eingabe (Zero-Touch-Login). Der Master-Key wird durch das Betriebssystem (DPAPI / Windows Hello) geschützt und transparent entschlüsselt.
+
+FA 14: Step-Up Authentifizierung & UI-Session-Timer:
+Die Desktop-Applikation unterscheidet strikt zwischen App-Start und Zugriff auf sensible Daten (IsLocked-State).
+- Autostart-Regel: Startet die App innerhalb von 5 Minuten nach der Windows-Anmeldung des Nutzers, startet sie im Hintergrund, erzwingt jedoch für sensible UI-Aktionen sofort den Windows-Credential-Prompt. Startet die App nach > 5 Minuten, wird der Start komplett blockiert, bis der Nutzer sich per Windows-Prompt authentifiziert.
+- Laufzeit-Sperren: Nach 10 Minuten Inaktivität, bei Minimierung in die Taskleiste für > 1 Minute oder bei sofortiger Minimierung in den System-Tray wird die "Sensitive Session" gesperrt. Für den lesenden Zugriff auf Passwörter im Klartext, Änderungen oder Exporte muss sich der Nutzer dann erneut via Windows-Credentials authentifizieren. 
+Wichtig: Standard-Aktivitäten im Hintergrund (z. B. Autofill über die Browser-Extension via Native Messaging) laufen komplett außerhalb dieses Timers und sind jederzeit nahtlos nutzbar, solange die Windows-Sitzung des Nutzers nicht gesperrt ist.
+
+FA 15: Multi-Device Roaming (Hybrid-Fallback):
+Wenn der Nutzer an einem komplett neuen, noch nicht gekoppelten Gerät arbeitet:
+- Weg A (Geräte-Kopplung): Ein bereits autorisiertes Gerät (z. B. Handy/Alt-PC) genehmigt das neue Gerät durch asymmetrisches Key-Wrapping.
+- Weg B (Fallback): Ein 34-stelliger Setup-Code (1Password-Prinzip), der bei vollständigem Geräteverlust am neuen PC manuell eingegeben wird. Danach greift wieder FA 13 (Nahtloses SSO via lokaler OS-Sicherung).
 
 3.2 Tresor-Funktionen (Vault Assets)
 
@@ -112,15 +124,19 @@ Duress-Logic: Spezielles Passwort öffnet "Fake-Vault" und setzt stillen Alarm a
 
 ✅ Audit-Dialog UI (FA 21/22): Orchestrator blockiert Payment-Assets und öffnet ein Topmost-Avalonia-Fenster zur Eingabe von Betrag/Bestellnummer. XAML-Fixes (z.B. AvaloniaXamlLoader.Load(this)) sind aktiv.
 
+✅ Echte Zero-Knowledge Entschlüsselung & Krypto-Roundtrip: Der VaultCryptoService ist vollständig integriert. AesGcm für Asset-Keys und HybridPqcKeyWrapper für asymmetrische AD-Key-Verpackung sind aktiv.
+
+✅ Hardware-gebundener Login (FA 13) & Step-Up Auth (FA 14): DPAPI-Bindung realisiert. Windows Credential Prompt (credui.dll) in Kombination mit 5-Min-Autostart-Logik und Session-Timern voll funktionsfähig.
+
+✅ AD & ACL Rollen (FA 11 & FA 12): AD-Gruppen-Abfragen und SID-basiertes Rechtesystem (Read, Owner, Execute-Only) sind im UI vollständig abgebildet und funktional.
+
 6.2 Offene Anforderungen (Nächste Schritte)
+
+⏳ Multi-Device Roaming (FA 15 - Weg B): Implementierung des 34-stelligen "Secret Key" (1Password-Prinzip) für die plattformunabhängige Geräte-Kopplung und Wiederherstellung bei vollständigem Geräteverlust.
 
 ⏳ API-Client & Server-Kommunikation: Ein VaultApiClient muss implementiert werden, um mit dem VaultController (PDP) via HTTPS/OIDC zu kommunizieren und verschlüsselte Blobs abzurufen.
 
 ⏳ Kryptografisches Audit-Log (FA 4.2 & FA 22): Die Eingaben aus dem AuditDialog müssen lokal mit AES-GCM verschlüsselt und mit dem Hash des vorherigen Eintrags verkettet werden (Hash-Chaining), bevor sie an den Server gesendet werden.
-
-⏳ Echte Zero-Knowledge Entschlüsselung: Der VaultCryptoService muss in den Orchestrator integriert werden, um Server-Blobs sicher lokal im RAM zu entschlüsseln (Ersatz der Dummy-Daten).
-
-⏳ Hardware-gebundener Login (FA 13): Ableitung des Master-Keys durch Master-Passwort (Argon2id) + FIDO2/WebAuthn HMAC.
 
 7. Abnahmekriterien
 

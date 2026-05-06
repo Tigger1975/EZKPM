@@ -7,6 +7,7 @@ public class VaultTreeNode
 {
     public VaultAssetPayload Payload { get; set; }
     public ObservableCollection<VaultTreeNode> Children { get; set; } = new();
+    public VaultTreeNode? Parent { get; set; }
     public bool IsExpanded { get; set; }
 
     public string Title => Payload.Title;

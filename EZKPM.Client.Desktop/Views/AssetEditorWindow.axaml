@@ -203,7 +203,8 @@
                                 </Border>
                             </StackPanel>
                         </Border>
-                    </StackPanel>
+                    </StackPanel> <!-- AuthenticatorPanel -->
+                    </StackPanel> <!-- CredentialsPanel -->
 
                     <TabControl Margin="0,20,0,0">
                         <TabItem Header="General &amp; Notes">
@@ -228,7 +229,7 @@
                                     <TextBlock Grid.Column="2" Text="Beschreibung" FontWeight="SemiBold" Foreground="#374151"/>
                                 </Grid>
                                 
-                                <ListBox x:Name="CustomFieldsListBox" MinHeight="150" Background="Transparent" BorderThickness="0">
+                                <ListBox x:Name="CustomFieldsListBox" MinHeight="150" MaxHeight="300" Background="Transparent" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate DataType="contracts:CustomField">
                                             <Grid ColumnDefinitions="2*, 3*, 4*, 50" Margin="0,2">
@@ -254,23 +255,28 @@
                                     <TextBlock Grid.Column="2" Text="Rolle" FontWeight="SemiBold" Foreground="#374151"/>
                                 </Grid>
                                 
-                                <ListBox x:Name="AclsListBox" MinHeight="150" Background="Transparent" BorderThickness="0">
+                                <ListBox x:Name="AclsListBox" MinHeight="150" MaxHeight="300" Background="Transparent" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto">
                                     <ListBox.ItemTemplate>
-                                        <DataTemplate DataType="contracts:AclEntryDto">
-                                            <Grid ColumnDefinitions="*, Auto, 130, Auto" Margin="0,2">
-                                                <Grid Grid.Column="0" Margin="0,0,5,0">
-                                                    <AutoCompleteBox Text="{Binding AdSid}" Watermark="SID oder Username..." MinimumPrefixLength="2" Populating="AdSidAutoCompleteBox_Populating" />
+                                        <DataTemplate x:DataType="local:AclGroupItemViewModel">
+                                            <Grid ColumnDefinitions="Auto, *, Auto, 130, Auto" Margin="0,2">
+                                                <TextBlock Grid.Column="0" Text="{Binding Icon}" Margin="0,0,5,0" VerticalAlignment="Center" FontSize="16"/>
+                                                
+                                                <Grid Grid.Column="1" Margin="0,0,5,0">
+                                                    <TextBlock Text="{Binding NameWithSource}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#111827" FontSize="14"/>
                                                     <TextBlock Text="[Geerbt]" IsVisible="{Binding IsInherited}" Foreground="#9CA3AF" FontSize="11" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,2,25,0" IsHitTestVisible="False"/>
                                                 </Grid>
-                                                <Button Grid.Column="1" Content="🔍" Classes="outline" Padding="8,4" Margin="0,0,10,0" Click="OpenAdPickerButton_Click" ToolTip.Tip="AD Benutzer/Gruppen suchen"/>
-                                                <ComboBox Grid.Column="2" SelectedIndex="{Binding UiPermissionIndex}" Margin="0,0,10,0" HorizontalAlignment="Stretch">
+                                                
+                                                <Button Grid.Column="2" IsVisible="False" />
+                                                
+                                                <ComboBox Grid.Column="3" SelectedIndex="{Binding UiPermissionIndex}" Margin="0,0,10,0" HorizontalAlignment="Stretch">
                                                     <ComboBoxItem Content="Deny (-1)" Foreground="Red"/>
                                                     <ComboBoxItem Content="Keine Rechte (0)" />
                                                     <ComboBoxItem Content="Execute (1)" />
                                                     <ComboBoxItem Content="Read (2)" />
                                                     <ComboBoxItem Content="Owner (3)" />
                                                 </ComboBox>
-                                                <Button Grid.Column="3" Content="❌" Foreground="Red" Classes="outline" HorizontalAlignment="Center" Click="RemoveAclButton_Click"/>
+                                                
+                                                <Button Grid.Column="4" Content="❌" Foreground="Red" Classes="outline" HorizontalAlignment="Center" Click="RemoveAclButton_Click"/>
                                             </Grid>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
@@ -284,7 +290,7 @@
                         <TabItem Header="Attachments">
                             <StackPanel Spacing="10" Margin="10">
                                 <Button Classes="outline" Content="📎" ToolTip.Tip="Add File(s)..." Click="AddAttachmentButton_Click" HorizontalAlignment="Left"/>
-                                <ListBox x:Name="AttachmentsListBox" MinHeight="120" Background="#F9FAFB" CornerRadius="6">
+                                <ListBox x:Name="AttachmentsListBox" MinHeight="120" MaxHeight="250" Background="#F9FAFB" CornerRadius="6" ScrollViewer.VerticalScrollBarVisibility="Auto">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate DataType="contracts:VaultAttachment">
                                             <StackPanel Orientation="Horizontal" Spacing="10">
@@ -330,7 +336,6 @@
                             </StackPanel>
                         </TabItem>
                     </TabControl>
-                    </StackPanel>
-                            </StackPanel>
-                        </ScrollViewer>
+                </StackPanel> <!-- EditorPanel -->
+            </ScrollViewer>
 </Window>

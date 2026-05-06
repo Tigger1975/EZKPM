@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="EZKPM.Client.Desktop.Views.CsvMappingWindow"
+        Title="CSV Spalten-Mapping" Width="500" Height="400"
+        WindowStartupLocation="CenterOwner"
+        Background="#F3F4F6">
+    <StackPanel Margin="20" Spacing="15">
+        <TextBlock Text="CSV Import Mapping" FontSize="20" FontWeight="Bold" Foreground="#111827"/>
+        <TextBlock Text="Bitte ordnen Sie die Spalten Ihrer CSV-Datei den EZKPM-Feldern zu:" Foreground="#4B5563" TextWrapping="Wrap"/>
+        
+        <Grid ColumnDefinitions="150, *" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="0,10">
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Name / Titel:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            <ComboBox Grid.Row="0" Grid.Column="1" x:Name="TitleComboBox" HorizontalAlignment="Stretch" Margin="0,5"/>
+            
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Benutzername:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            <ComboBox Grid.Row="1" Grid.Column="1" x:Name="UsernameComboBox" HorizontalAlignment="Stretch" Margin="0,5"/>
+            
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Passwort:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            <ComboBox Grid.Row="2" Grid.Column="1" x:Name="PasswordComboBox" HorizontalAlignment="Stretch" Margin="0,5"/>
+            
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Web-Seite / URL:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            <ComboBox Grid.Row="3" Grid.Column="1" x:Name="UrlComboBox" HorizontalAlignment="Stretch" Margin="0,5"/>
+            
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Anmerkungen:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            <ComboBox Grid.Row="4" Grid.Column="1" x:Name="NotesComboBox" HorizontalAlignment="Stretch" Margin="0,5"/>
+        </Grid>
+        
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,20,0,0">
+            <Button Content="Abbrechen" Click="CancelButton_Click"/>
+            <Button Content="Importieren" Click="OkButton_Click" Background="#2563EB" Foreground="White" FontWeight="Bold"/>
+        </StackPanel>
+    </StackPanel>
+</Window>
