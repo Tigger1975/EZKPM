@@ -46,10 +46,13 @@ namespace EZKPM.Server.PDP.Controllers
             var existingRequest = await _db.VaultRecoveryRequests
                 .FirstOrDefaultAsync(r => r.AdSid == hashedSid && !r.IsCompleted);
 
+            Guid currentRequestId;
+
             if (existingRequest != null)
             {
-                // Update ephemeral key if they request again
                 existingRequest.EphemeralUserPubKey = request.EphemeralUserPubKey;
+                existingRequest.RequestedAt = DateTime.UtcNow; // Reset window
+                currentRequestId = existingRequest.Id;
             }
             else
             {
@@ -60,7 +63,16 @@ namespace EZKPM.Server.PDP.Controllers
                     RequiredShares = 2 // Hardcoded to 2-of-N for this prototype
                 };
                 _db.VaultRecoveryRequests.Add(newRequest);
+                currentRequestId = newRequest.Id;
             }
+
+            _db.RecoveryAuditLogs.Add(new RecoveryAuditLog
+            {
+                RecoveryRequestId = currentRequestId,
+                Action = "Requested",
+                ActorSid = hashedSid,
+                Details = "User initiated a Vault Recovery request."
+            });
 
             await _db.SaveChangesAsync();
             return Ok();
@@ -69,6 +81,12 @@ namespace EZKPM.Server.PDP.Controllers
         [HttpPost("approve")]
         public async Task<IActionResult> ApproveRecovery([FromBody] ProvideRecoveryShareDto request)
         {
+            var hashedAdminSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.AdminSid);
+            var adminProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedAdminSid);
+
+            if (adminProfile == null || !adminProfile.IsAdmin)
+                return Forbid("Only administrators can approve a recovery request.");
+
             var recovery = await _db.VaultRecoveryRequests
                 .Include(r => r.ProvidedShares)
                 .FirstOrDefaultAsync(r => r.Id == request.RecoveryRequestId);
@@ -76,8 +94,22 @@ namespace EZKPM.Server.PDP.Controllers
             if (recovery == null) return NotFound("Recovery request not found.");
             if (recovery.IsCompleted) return BadRequest("Recovery already completed.");
 
-            // Avoid duplicate shares from the same admin
-            var hashedAdminSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.AdminSid);
+            // Zeitfenster-Prüfung (z.B. max 1 Stunde)
+            if (DateTime.UtcNow > recovery.RequestedAt.AddHours(1))
+            {
+                _db.RecoveryAuditLogs.Add(new RecoveryAuditLog
+                {
+                    RecoveryRequestId = recovery.Id,
+                    Action = "Expired",
+                    ActorSid = "SYSTEM",
+                    Details = "Recovery request expired before enough approvals were received."
+                });
+                
+                _db.VaultRecoveryRequests.Remove(recovery);
+                await _db.SaveChangesAsync();
+                return BadRequest("The recovery request has expired.");
+            }
+
             if (recovery.ProvidedShares.Any(s => s.AdminSid == hashedAdminSid))
                 return BadRequest("Admin has already provided a share.");
 
@@ -89,6 +121,28 @@ namespace EZKPM.Server.PDP.Controllers
             };
             
             _db.VaultRecoveryShares.Add(share);
+
+            _db.RecoveryAuditLogs.Add(new RecoveryAuditLog
+            {
+                RecoveryRequestId = recovery.Id,
+                Action = "Approved",
+                ActorSid = hashedAdminSid,
+                Details = "Admin approved the recovery request."
+            });
+
+            // Wenn wir durch diese Freigabe das Limit erreichen, schließen wir ab
+            if (recovery.ProvidedShares.Count + 1 >= recovery.RequiredShares)
+            {
+                recovery.IsCompleted = true;
+                _db.RecoveryAuditLogs.Add(new RecoveryAuditLog
+                {
+                    RecoveryRequestId = recovery.Id,
+                    Action = "Completed",
+                    ActorSid = "SYSTEM",
+                    Details = "Recovery threshold met. Fragments released to the user."
+                });
+            }
+
             await _db.SaveChangesAsync();
 
             return Ok();
@@ -109,6 +163,21 @@ namespace EZKPM.Server.PDP.Controllers
 
             if (recovery == null) return NotFound("No active recovery request.");
 
+            // Zeitfenster-Prüfung
+            if (DateTime.UtcNow > recovery.RequestedAt.AddHours(1))
+            {
+                _db.RecoveryAuditLogs.Add(new RecoveryAuditLog
+                {
+                    RecoveryRequestId = recovery.Id,
+                    Action = "Expired",
+                    ActorSid = "SYSTEM",
+                    Details = "Recovery request expired while polling status."
+                });
+                _db.VaultRecoveryRequests.Remove(recovery);
+                await _db.SaveChangesAsync();
+                return BadRequest("The recovery request has expired.");
+            }
+
             var response = new RecoveryStatusResponseDto
             {
                 RecoveryRequestId = recovery.Id,
@@ -119,15 +188,69 @@ namespace EZKPM.Server.PDP.Controllers
                 EncryptedShareBlobs = recovery.ProvidedShares.Select(s => s.EncryptedShareBlob).ToList()
             };
 
-            // If the threshold is reached, we consider the recovery fetchable and complete it 
-            // so admins can't submit more.
-            if (response.IsCompleted)
+            return Ok(response);
+        }
+
+        [HttpPost("set-admin")]
+        public async Task<IActionResult> SetAdmin([FromBody] SetAdminRequestDto request)
+        {
+            // Security Note: In a real environment, this should be protected by an Authorize attribute
+            // requiring an existing Admin or Domain Admin role from the token.
+            var hashedTargetSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.TargetAdSid);
+            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedTargetSid);
+            
+            if (profile == null)
             {
-                recovery.IsCompleted = true;
+                profile = new UserProfile { AdSid = hashedTargetSid, IsAdmin = request.IsAdmin };
+                _db.UserProfiles.Add(profile);
+            }
+            else
+            {
+                profile.IsAdmin = request.IsAdmin;
+            }
+
+            await _db.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpGet("pending")]
+        public async Task<ActionResult<List<VaultRecoveryRequest>>> GetPendingRequests()
+        {
+            // Bereinige abgelaufene Requests beim Abfragen
+            var cutoff = DateTime.UtcNow.AddHours(-1);
+            var expired = await _db.VaultRecoveryRequests
+                .Where(r => r.RequestedAt < cutoff && !r.IsCompleted)
+                .ToListAsync();
+
+            if (expired.Any())
+            {
+                foreach (var ex in expired)
+                {
+                    _db.RecoveryAuditLogs.Add(new RecoveryAuditLog
+                    {
+                        RecoveryRequestId = ex.Id,
+                        Action = "Expired",
+                        ActorSid = "SYSTEM",
+                        Details = "Recovery request expired (1 hour window)."
+                    });
+                }
+                _db.VaultRecoveryRequests.RemoveRange(expired);
                 await _db.SaveChangesAsync();
             }
 
-            return Ok(response);
+            var pending = await _db.VaultRecoveryRequests
+                .Include(r => r.ProvidedShares)
+                .Where(r => !r.IsCompleted)
+                .OrderByDescending(r => r.RequestedAt)
+                .ToListAsync();
+
+            return Ok(pending);
         }
+    }
+
+    public class SetAdminRequestDto
+    {
+        public string TargetAdSid { get; set; }
+        public bool IsAdmin { get; set; }
     }
 }

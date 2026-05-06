@@ -16,6 +16,7 @@ namespace EZKPM.Server.PDP.Data
         public DbSet<UserProfile> UserProfiles { get; set; }
         public DbSet<VaultRecoveryRequest> VaultRecoveryRequests { get; set; }
         public DbSet<VaultRecoveryShare> VaultRecoveryShares { get; set; }
+        public DbSet<RecoveryAuditLog> RecoveryAuditLogs { get; set; }
 
         public EzkpmDbContext(DbContextOptions<EzkpmDbContext> options) : base(options) { }
 
@@ -78,6 +79,11 @@ namespace EZKPM.Server.PDP.Data
             });
 
             modelBuilder.Entity<VaultRecoveryShare>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+            });
+
+            modelBuilder.Entity<RecoveryAuditLog>(entity =>
             {
                 entity.HasKey(e => e.Id);
             });
@@ -181,6 +187,7 @@ namespace EZKPM.Server.PDP.Data
     {
         public string AdSid { get; set; }
         public string EncryptedMasterKeyBackup { get; set; }
+        public bool IsAdmin { get; set; }
     }
 
     public class VaultRecoveryRequest
@@ -201,5 +208,15 @@ namespace EZKPM.Server.PDP.Data
         public Guid RecoveryRequestId { get; set; }
         public string AdminSid { get; set; }
         public string EncryptedShareBlob { get; set; }
+    }
+
+    public class RecoveryAuditLog
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public Guid RecoveryRequestId { get; set; }
+        public string Action { get; set; } // e.g. "Requested", "Approved", "Completed", "Expired"
+        public string ActorSid { get; set; } // Who did it
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public string Details { get; set; } 
     }
 }
