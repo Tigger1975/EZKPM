@@ -534,29 +534,111 @@ function injectGeneratorIcon() {
             e.preventDefault();
             e.stopPropagation();
             
+            // Toggle UI
+            let existingUi = document.getElementById('ezkpm-gen-ui');
+            if (existingUi) {
+                existingUi.remove();
+                return;
+            }
+
             let minLen = field.getAttribute('minlength') || 16;
             minLen = Math.max(16, parseInt(minLen));
-            
-            const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
-            let pwd = "";
-            const array = new Uint32Array(minLen);
-            window.crypto.getRandomValues(array);
-            for (let i = 0; i < minLen; i++) {
-                pwd += chars[array[i] % chars.length];
-            }
-            
-            const allEmptyPwd = document.querySelectorAll('input[type="password"]');
-            allEmptyPwd.forEach(p => {
-                if (!p.value) {
-                    p.value = pwd;
-                    p.dispatchEvent(new Event('input', { bubbles: true }));
-                    p.dispatchEvent(new Event('change', { bubbles: true }));
+
+            const ui = document.createElement('div');
+            ui.id = 'ezkpm-gen-ui';
+            ui.style.position = 'absolute';
+            ui.style.backgroundColor = '#1E293B';
+            ui.style.border = '1px solid #3B82F6';
+            ui.style.borderRadius = '8px';
+            ui.style.padding = '15px';
+            ui.style.zIndex = '10000';
+            ui.style.color = 'white';
+            ui.style.fontFamily = 'sans-serif';
+            ui.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
+            ui.style.width = '220px';
+
+            const rect = icon.getBoundingClientRect();
+            ui.style.top = (rect.bottom + 5 + window.scrollY) + 'px';
+            ui.style.left = (rect.left - 100 + window.scrollX) + 'px';
+
+            ui.innerHTML = `
+                <div style="margin-bottom:10px; font-weight:bold; color:#3B82F6;">Passwort Generator</div>
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:12px;">Länge: <span id="ezkpm-len-val">${minLen}</span></label>
+                    <input type="range" id="ezkpm-len" min="8" max="64" value="${minLen}" style="width:100%;">
+                </div>
+                <div style="font-size:12px; margin-bottom:15px; display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+                    <label><input type="checkbox" id="ezkpm-uc" checked> A-Z</label>
+                    <label><input type="checkbox" id="ezkpm-lc" checked> a-z</label>
+                    <label><input type="checkbox" id="ezkpm-num" checked> 0-9</label>
+                    <label><input type="checkbox" id="ezkpm-spec" checked> !@#$</label>
+                </div>
+                <button id="ezkpm-gen-btn" style="width:100%; background:#10B981; color:white; border:none; padding:8px; border-radius:4px; cursor:pointer; font-weight:bold;">Generieren & Einfüllen</button>
+            `;
+
+            document.body.appendChild(ui);
+
+            // Close when clicking outside
+            setTimeout(() => {
+                const closeHandler = (ev) => {
+                    if (!ui.contains(ev.target) && ev.target !== icon) {
+                        ui.remove();
+                        document.removeEventListener('click', closeHandler);
+                    }
+                };
+                document.addEventListener('click', closeHandler);
+            }, 100);
+
+            // Update length label
+            const lenSlider = document.getElementById('ezkpm-len');
+            const lenVal = document.getElementById('ezkpm-len-val');
+            lenSlider.addEventListener('input', () => lenVal.innerText = lenSlider.value);
+
+            // Generate & Fill logic
+            document.getElementById('ezkpm-gen-btn').addEventListener('click', (ev) => {
+                ev.preventDefault();
+                const len = parseInt(lenSlider.value);
+                const useUc = document.getElementById('ezkpm-uc').checked;
+                const useLc = document.getElementById('ezkpm-lc').checked;
+                const useNum = document.getElementById('ezkpm-num').checked;
+                const useSpec = document.getElementById('ezkpm-spec').checked;
+
+                let chars = "";
+                if (useUc) chars += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                if (useLc) chars += "abcdefghijklmnopqrstuvwxyz";
+                if (useNum) chars += "0123456789";
+                if (useSpec) chars += "!@#$%^&*()_+~`|}{[]:;?><,./-=";
+                if (chars === "") chars = "abcdefghijklmnopqrstuvwxyz"; // fallback
+
+                let pwd = "";
+                const array = new Uint32Array(len);
+                window.crypto.getRandomValues(array);
+                for (let i = 0; i < len; i++) {
+                    pwd += chars[array[i] % chars.length];
                 }
+
+                // Fill into this field
+                field.value = pwd;
+                field.dispatchEvent(new Event('input', { bubbles: true }));
+                field.dispatchEvent(new Event('change', { bubbles: true }));
+
+                // Try to fill confirm-password fields in the same form
+                if (field.form) {
+                    const allPwd = field.form.querySelectorAll('input[type="password"]');
+                    allPwd.forEach(p => {
+                        if (p !== field) {
+                            p.value = pwd;
+                            p.dispatchEvent(new Event('input', { bubbles: true }));
+                            p.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+                }
+
+                icon.innerHTML = '✅';
+                setTimeout(() => icon.innerHTML = '🔑', 2000);
+                sessionStorage.setItem('ezkpm_generated_pwd', pwd);
+                ui.remove();
             });
-            
-            icon.innerHTML = '✅';
-            setTimeout(() => icon.innerHTML = '🔑', 2000);
-            sessionStorage.setItem('ezkpm_generated_pwd', pwd);
         });
     });
 }
@@ -581,6 +663,11 @@ document.addEventListener('submit', (e) => {
         if (lastAutofill) {
             const parsed = JSON.parse(lastAutofill);
             if (parsed.Password === password) return; 
+        }
+        
+        // Confirmation Prompt before sending
+        if (!window.confirm(`EZKPM Security\n\nMöchten Sie diese neuen Zugangsdaten für ${window.location.hostname} im Ironclad Vault speichern?\n\nUsername: ${username}`)) {
+            return; // User aborted
         }
         
         try {

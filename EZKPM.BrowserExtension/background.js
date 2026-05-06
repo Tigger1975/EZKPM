@@ -6,7 +6,7 @@ const NATIVE_APP_NAME = "com.ezkpm.nativehost";
 let nativePort = null;
 let reconnectTimer = null;
 
-function setExtensionIcon(state) {
+async function setExtensionIcon(state) {
     let path = "icons/icon_gray.png";
     let title = "EZKPM: Disconnected";
     if (state === 'connected') {
@@ -19,15 +19,16 @@ function setExtensionIcon(state) {
     }
     
     try {
-        // In Manifest V3, we must use absolute paths or a dictionary, and sometimes path alone fails if it's not well-formed
-        // Using a dictionary of sizes is the safest approach.
-        chrome.action.setIcon({ 
-            path: {
-                "16": path,
-                "48": path,
-                "128": path
-            }
-        });
+        const response = await fetch(chrome.runtime.getURL(path));
+        const blob = await response.blob();
+        const bitmap = await createImageBitmap(blob);
+        const canvas = new OffscreenCanvas(32, 32);
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 32, 32);
+        ctx.drawImage(bitmap, 0, 0, 32, 32);
+        const imageData = ctx.getImageData(0, 0, 32, 32);
+        
+        chrome.action.setIcon({ imageData: imageData });
         chrome.action.setTitle({ title: title });
     } catch (e) {
         console.error("Failed to set icon", e);
