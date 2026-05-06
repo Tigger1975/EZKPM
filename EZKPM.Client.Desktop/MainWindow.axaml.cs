@@ -51,7 +51,7 @@ public partial class MainWindow : Window
 
                 payload.ParentFolderId = GetPrivateFolderId();
 
-                var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList());
+        var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList(), _cryptoService);
                 editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
                 editor.Show();
             });
@@ -777,7 +777,7 @@ public partial class MainWindow : Window
             }
             else
             {
-                var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList());
+        var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList(), _cryptoService);
                 editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
                 editor.Show();
             }
@@ -799,7 +799,7 @@ public partial class MainWindow : Window
     {
         if (sender is MenuItem menuItem && menuItem.DataContext is VaultTreeNode node)
         {
-            var editor = new Views.AssetEditorWindow(node.Payload, _decryptedAssets.ToList());
+            var editor = new Views.AssetEditorWindow(node.Payload, _decryptedAssets.ToList(), _cryptoService);
             editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
             editor.Show();
         }
@@ -889,7 +889,7 @@ public partial class MainWindow : Window
         if (selectedNode != null && selectedNode.Payload.AssetType == "Folder") {
             payload.ParentFolderId = selectedNode.Payload.TransientAssetId;
         }
-        var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList());
+        var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList(), _cryptoService);
         editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
         editor.Show();
     }
@@ -909,7 +909,7 @@ public partial class MainWindow : Window
         } else {
             payload.ParentFolderId = GetPrivateFolderId();
         }
-        var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList());
+        var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList(), _cryptoService);
         editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
         editor.Show();
     }
