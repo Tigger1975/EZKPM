@@ -335,6 +335,18 @@
   <data name="Main_ColDesc" xml:space="preserve">
     <value>Description</value>
   </data>
+  <data name="Main_BtnNewAsset" xml:space="preserve">
+    <value>+ Asset</value>
+  </data>
+  <data name="Main_BtnNewFolder" xml:space="preserve">
+    <value>+ Folder</value>
+  </data>
+  <data name="Main_MenuEditFolder" xml:space="preserve">
+    <value>Edit Folder</value>
+  </data>
+  <data name="Main_MenuDeleteFolder" xml:space="preserve">
+    <value>Delete Folder</value>
+  </data>
   <data name="Startup_ErrNoUrl" xml:space="preserve">
     <value>Please enter a URL.</value>
   </data>

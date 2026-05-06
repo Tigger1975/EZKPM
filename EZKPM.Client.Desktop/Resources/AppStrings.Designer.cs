@@ -457,6 +457,24 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die + Asset ähnelt.
+        /// </summary>
+        public static string Main_BtnNewAsset {
+            get {
+                return ResourceManager.GetString("Main_BtnNewAsset", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die + Folder ähnelt.
+        /// </summary>
+        public static string Main_BtnNewFolder {
+            get {
+                return ResourceManager.GetString("Main_BtnNewFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die 🔄 Restore ähnelt.
         /// </summary>
         public static string Main_BtnRestore {
@@ -534,6 +552,24 @@ namespace EZKPM.Client.Desktop.Resources {
         public static string Main_LblExpired {
             get {
                 return ResourceManager.GetString("Main_LblExpired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Delete Folder ähnelt.
+        /// </summary>
+        public static string Main_MenuDeleteFolder {
+            get {
+                return ResourceManager.GetString("Main_MenuDeleteFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Edit Folder ähnelt.
+        /// </summary>
+        public static string Main_MenuEditFolder {
+            get {
+                return ResourceManager.GetString("Main_MenuEditFolder", resourceCulture);
             }
         }
         
