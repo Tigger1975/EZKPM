@@ -12,9 +12,6 @@ function scanForForms() {
         console.log("EZKPM: Found savedSessionStr, injecting...");
         const cred = JSON.parse(savedSessionStr);
         
-        // Blockiere das UI sofort, wenn wir wissen, dass wir in einem Autologin-Ablauf sind
-        blockUserInput();
-        
         const passField = document.querySelector('input[type="password"]');
         if (passField) {
             console.log("EZKPM: Zweischritt-Login (Reload) erkannt. Injiziere autorisiertes Passwort...");
