@@ -455,4 +455,7 @@ Bitte schreiben Sie es auf! Einloggen in 8 Sekunden...</value>
   <data name="Main_MenuDeleteFolder" xml:space="preserve">
     <value>Ordner löschen</value>
   </data>
+  <data name="Main_PrivateFolder" xml:space="preserve">
+    <value>Privat</value>
+  </data>
 </root>

@@ -54,7 +54,8 @@ public partial class MainWindow : Window
                     Title = string.IsNullOrEmpty(url) ? "New Login" : url + " Login",
                     Url = url,
                     Username = username,
-                    Password = password
+                    Password = password,
+                    ParentFolderId = GetPrivateFolderId()
                 };
 
                 var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList());
@@ -833,12 +834,21 @@ public partial class MainWindow : Window
         editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
         editor.Show();
     }
+    private Guid? GetPrivateFolderId()
+    {
+        string pName = EZKPM.Client.Desktop.Resources.AppStrings.Main_PrivateFolder ?? "Private";
+        var privateFolder = _decryptedAssets.FirstOrDefault(a => a.AssetType == "Folder" && !a.IsDeleted && (a.Title == "Privat" || a.Title == "Private" || a.Title == pName));
+        return privateFolder?.TransientAssetId;
+    }
+
     private void NewAssetButton_Click(object sender, RoutedEventArgs e)
     {
         var selectedNode = AssetTreeView?.SelectedItem as VaultTreeNode;
         var payload = new VaultAssetPayload();
         if (selectedNode != null && selectedNode.Payload.AssetType == "Folder") {
             payload.ParentFolderId = selectedNode.Payload.TransientAssetId;
+        } else {
+            payload.ParentFolderId = GetPrivateFolderId();
         }
         var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList());
         editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
