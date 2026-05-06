@@ -147,6 +147,67 @@ public partial class AdminDashboardWindow : Window
         }
     }
 
+    private async void ResolveAdminsButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            // 1. Hole alle AD User SIDs
+            var allUsers = await Task.Run(() => 
+            {
+                var list = new System.Collections.Generic.List<EZKPM.Client.Desktop.Services.AdPrincipal>();
+                try
+                {
+                    var ctx = new System.DirectoryServices.AccountManagement.PrincipalContext(System.DirectoryServices.AccountManagement.ContextType.Domain);
+                    var searcher = new System.DirectoryServices.AccountManagement.PrincipalSearcher(new System.DirectoryServices.AccountManagement.UserPrincipal(ctx));
+                    foreach (var result in searcher.FindAll())
+                    {
+                        if (result.Sid != null)
+                        {
+                            list.Add(new EZKPM.Client.Desktop.Services.AdPrincipal
+                            {
+                                Sid = result.Sid.Value,
+                                DisplayName = result.DisplayName ?? result.SamAccountName,
+                                SamAccountName = result.SamAccountName,
+                                IsAccountDisabled = result is System.DirectoryServices.AccountManagement.UserPrincipal u && (u.Enabled == false)
+                            });
+                        }
+                    }
+                }
+                catch { }
+                return list;
+            });
+
+            if (allUsers.Any())
+            {
+                // 2. Sende Liste an Server zum Filtern (Server hasht lokal und vergleicht)
+                var sidsOnly = allUsers.Select(u => u.Sid).ToList();
+                var response = await _apiClient.HttpClient.PostAsJsonAsync("/api/v1/recovery/filter-admins", sidsOnly);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var adminSids = await response.Content.ReadFromJsonAsync<System.Collections.Generic.List<string>>();
+                    if (adminSids != null)
+                    {
+                        // 3. Zeige die echten Admins an
+                        var resolvedAdmins = allUsers.Where(u => adminSids.Contains(u.Sid)).ToList();
+                        CurrentAdminsList.ItemsSource = resolvedAdmins;
+                    }
+                }
+                else
+                {
+                    string err = await response.Content.ReadAsStringAsync();
+                    var dialog = new ConfirmationDialog($"Fehler vom Server: {err}");
+                    await dialog.ShowDialogAsync(this);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            var dialog = new ConfirmationDialog($"Fehler: {ex.Message}");
+            await dialog.ShowDialogAsync(this);
+        }
+    }
+
     private async void RefreshRecoveryButton_Click(object sender, RoutedEventArgs e)
     {
         try

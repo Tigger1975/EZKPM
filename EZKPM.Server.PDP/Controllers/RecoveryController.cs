@@ -269,6 +269,38 @@ namespace EZKPM.Server.PDP.Controllers
             });
         }
 
+        [HttpPost("filter-admins")]
+        public async Task<IActionResult> FilterAdmins([FromBody] System.Collections.Generic.List<string> candidateSids)
+        {
+            var callerHashedSid = GetUserSid();
+            var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == callerHashedSid);
+            bool isCallerAdmin = callerProfile?.IsAdmin == true;
+            bool anyAdminExists = await _db.UserProfiles.AnyAsync(u => u.IsAdmin);
+
+            if (!isCallerAdmin && anyAdminExists)
+            {
+                return Forbid("Only administrators can list admins.");
+            }
+
+            var adminSidsInDb = await _db.UserProfiles
+                .Where(u => u.IsAdmin)
+                .Select(u => u.AdSid)
+                .ToListAsync();
+
+            var matchedSids = new System.Collections.Generic.List<string>();
+
+            foreach (var sid in candidateSids)
+            {
+                var hashed = EZKPM.Server.PDP.Services.SidHasher.HashSid(sid);
+                if (adminSidsInDb.Contains(hashed))
+                {
+                    matchedSids.Add(sid);
+                }
+            }
+
+            return Ok(matchedSids);
+        }
+
         [HttpPost("set-admin")]
         public async Task<IActionResult> SetAdmin([FromBody] SetAdminRequestDto request)
         {
