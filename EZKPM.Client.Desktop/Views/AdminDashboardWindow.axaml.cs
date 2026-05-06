@@ -5,6 +5,7 @@ using EZKPM.Shared.Contracts;
 using System;
 using System.Linq;
 using System.Net.Http.Json;
+using System.Threading.Tasks;
 
 namespace EZKPM.Client.Desktop.Views;
 
@@ -21,6 +22,7 @@ public partial class AdminDashboardWindow : Window
     {
         _apiClient = apiClient;
         LoadAdminStatus();
+        _ = LoadAlertsAsync();
     }
 
     private async void LoadAdminStatus()
@@ -250,6 +252,53 @@ public partial class AdminDashboardWindow : Window
         {
             var dialog = new ConfirmationDialog($"Fehler: {ex.Message}");
             await dialog.ShowDialog(this);
+        }
+    }
+    private async void RefreshAlertsButton_Click(object sender, RoutedEventArgs e)
+    {
+        await LoadAlertsAsync();
+    }
+
+    private async Task LoadAlertsAsync()
+    {
+        try
+        {
+            var response = await _apiClient.HttpClient.GetAsync("/api/v1/security-alerts");
+            if (response.IsSuccessStatusCode)
+            {
+                var alerts = await response.Content.ReadFromJsonAsync<System.Collections.Generic.List<EZKPM.Shared.Contracts.SecurityAlertResponseDto>>();
+                SecurityAlertsList.ItemsSource = alerts?.Where(a => !a.IsResolved).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Program.LogDebug($"Fehler beim Laden der Security Alerts: {ex.Message}");
+        }
+    }
+
+    private async void ResolveAlertButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is Guid alertId)
+        {
+            try
+            {
+                var response = await _apiClient.HttpClient.PostAsync($"/api/v1/security-alerts/{alertId}/resolve", null);
+                if (response.IsSuccessStatusCode)
+                {
+                    await LoadAlertsAsync();
+                }
+                else
+                {
+                    var err = await response.Content.ReadAsStringAsync();
+                    var dialog = new ConfirmationDialog($"Fehler: {err}");
+                    await dialog.ShowDialogAsync(this);
+                }
+            }
+            catch (Exception ex)
+            {
+                var dialog = new ConfirmationDialog($"Fehler: {ex.Message}");
+                await dialog.ShowDialogAsync(this);
+            }
         }
     }
 }

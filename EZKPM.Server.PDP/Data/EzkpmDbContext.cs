@@ -17,6 +17,7 @@ namespace EZKPM.Server.PDP.Data
         public DbSet<VaultRecoveryRequest> VaultRecoveryRequests { get; set; }
         public DbSet<VaultRecoveryShare> VaultRecoveryShares { get; set; }
         public DbSet<RecoveryAuditLog> RecoveryAuditLogs { get; set; }
+        public DbSet<SecurityAlert> SecurityAlerts { get; set; }
 
         public EzkpmDbContext(DbContextOptions<EzkpmDbContext> options) : base(options) { }
 
