@@ -194,6 +194,7 @@ namespace EZKPM.Server.PDP.Data
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public string AdSid { get; set; } 
+        public string RequesterSid { get; set; } // Enforces 6-eyes principle
         public string EphemeralUserPubKey { get; set; } 
         public int RequiredShares { get; set; } = 2; // e.g. 2-of-5 threshold
         public bool IsCompleted { get; set; }

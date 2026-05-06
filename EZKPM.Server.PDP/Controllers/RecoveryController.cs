@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using EZKPM.Server.PDP.Data;
 using EZKPM.Shared.Contracts;
 using Microsoft.AspNetCore.SignalR;
+using System.Security.Claims;
 
 namespace EZKPM.Server.PDP.Controllers
 {
@@ -20,6 +21,30 @@ namespace EZKPM.Server.PDP.Controllers
         {
             _db = db;
             _hubContext = hubContext;
+        }
+
+        private string GetUserSid()
+        {
+            string sid = null;
+            // Try to get SID from token
+            sid = User.FindFirstValue(System.Security.Claims.ClaimTypes.PrimarySid) ?? User.FindFirstValue("sid");
+            
+            // Fallback for local testing (Cross-Platform safe)
+            if (string.IsNullOrEmpty(sid))
+            {
+                try 
+                {
+                    if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                    {
+                        sid = System.Security.Principal.WindowsIdentity.GetCurrent().User?.Value ?? "S-1-5-21-DUMMY-FALLBACK";
+                    }
+                }
+                catch { /* Ignored */ }
+            }
+
+            if (string.IsNullOrEmpty(sid)) sid = Environment.UserName; // Linux fallback
+            
+            return EZKPM.Server.PDP.Services.SidHasher.HashSid(sid);
         }
 
         [HttpPost("setup")]
@@ -62,8 +87,9 @@ namespace EZKPM.Server.PDP.Controllers
                 var newRequest = new VaultRecoveryRequest
                 {
                     AdSid = hashedSid,
+                    RequesterSid = GetUserSid(), // The admin who initiates the request
                     EphemeralUserPubKey = request.EphemeralUserPubKey,
-                    RequiredShares = 2 // Hardcoded to 2-of-N for this prototype
+                    RequiredShares = 2 // 2 OTHER admins required for 6-eyes principle
                 };
                 _db.VaultRecoveryRequests.Add(newRequest);
                 currentRequestId = newRequest.Id;
@@ -116,6 +142,9 @@ namespace EZKPM.Server.PDP.Controllers
 
             if (recovery == null) return NotFound("Recovery request not found.");
             if (recovery.IsCompleted) return BadRequest("Recovery already completed.");
+
+            if (hashedAdminSid == recovery.RequesterSid)
+                return BadRequest("The admin who initiated the recovery request cannot approve it (6-eyes principle requires 2 other admins).");
 
             // Zeitfenster-Prüfung (z.B. max 1 Stunde)
             if (DateTime.UtcNow > recovery.RequestedAt.AddHours(1))
