@@ -342,7 +342,7 @@
                             <StackPanel Spacing="12" Margin="10">
                                 <TextBlock Text="Auto-Type Pattern" Classes="label"/>
                                 <TextBox x:Name="AutoTypePatternTextBox" Text="{}{USERNAME}{TAB}{PASSWORD}{ENTER}" />
-                                <TextBlock Text="Verfügbare Platzhalter: {USERNAME}, {PASSWORD}, {TITLE}, {TAB}, {ENTER}, {DELAY 1000}" FontSize="11" Foreground="#6B7280"/>
+                                <TextBlock Text="Verfügbare Platzhalter: {USERNAME}, {PASSWORD}, {TITLE}, {TAB}, {ENTER}, {DELAY 1000}, {CustomField_Name}" FontSize="11" Foreground="#6B7280"/>
                                 
                                 <TextBlock Text="Übertragungs-Modus" Classes="label" Margin="0,10,0,0"/>
                                 <ComboBox x:Name="AutoTypeModeComboBox" SelectedIndex="0" HorizontalAlignment="Stretch">
@@ -350,6 +350,31 @@
                                     <ComboBoxItem Content="2. Vollständiger String (Copy &amp; Paste blockweise)" />
                                     <ComboBoxItem Content="3. Tastatureingaben (Schlechteste Wahl)" />
                                 </ComboBox>
+
+                                <Expander Header="Ziel-Fenster Zuordnung (Auto-Type bei Erkennung)" HorizontalAlignment="Stretch" CornerRadius="4" Background="White" BorderBrush="#E5E7EB" Margin="0,15,0,0">
+                                    <StackPanel Spacing="10" Margin="10">
+                                        <TextBlock Text="Klicken und ziehen Sie die Zielscheibe auf ein beliebiges Fenster, um es zu verknüpfen:" Foreground="#6B7280" TextWrapping="Wrap"/>
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <Border Grid.Column="0" Background="#F3F4F6" BorderBrush="#D1D5DB" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,15,0" Width="50" Height="50" PointerPressed="Crosshair_PointerPressed" PointerMoved="Crosshair_PointerMoved" PointerReleased="Crosshair_PointerReleased" Cursor="Cross">
+                                                <TextBlock Text="🎯" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Spacing="8">
+                                                <Grid ColumnDefinitions="100, *">
+                                                    <TextBlock Grid.Column="0" Text="Fenstertitel:" VerticalAlignment="Center" Classes="label" Margin="0"/>
+                                                    <TextBox x:Name="TargetWindowTitleTextBox" Grid.Column="1" PlaceholderText="Regulärer Ausdruck oder exakter Titel..." />
+                                                </Grid>
+                                                <Grid ColumnDefinitions="100, *">
+                                                    <TextBlock Grid.Column="0" Text="Prozessname:" VerticalAlignment="Center" Classes="label" Margin="0"/>
+                                                    <TextBox x:Name="TargetProcessNameTextBox" Grid.Column="1" PlaceholderText="z.B. chrome.exe" />
+                                                </Grid>
+                                                <Grid ColumnDefinitions="100, *">
+                                                    <TextBlock Grid.Column="0" Text="Fensterklasse:" VerticalAlignment="Center" Classes="label" Margin="0"/>
+                                                    <TextBox x:Name="TargetWindowClassTextBox" Grid.Column="1" PlaceholderText="z.B. Chrome_WidgetWin_1" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Expander>
                                 
                                 <Button Classes="primary" Content="⌨️ Auto-Type Ausführen" Click="PerformAutoTypeButton_Click" HorizontalAlignment="Left" Margin="0,15,0,0"/>
                             </StackPanel>

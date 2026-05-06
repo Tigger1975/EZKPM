@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:contracts="clr-namespace:EZKPM.Shared.Contracts;assembly=EZKPM.Shared.Contracts"
+        x:Class="EZKPM.Client.Desktop.Views.AutoTypePromptWindow"
+        Title="Auto-Type Erkennung" Width="400" SizeToContent="Height"
+        WindowStartupLocation="CenterScreen"
+        Topmost="True"
+        SystemDecorations="None"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent">
+    
+    <Border Background="#1F2937" CornerRadius="12" Padding="20" BorderBrush="#374151" BorderThickness="1" BoxShadow="0 10 30 0 #40000000">
+        <StackPanel Spacing="15">
+            <TextBlock Text="🎯 Auto-Type erkannt!" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+            <TextBlock Text="Das aktuelle Fenster stimmt mit Ihren Tresor-Daten überein. Möchten Sie die Zugangsdaten automatisch eintragen?" Foreground="#9CA3AF" TextWrapping="Wrap" FontSize="13" TextAlignment="Center"/>
+            
+            <TextBlock Text="Gefundene Einträge:" Foreground="White" FontWeight="SemiBold" Margin="0,10,0,0"/>
+            <ListBox x:Name="MatchesListBox" Background="#374151" CornerRadius="6" MinHeight="80" MaxHeight="150" Foreground="White">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="contracts:VaultAssetPayload">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding Username}" Foreground="#9CA3AF"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <Grid ColumnDefinitions="*, 10, *" Margin="0,15,0,0">
+                <Button Grid.Column="0" x:Name="BtnCancel" Content="Abbrechen" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="Transparent" Foreground="#D1D5DB" BorderBrush="#6B7280" BorderThickness="1" Click="BtnCancel_Click"/>
+                <Button Grid.Column="2" x:Name="BtnExecute" Content="Ausführen" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="#3B82F6" Foreground="White" FontWeight="Bold" Click="BtnExecute_Click"/>
+            </Grid>
+        </StackPanel>
+    </Border>
+</Window>

@@ -227,6 +227,15 @@ public partial class AssetEditorWindow : Window
             {
                 AutoTypePatternTextBox.Text = payload.AutoType.Pattern ?? "{USERNAME}{TAB}{PASSWORD}{ENTER}";
                 AutoTypeModeComboBox.SelectedIndex = payload.AutoType.Mode == 2 ? 1 : (payload.AutoType.Mode == 3 ? 2 : 0);
+                
+                var tbTitle = this.FindControl<TextBox>("TargetWindowTitleTextBox");
+                if (tbTitle != null) tbTitle.Text = payload.AutoType.TargetWindowTitle ?? "";
+                
+                var tbProcess = this.FindControl<TextBox>("TargetProcessNameTextBox");
+                if (tbProcess != null) tbProcess.Text = payload.AutoType.TargetProcessName ?? "";
+                
+                var tbClass = this.FindControl<TextBox>("TargetWindowClassTextBox");
+                if (tbClass != null) tbClass.Text = payload.AutoType.TargetWindowClass ?? "";
             }
         }
         
@@ -325,6 +334,15 @@ public partial class AssetEditorWindow : Window
 
         AutoTypePatternTextBox.Text = "{USERNAME}{TAB}{PASSWORD}{ENTER}";
         AutoTypeModeComboBox.SelectedIndex = 0;
+        
+        var tbTitle = this.FindControl<TextBox>("TargetWindowTitleTextBox");
+        if (tbTitle != null) tbTitle.Text = "";
+        
+        var tbProcess = this.FindControl<TextBox>("TargetProcessNameTextBox");
+        if (tbProcess != null) tbProcess.Text = "";
+        
+        var tbClass = this.FindControl<TextBox>("TargetWindowClassTextBox");
+        if (tbClass != null) tbClass.Text = "";
     }
 
     private async void CopyUsernameButton_Click(object sender, RoutedEventArgs e)
@@ -602,7 +620,10 @@ public partial class AssetEditorWindow : Window
                 AutoType = new AutoTypeConfig
                 {
                     Pattern = AutoTypePatternTextBox.Text ?? "{USERNAME}{TAB}{PASSWORD}{ENTER}",
-                    Mode = AutoTypeModeComboBox.SelectedIndex + 1
+                    Mode = AutoTypeModeComboBox.SelectedIndex + 1,
+                    TargetWindowTitle = this.FindControl<TextBox>("TargetWindowTitleTextBox")?.Text ?? "",
+                    TargetProcessName = this.FindControl<TextBox>("TargetProcessNameTextBox")?.Text ?? "",
+                    TargetWindowClass = this.FindControl<TextBox>("TargetWindowClassTextBox")?.Text ?? ""
                 },
 
                 Attachments = _attachments.ToList(),
@@ -744,7 +765,8 @@ public partial class AssetEditorWindow : Window
 
         try
         {
-            await EZKPM.Client.Desktop.Services.AutoTypeService.PerformAutoType(pattern, username, password, title, mode, clipboard);
+            var fields = _customFields.ToList();
+            await EZKPM.Client.Desktop.Services.AutoTypeService.PerformAutoType(pattern, username, password, title, mode, clipboard, fields);
         }
         catch (Exception ex)
         {
@@ -753,6 +775,49 @@ public partial class AssetEditorWindow : Window
         finally
         {
             this.WindowState = WindowState.Normal;
+        }
+    }
+
+    private bool _isCrosshairActive = false;
+
+    private void Crosshair_PointerPressed(object sender, PointerPressedEventArgs e)
+    {
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            _isCrosshairActive = true;
+            (sender as Avalonia.Controls.Control)?.Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Cross);
+            e.Pointer.Capture(sender as Avalonia.Controls.Control);
+            e.Handled = true;
+        }
+    }
+
+    private void Crosshair_PointerMoved(object sender, PointerEventArgs e)
+    {
+        if (_isCrosshairActive)
+        {
+            var info = EZKPM.Client.Desktop.Services.TargetWindowService.GetWindowInfoAtCursor();
+            if (info != null)
+            {
+                var tbTitle = this.FindControl<TextBox>("TargetWindowTitleTextBox");
+                if (tbTitle != null) tbTitle.Text = info.Title ?? "";
+                
+                var tbProcess = this.FindControl<TextBox>("TargetProcessNameTextBox");
+                if (tbProcess != null) tbProcess.Text = info.ProcessName ?? "";
+                
+                var tbClass = this.FindControl<TextBox>("TargetWindowClassTextBox");
+                if (tbClass != null) tbClass.Text = info.ClassName ?? "";
+            }
+        }
+    }
+
+    private void Crosshair_PointerReleased(object sender, PointerReleasedEventArgs e)
+    {
+        if (_isCrosshairActive)
+        {
+            _isCrosshairActive = false;
+            e.Pointer.Capture(null);
+            (sender as Avalonia.Controls.Control)?.Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Arrow);
+            e.Handled = true;
         }
     }
 

@@ -54,7 +54,7 @@ namespace EZKPM.Client.Desktop.Services
         private const ushort VK_CONTROL = 0x11;
         private const ushort VK_V = 0x56;
 
-        public static async Task PerformAutoType(string pattern, string username, string password, string title, int mode, Avalonia.Input.Platform.IClipboard clipboard)
+        public static async Task PerformAutoType(string pattern, string username, string password, string title, int mode, Avalonia.Input.Platform.IClipboard clipboard, List<EZKPM.Shared.Contracts.CustomField> customFields = null)
         {
             // Modes: 1 = RandomChunks (Paste), 2 = FullBlock (Paste), 3 = Keystrokes
             
@@ -62,7 +62,7 @@ namespace EZKPM.Client.Desktop.Services
             await Task.Delay(500);
 
             pattern = pattern ?? "{USERNAME}{TAB}{PASSWORD}{ENTER}";
-            var parts = ParsePattern(pattern, username, password, title);
+            var parts = ParsePattern(pattern, username, password, title, customFields);
 
             foreach (var part in parts)
             {
@@ -154,7 +154,7 @@ namespace EZKPM.Client.Desktop.Services
             public string Value { get; set; }
         }
 
-        private static List<PatternPart> ParsePattern(string pattern, string username, string password, string title)
+        private static List<PatternPart> ParsePattern(string pattern, string username, string password, string title, List<EZKPM.Shared.Contracts.CustomField> customFields)
         {
             var result = new List<PatternPart>();
             
@@ -163,6 +163,17 @@ namespace EZKPM.Client.Desktop.Services
                 .Replace("{USERNAME}", username ?? "")
                 .Replace("{PASSWORD}", password ?? "")
                 .Replace("{TITLE}", title ?? "");
+
+            if (customFields != null)
+            {
+                foreach (var cf in customFields)
+                {
+                    if (!string.IsNullOrWhiteSpace(cf.Name))
+                    {
+                        processed = processed.Replace("{" + cf.Name + "}", cf.Value ?? "");
+                    }
+                }
+            }
 
             int i = 0;
             while (i < processed.Length)

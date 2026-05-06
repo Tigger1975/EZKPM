@@ -93,6 +93,11 @@ namespace EZKPM.Shared.Contracts
         public string Pattern { get; set; } = "{USERNAME}{TAB}{PASSWORD}{ENTER}";
         // Modes: 1 = RandomChunks, 2 = FullBlock, 3 = Keystrokes
         public int Mode { get; set; } = 1; 
+
+        // Target window association
+        public string TargetWindowTitle { get; set; }
+        public string TargetWindowClass { get; set; }
+        public string TargetProcessName { get; set; }
     }
 
     /// <summary>

@@ -215,6 +215,43 @@ public partial class MainWindow : Window
         // Starte SSO SignalR Verbindung
         var userSid = EZKPM.Client.Desktop.Services.AdSearchService.GetCurrentUser()?.Sid ?? "S-1-5-21-DUMMY-TEST-USER";
         _ = _ssoSyncClient.ConnectAsync(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl, userSid);
+
+        // Starte Auto-Type Watcher
+        EZKPM.Client.Desktop.Services.AutoTypeWatcherService.StartWatching(
+            () => _decryptedAssets.ToList(),
+            async (matches, hWnd) => await OnAutoTypeMatchAsync(matches, hWnd)
+        );
+    }
+
+    private async Task OnAutoTypeMatchAsync(List<EZKPM.Shared.Contracts.VaultAssetPayload> matches, IntPtr targetHwnd)
+    {
+        if (matches == null || matches.Count == 0) return;
+
+        var prompt = new Views.AutoTypePromptWindow(matches);
+        var result = await prompt.ShowDialog<EZKPM.Shared.Contracts.VaultAssetPayload>(this);
+        
+        if (result != null)
+        {
+            if (!Services.SessionManager.EnsureAuthenticated("Auto-Type ausführen")) return;
+
+            string pattern = result.AutoType?.Pattern ?? "{USERNAME}{TAB}{PASSWORD}{ENTER}";
+            int mode = result.AutoType?.Mode ?? 1;
+            string username = result.Username ?? "";
+            string password = result.Password ?? "";
+            string title = result.Title ?? "";
+
+            var clipboard = Avalonia.Controls.TopLevel.GetTopLevel(this)?.Clipboard;
+            if (clipboard == null) return;
+
+            try
+            {
+                await EZKPM.Client.Desktop.Services.AutoTypeService.PerformAutoType(pattern, username, password, title, mode, clipboard, result.CustomFields);
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Auto-Type Fehler: {ex.Message}", isError: true);
+            }
+        }
     }
 
     private async Task LoadAssetsAsync(Views.StartupWindow? splash = null)
@@ -1015,7 +1052,7 @@ public partial class MainWindow : Window
 
             try
             {
-                await EZKPM.Client.Desktop.Services.AutoTypeService.PerformAutoType(pattern, username, password, title, mode, clipboard);
+                await EZKPM.Client.Desktop.Services.AutoTypeService.PerformAutoType(pattern, username, password, title, mode, clipboard, payload.CustomFields);
             }
             catch (Exception ex)
             {
