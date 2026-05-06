@@ -1156,8 +1156,13 @@ public partial class AssetEditorWindow : Window
                 }
                 else
                 {
-                    var inherited = _acls.Where(a => a.IsInherited).ToList();
-                    foreach (var a in inherited) _acls.Remove(a);
+                    for (int i = _acls.Count - 1; i >= 0; i--)
+                    {
+                        if (_acls[i].IsInherited)
+                        {
+                            _acls.RemoveAt(i);
+                        }
+                    }
                 }
                 // Refresh list
                 RefreshDisplayAcls();
@@ -1264,7 +1269,14 @@ public partial class AssetEditorWindow : Window
             var allDecrypted = new List<VaultAssetPayload>();
             foreach (var dto in serverAssets) 
             {
-                 allDecrypted.Add(_cryptoService.DecryptAsset(dto));
+                try 
+                {
+                    allDecrypted.Add(_cryptoService.DecryptAsset(dto));
+                }
+                catch 
+                {
+                    // Ignore corrupted assets so they don't break the entire inheritance tree
+                }
             }
 
             var childrenToUpdate = GetDescendantsRespectingInheritance(folderId, allDecrypted);
@@ -1293,8 +1305,15 @@ public partial class AssetEditorWindow : Window
                     }
                 }
 
-                var req = _cryptoService.EncryptAsset(child);
-                await _apiClient.UpdateAssetAsync(child.TransientAssetId.Value, req);
+                try
+                {
+                    var req = _cryptoService.EncryptAsset(child);
+                    await _apiClient.UpdateAssetAsync(child.TransientAssetId.Value, req);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Fehler beim Vererben an {child.Title}: {ex.Message}");
+                }
             }
             ShowStatus($"Vererbung abgeschlossen: {childrenToUpdate.Count} Elemente aktualisiert.");
         }
