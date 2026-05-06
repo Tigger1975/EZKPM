@@ -74,6 +74,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+builder.Services.AddHostedService<EZKPM.Server.PDP.Services.ServerVulnerabilityScannerService>();
+
 var app = builder.Build();
 
 app.UseForwardedHeaders();
