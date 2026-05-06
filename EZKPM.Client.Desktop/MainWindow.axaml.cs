@@ -212,6 +212,21 @@ public partial class MainWindow : Window
             splash.Close();
         }
 
+        // Check Admin Status
+        try 
+        {
+            var adminStatus = await _apiClient.GetAdminStatusAsync();
+            if (adminStatus != null)
+            {
+                AdminPanelButton.IsVisible = adminStatus.HasAccessToAdminPanel;
+                if (adminStatus.IsBootstrapActive)
+                {
+                    AdminPanelButton.Content = "🛡️ Admin Setup (Bootstrap)";
+                }
+            }
+        }
+        catch { }
+
         // Starte SSO SignalR Verbindung
         var userSid = EZKPM.Client.Desktop.Services.AdSearchService.GetCurrentUser()?.Sid ?? "S-1-5-21-DUMMY-TEST-USER";
         _ = _ssoSyncClient.ConnectAsync(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl, userSid);
@@ -585,6 +600,33 @@ public partial class MainWindow : Window
         
         // Reload after closing to reflect any rotated passwords
         await LoadAssetsAsync();
+    }
+
+    private async void OpenAdminPanel_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (!Services.SessionManager.EnsureAuthenticated("Admin Panel öffnen")) return;
+
+        var adminDashboard = new Views.AdminDashboardWindow(_apiClient);
+        await adminDashboard.ShowDialog(this);
+        
+        // Refresh admin button status after closing (in case bootstrap ended or rights changed)
+        try 
+        {
+            var adminStatus = await _apiClient.GetAdminStatusAsync();
+            if (adminStatus != null)
+            {
+                AdminPanelButton.IsVisible = adminStatus.HasAccessToAdminPanel;
+                if (adminStatus.IsBootstrapActive)
+                {
+                    AdminPanelButton.Content = "🛡️ Admin Setup (Bootstrap)";
+                }
+                else
+                {
+                    AdminPanelButton.Content = "🛡️ Admin & Recovery";
+                }
+            }
+        }
+        catch { }
     }
 
     private async void ImportKeePass_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)

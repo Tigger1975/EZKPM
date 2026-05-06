@@ -10,6 +10,7 @@ namespace EZKPM.Client.Core.Services
     public class VaultApiClient
     {
         private readonly HttpClient _httpClient;
+        public HttpClient HttpClient => _httpClient;
 
         public VaultApiClient(HttpClient httpClient)
         {
@@ -129,6 +130,20 @@ namespace EZKPM.Client.Core.Services
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<RecoveryStatusResponseDto>();
+        }
+
+        public async Task<AdminStatusDto?> GetAdminStatusAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync("/api/v1/recovery/admin-status");
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<AdminStatusDto>();
+                }
+            }
+            catch { }
+            return null;
         }
     }
 }

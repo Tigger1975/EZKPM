@@ -161,4 +161,17 @@ namespace EZKPM.Shared.Contracts
         [System.Text.Json.Serialization.JsonIgnore]
         public bool HasAutoTypeConfigured => AssetType != "Folder" && AutoType != null && !string.IsNullOrEmpty(AutoType.Pattern);
     }
+
+    public class SetAdminRequestDto
+    {
+        public string TargetAdSid { get; set; }
+        public bool IsAdmin { get; set; }
+    }
+
+    public class AdminStatusDto
+    {
+        public bool IsAdmin { get; set; }
+        public bool IsBootstrapActive { get; set; }
+        public bool HasAccessToAdminPanel { get; set; }
+    }
 }

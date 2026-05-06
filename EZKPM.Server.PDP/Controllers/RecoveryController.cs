@@ -337,10 +337,4 @@ namespace EZKPM.Server.PDP.Controllers
             return Ok(pending);
         }
     }
-
-    public class SetAdminRequestDto
-    {
-        public string TargetAdSid { get; set; }
-        public bool IsAdmin { get; set; }
-    }
 }

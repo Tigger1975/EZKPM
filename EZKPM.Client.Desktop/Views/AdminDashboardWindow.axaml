@@ -1,0 +1,81 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="EZKPM.Client.Desktop.Views.AdminDashboardWindow"
+        Title="Admin Dashboard" Width="800" Height="600"
+        WindowStartupLocation="CenterOwner" Background="#F9FAFB">
+    
+    <Grid RowDefinitions="Auto, *">
+        <Border Grid.Row="0" Background="#1E293B" Padding="20">
+            <StackPanel>
+                <TextBlock Text="🛡️ Admin Dashboard" FontSize="24" FontWeight="Bold" Foreground="White" />
+                <TextBlock x:Name="BootstrapWarningText" Text="⚠️ BOOTSTRAP MODUS AKTIV: Es gibt keine Administratoren. Sie können sich selbst als Admin hinzufügen." Foreground="#FACC15" IsVisible="False" Margin="0,5,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <TabControl Grid.Row="1" Margin="10">
+            <TabItem Header="Admin-Verwaltung">
+                <Grid RowDefinitions="Auto, *, Auto" Margin="10">
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
+                        <TextBlock Text="User SID oder Name suchen:" VerticalAlignment="Center"/>
+                        <TextBox x:Name="SearchAdminTextBox" Width="200" Watermark="Suche im AD..."/>
+                        <Button Content="Suchen" Click="SearchAdminButton_Click" Classes="primary" Background="#3B82F6" Foreground="White" />
+                    </StackPanel>
+                    
+                    <ListBox x:Name="AdminSearchResultsList" Grid.Row="1" BorderBrush="#D1D5DB" BorderThickness="1">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:CompileBindings="False">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="{Binding DisplayName}" FontWeight="Bold" />
+                                    <TextBlock Text="{Binding Sid}" Foreground="Gray" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,10,0,0">
+                        <Button Content="Als Admin hinzufügen" Click="MakeAdminButton_Click" Background="#10B981" Foreground="White" />
+                        <Button Content="Admin-Rechte entziehen" Click="RemoveAdminButton_Click" Background="#EF4444" Foreground="White" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+            
+            <TabItem Header="Recovery-Verwaltung">
+                <Grid RowDefinitions="Auto, *, Auto" Margin="10">
+                    <TextBlock Grid.Row="0" Text="Offene Recovery-Anfragen" FontWeight="Bold" Margin="0,0,0,10"/>
+                    
+                    <ListBox x:Name="PendingRecoveryList" Grid.Row="1" BorderBrush="#D1D5DB" BorderThickness="1">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:CompileBindings="False">
+                                <StackPanel Spacing="5" Margin="5">
+                                    <TextBlock Text="{Binding AdSid, StringFormat='Ziel-User SID: {0}'}" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding RequestedAt, StringFormat='Angefragt am: {0:g}'}"/>
+                                    <TextBlock Text="{Binding ProvidedShares.Count, StringFormat='Freigaben: {0} / 2'}" Foreground="Green"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,10,0,0">
+                        <Button Content="Aktualisieren" Click="RefreshRecoveryButton_Click" />
+                        <Button Content="Freigeben (Share senden)" Click="ApproveRecoveryButton_Click" Background="#3B82F6" Foreground="White" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+            
+            <TabItem Header="Fremd-Recovery initiieren">
+                <Grid RowDefinitions="Auto, *, Auto" Margin="10">
+                    <StackPanel Grid.Row="0" Spacing="10" Margin="0,0,0,10">
+                        <TextBlock Text="Recovery für anderen User anfordern (z.B. nach Austritt)" FontWeight="Bold"/>
+                        <TextBlock Text="Hinweis: Sie benötigen die Freigabe von 2 weiteren Administratoren." Foreground="Gray" TextWrapping="Wrap"/>
+                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+                            <TextBlock Text="Ziel-User SID:" VerticalAlignment="Center"/>
+                            <TextBox x:Name="TargetUserSidTextBox" Width="200" Watermark="S-1-5-21-..."/>
+                        </StackPanel>
+                    </StackPanel>
+                    
+                    <Button Grid.Row="2" Content="Recovery anfordern" Click="InitiateRecoveryButton_Click" HorizontalAlignment="Right" Background="#F59E0B" Foreground="White" />
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

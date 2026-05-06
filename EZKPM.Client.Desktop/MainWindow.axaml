@@ -81,6 +81,7 @@
                     <TextBlock Text="EZKPM" FontWeight="Black" FontSize="24" Foreground="White" LetterSpacing="1"/>
                     <TextBlock Text="Enterprise Vault" FontSize="12" Foreground="#94A3B8"/>
                     <Button Classes="outline" Content="🔄 Rotation Assistant" Margin="0,15,0,0" Click="OpenRotationAssistant_Click" Foreground="#94A3B8" BorderBrush="#374151" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                    <Button x:Name="AdminPanelButton" Classes="outline" Content="🛡️ Admin &amp; Recovery" Margin="0,10,0,0" Click="OpenAdminPanel_Click" Foreground="#FACC15" BorderBrush="#374151" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsVisible="False"/>
                 </StackPanel>
                 
                 <TreeView x:Name="AssetTreeView" Grid.Row="1" Background="Transparent" 
