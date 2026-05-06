@@ -200,7 +200,7 @@
                                 <DataGridTemplateColumn Header="Aktionen" Width="Auto">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="contracts:VaultAssetPayload">
-                                            <Button Content="⌨️ Auto-Type" Classes="outline" Padding="5,2" Margin="5" Click="DataGridAutoType_Click" Tag="{Binding}" />
+                                            <Button Content="⌨️ Auto-Type" Classes="outline" Padding="5,2" Margin="5" Click="DataGridAutoType_Click" Tag="{Binding}" IsVisible="{Binding HasAutoTypeConfigured}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

@@ -156,5 +156,8 @@ namespace EZKPM.Shared.Contracts
         public PasswordGeneratorConfig PasswordSettings { get; set; } = new PasswordGeneratorConfig();
         public LoginFlowConfig LoginFlow { get; set; } = new LoginFlowConfig();
         public AutoTypeConfig AutoType { get; set; } = new AutoTypeConfig();
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool HasAutoTypeConfigured => AssetType != "Folder" && AutoType != null && (!string.IsNullOrEmpty(AutoType.TargetWindowTitle) || !string.IsNullOrEmpty(AutoType.TargetProcessName));
     }
 }

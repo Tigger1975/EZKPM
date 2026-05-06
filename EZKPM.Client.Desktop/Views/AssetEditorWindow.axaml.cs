@@ -1238,6 +1238,15 @@ public partial class AssetEditorWindow : Window
             
             var applyCb = this.FindControl<CheckBox>("ApplyToChildrenCheckBox");
             if (applyCb != null) applyCb.IsVisible = (type == "Folder");
+
+            var tabCustomVars = this.FindControl<TabItem>("TabCustomVars");
+            var tabSettings = this.FindControl<TabItem>("TabSettings");
+            var tabAutoType = this.FindControl<TabItem>("TabAutoType");
+            
+            bool isNotFolder = type != "Folder";
+            if (tabCustomVars != null) tabCustomVars.IsVisible = isNotFolder;
+            if (tabSettings != null) tabSettings.IsVisible = isNotFolder;
+            if (tabAutoType != null) tabAutoType.IsVisible = isNotFolder;
         }
     }
 

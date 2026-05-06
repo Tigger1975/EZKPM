@@ -207,7 +207,7 @@
                     </StackPanel> <!-- AuthenticatorPanel -->
                     </StackPanel> <!-- CredentialsPanel -->
 
-                    <TabControl Margin="0,20,0,0">
+                    <TabControl Margin="0,20,0,0" MinHeight="450">
                         <TabItem Header="{x:Static res:AppStrings.AssetEditor_TabGeneral}">
                             <StackPanel Spacing="10" Margin="10">
                                 <TextBlock Classes="label" Text="{x:Static res:AppStrings.AssetEditor_LblLoginUrl}"/>
@@ -220,7 +220,7 @@
                                 <TextBox x:Name="DetailedDescriptionTextBox" AcceptsReturn="True" MinHeight="80" PlaceholderText="{x:Static res:AppStrings.AssetEditor_DescWatermark}" />
                             </StackPanel>
                         </TabItem>
-                        <TabItem Header="{x:Static res:AppStrings.AssetEditor_TabVars}">
+                        <TabItem x:Name="TabCustomVars" Header="{x:Static res:AppStrings.AssetEditor_TabVars}">
                             <StackPanel Spacing="10" Margin="10">
                                 <TextBlock Text="{x:Static res:AppStrings.AssetEditor_CustomVarsDesc}" Foreground="#6B7280"/>
                                 
@@ -307,7 +307,7 @@
                                 </StackPanel>
                             </StackPanel>
                         </TabItem>
-                        <TabItem Header="{x:Static res:AppStrings.AssetEditor_TabSettings}">
+                        <TabItem x:Name="TabSettings" Header="{x:Static res:AppStrings.AssetEditor_TabSettings}">
                             <StackPanel Spacing="12" Margin="10">
                                 <TextBlock Classes="label" Text="{x:Static res:AppStrings.AssetEditor_LblValidity}"/>
                                 <NumericUpDown x:Name="ValidityDaysControl" Value="365" Minimum="1" Maximum="365" Width="150" HorizontalAlignment="Left" CornerRadius="4"/>
@@ -338,7 +338,7 @@
                                 </Expander>
                             </StackPanel>
                         </TabItem>
-                        <TabItem Header="Auto-Type">
+                        <TabItem x:Name="TabAutoType" Header="Auto-Type">
                             <StackPanel Spacing="12" Margin="10">
                                 <TextBlock Text="Auto-Type Pattern" Classes="label"/>
                                 <TextBox x:Name="AutoTypePatternTextBox" Text="{}{USERNAME}{TAB}{PASSWORD}{ENTER}" />
