@@ -576,6 +576,17 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void OpenRotationAssistant_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (!Services.SessionManager.EnsureAuthenticated("Rotation Assistant öffnen")) return;
+
+        var assistant = new Views.RotationAssistantWindow(_decryptedAssets.ToList(), _cryptoService, _apiClient);
+        await assistant.ShowDialog(this);
+        
+        // Reload after closing to reflect any rotated passwords
+        await LoadAssetsAsync();
+    }
+
     private async void ImportKeePass_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         try

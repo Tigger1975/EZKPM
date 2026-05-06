@@ -131,5 +131,67 @@ namespace EZKPM.Client.Tests.Security
             // Log 2 muss den CurrentEntryHash von Log 1 als PreviousEntryHash verwenden!
             Assert.Equal(log1.CurrentEntryHash, log2.PreviousEntryHash);
         }
+
+        [Fact]
+        public void HybridPqcKeyWrapper_ShouldWrapAndUnwrap_SymmetricKeys()
+        {
+            // Arrange (FA 13 / PQC-Kryptografie Test)
+            var wrapper = new EZKPM.Client.Core.Cryptography.HybridPqcKeyWrapper();
+            
+            // Dummy Asymmetric Keys (for PoC)
+            byte[] dummyPubKeyX = new byte[32];
+            byte[] dummyPubKeyK = new byte[32];
+            byte[] dummyPrivKeyX = new byte[32];
+            byte[] dummyPrivKeyK = new byte[32];
+            
+            using var privX = new EZKPM.Client.Core.Security.SecureMemory(dummyPrivKeyX);
+            using var privK = new EZKPM.Client.Core.Security.SecureMemory(dummyPrivKeyK);
+
+            // AES-GCM Key (32 bytes)
+            byte[] originalAssetKeyRaw = new byte[32];
+            RandomNumberGenerator.Fill(originalAssetKeyRaw);
+            using var originalAssetKey = new EZKPM.Client.Core.Security.SecureMemory(originalAssetKeyRaw);
+
+            // Act
+            byte[] wrappedBlob = wrapper.WrapAssetKey(originalAssetKey, dummyPubKeyX, dummyPubKeyK);
+            
+            using var unwrappedKey = wrapper.UnwrapAssetKey(wrappedBlob, privX, privK);
+
+            // Assert
+            Assert.NotNull(wrappedBlob);
+            Assert.True(wrappedBlob.Length > originalAssetKeyRaw.Length); // Sollte Header, Ciphertext und PQC-Overhead enthalten
+            
+            Assert.Equal(originalAssetKeyRaw.Length, unwrappedKey.Span.Length);
+            Assert.True(unwrappedKey.Span.SequenceEqual(originalAssetKeyRaw));
+        }
+
+        [Fact]
+        public void HybridPqcKeyWrapper_ShouldFailUnwrap_WhenBlobCorrupted()
+        {
+            // Arrange
+            var wrapper = new EZKPM.Client.Core.Cryptography.HybridPqcKeyWrapper();
+            
+            byte[] dummyPubKeyX = new byte[32];
+            byte[] dummyPubKeyK = new byte[32];
+            byte[] dummyPrivKeyX = new byte[32];
+            byte[] dummyPrivKeyK = new byte[32];
+            
+            using var privX = new EZKPM.Client.Core.Security.SecureMemory(dummyPrivKeyX);
+            using var privK = new EZKPM.Client.Core.Security.SecureMemory(dummyPrivKeyK);
+
+            // AES-GCM Key (32 bytes)
+            byte[] originalAssetKeyRaw = new byte[32];
+            RandomNumberGenerator.Fill(originalAssetKeyRaw);
+            using var originalAssetKey = new EZKPM.Client.Core.Security.SecureMemory(originalAssetKeyRaw);
+
+            // Act
+            byte[] wrappedBlob = wrapper.WrapAssetKey(originalAssetKey, dummyPubKeyX, dummyPubKeyK);
+            
+            // Corrupt the blob (modify the last byte, which is likely part of the MAC or ciphertext)
+            wrappedBlob[^1] ^= 0xFF;
+
+            // Assert
+            Assert.ThrowsAny<Exception>(() => wrapper.UnwrapAssetKey(wrappedBlob, privX, privK));
+        }
     }
 }

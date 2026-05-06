@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:contracts="clr-namespace:EZKPM.Shared.Contracts;assembly=EZKPM.Shared.Contracts"
+        x:Class="EZKPM.Client.Desktop.Views.RotationAssistantWindow"
+        Title="Rotation Assistant" Width="600" Height="450"
+        WindowStartupLocation="CenterOwner"
+        Background="#F5F7FA" FontFamily="Inter, sans-serif">
+    
+    <Grid RowDefinitions="Auto, *, Auto" Margin="20">
+        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+            <TextBlock Text="🔄 Rotation Assistant" FontWeight="Bold" FontSize="20" Foreground="#111827"/>
+            <TextBlock Text="Die folgenden Zugangsdaten sind abgelaufen und sollten dringend erneuert werden." Foreground="#6B7280" Margin="0,5,0,0" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <ListBox x:Name="ExpiredAssetsListBox" Grid.Row="1" Background="White" CornerRadius="4" BorderBrush="#E5E7EB" BorderThickness="1">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="contracts:VaultAssetPayload">
+                    <Grid ColumnDefinitions="*, Auto" Margin="10,5">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="14" Foreground="#111827"/>
+                            <TextBlock Text="{Binding Username}" Foreground="#6B7280" FontSize="12"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="Auto-Rotate 🔑" Click="RotateButton_Click" Background="#10B981" Foreground="White" FontWeight="SemiBold" CornerRadius="4" Padding="10,5" Cursor="Hand"/>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0" Spacing="10">
+            <Button Content="Schließen" Click="CloseButton_Click" Background="Transparent" BorderBrush="#D1D5DB" BorderThickness="1" Foreground="#4B5563" CornerRadius="4" Padding="15,8" Cursor="Hand"/>
+        </StackPanel>
+    </Grid>
+</Window>

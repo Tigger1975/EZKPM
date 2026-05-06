@@ -628,35 +628,71 @@ public partial class AssetEditorWindow : Window
 
                 Attachments = _attachments.ToList(),
                 CustomFields = _customFields.ToList(),
-                Acls = _acls.Where(a => !string.IsNullOrWhiteSpace(a.AdSid))
-                            .Select(a => 
-                            {
-                                if (a.AdSid.Contains("(") && a.AdSid.Contains(")"))
-                                {
-                                    var start = a.AdSid.LastIndexOf("(") + 1;
-                                    var end = a.AdSid.LastIndexOf(")");
-                                    if (end > start) a.AdSid = a.AdSid.Substring(start, end - start);
-                                }
-                                return a;
-                            })
-                            .GroupBy(a => a.AdSid)
-                            .Select(g => 
-                            {
-                                var entries = g.ToList();
-                                var finalEntry = entries.First();
-                                if (entries.Any(e => e.PermissionLevel <= 0))
-                                {
-                                    finalEntry.PermissionLevel = entries.Where(e => e.PermissionLevel <= 0).Min(e => e.PermissionLevel);
-                                }
-                                else
-                                {
-                                    finalEntry.PermissionLevel = entries.Max(e => e.PermissionLevel);
-                                }
-                                return finalEntry;
-                            })
-                            .ToList(),
                 IsInheriting = this.FindControl<CheckBox>("IsInheritingCheckBox")?.IsChecked == true
-            };
+            }; // End of payload initializer
+
+            // AD Group Resolution (AGDLP) - "Auflösung erst beim Speicher machen"
+            var rawAcls = _acls.Where(a => !string.IsNullOrWhiteSpace(a.AdSid)).ToList();
+            var expandedAcls = new List<EZKPM.Shared.Contracts.AclEntryDto>();
+
+            foreach (var a in rawAcls)
+            {
+                var cleanSid = a.AdSid;
+                if (cleanSid.Contains("(") && cleanSid.Contains(")"))
+                {
+                    var start = cleanSid.LastIndexOf("(") + 1;
+                    var end = cleanSid.LastIndexOf(")");
+                    if (end > start) cleanSid = cleanSid.Substring(start, end - start);
+                }
+
+                // Check if it's a group by trying to get members
+                var members = await Services.AdSearchService.GetGroupMembersAsync(cleanSid);
+                if (members != null && members.Count > 0)
+                {
+                    // It's a group, add all recursive members
+                    foreach (var m in members)
+                    {
+                        expandedAcls.Add(new EZKPM.Shared.Contracts.AclEntryDto 
+                        { 
+                            AdSid = m.Sid, 
+                            PermissionLevel = a.PermissionLevel, 
+                            EncryptedKeyShare = a.EncryptedKeyShare 
+                        });
+                    }
+                }
+                else
+                {
+                    // It's a user (or group with no members)
+                    expandedAcls.Add(new EZKPM.Shared.Contracts.AclEntryDto 
+                    { 
+                        AdSid = cleanSid, 
+                        PermissionLevel = a.PermissionLevel, 
+                        EncryptedKeyShare = a.EncryptedKeyShare 
+                    });
+                }
+            }
+
+            // Apply priority resolution for overlapping group memberships
+            // Deny (-1) -> None (0) -> Execute (1) -> Read (2) -> Owner (3)
+            payload.Acls = expandedAcls
+                .GroupBy(a => a.AdSid)
+                .Select(g => 
+                {
+                    var entries = g.ToList();
+                    var finalEntry = entries.First();
+                    if (entries.Any(e => e.PermissionLevel <= 0))
+                    {
+                        // If any path yields Deny or None, restrict access to the minimum (usually -1 or 0)
+                        finalEntry.PermissionLevel = entries.Where(e => e.PermissionLevel <= 0).Min(e => e.PermissionLevel);
+                    }
+                    else
+                    {
+                        // Otherwise take the highest positive permission (e.g. Owner over Read)
+                        finalEntry.PermissionLevel = entries.Max(e => e.PermissionLevel);
+                    }
+                    return finalEntry;
+                })
+                .ToList();
 
             var currentUserSid = Services.AdSearchService.GetCurrentUser().Sid;
             
@@ -785,7 +821,7 @@ public partial class AssetEditorWindow : Window
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
             _isCrosshairActive = true;
-            (sender as Avalonia.Controls.Control)?.Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Cross);
+            if (sender is Avalonia.Controls.Control ctrl) ctrl.Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Cross);
             e.Pointer.Capture(sender as Avalonia.Controls.Control);
             e.Handled = true;
         }
@@ -816,7 +852,7 @@ public partial class AssetEditorWindow : Window
         {
             _isCrosshairActive = false;
             e.Pointer.Capture(null);
-            (sender as Avalonia.Controls.Control)?.Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Arrow);
+            if (sender is Avalonia.Controls.Control ctrl) ctrl.Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Arrow);
             e.Handled = true;
         }
     }

@@ -12,9 +12,21 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddOpenApi();
 
-// Für Phase 2 Test: SQLite statt In-Memory, um Daten dauerhaft zu speichern
+// Datenbank-Provider auslesen
+var dbProvider = builder.Configuration.GetValue<string>("Database:Provider") ?? "SQLite";
+var connectionString = builder.Configuration.GetValue<string>("Database:ConnectionString") ?? "Data Source=ezkpm_vault.db";
+
 builder.Services.AddDbContext<EzkpmDbContext>(options =>
-    options.UseSqlite("Data Source=ezkpm_vault.db"));
+{
+    if (dbProvider.Equals("SqlServer", System.StringComparison.OrdinalIgnoreCase))
+    {
+        options.UseSqlServer(connectionString);
+    }
+    else
+    {
+        options.UseSqlite(connectionString);
+    }
+});
 
 // P2P Sync Engine als BackgroundService registrieren
 builder.Services.AddSingleton<EZKPM.Server.PDP.Services.P2PSyncTrigger>();

@@ -80,6 +80,7 @@
                 <StackPanel Grid.Row="0" Margin="0,0,0,20">
                     <TextBlock Text="EZKPM" FontWeight="Black" FontSize="24" Foreground="White" LetterSpacing="1"/>
                     <TextBlock Text="Enterprise Vault" FontSize="12" Foreground="#94A3B8"/>
+                    <Button Classes="outline" Content="🔄 Rotation Assistant" Margin="0,15,0,0" Click="OpenRotationAssistant_Click" Foreground="#94A3B8" BorderBrush="#374151" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
                 </StackPanel>
                 
                 <TreeView x:Name="AssetTreeView" Grid.Row="1" Background="Transparent" 
