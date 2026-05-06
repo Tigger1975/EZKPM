@@ -174,4 +174,10 @@ namespace EZKPM.Shared.Contracts
         public bool IsBootstrapActive { get; set; }
         public bool HasAccessToAdminPanel { get; set; }
     }
+
+    public class LinkPersonDto
+    {
+        public string SourceAdSid { get; set; }
+        public string TargetAdSid { get; set; }
+    }
 }

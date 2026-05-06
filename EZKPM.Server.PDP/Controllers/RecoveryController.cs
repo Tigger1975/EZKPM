@@ -313,6 +313,31 @@ namespace EZKPM.Server.PDP.Controllers
             return Ok();
         }
 
+        [HttpPost("link-person")]
+        public async Task<IActionResult> LinkPerson([FromBody] LinkPersonDto request)
+        {
+            var callerHashedSid = GetUserSid();
+            var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == callerHashedSid);
+            
+            if (callerProfile == null || !callerProfile.IsAdmin)
+                return Forbid("Only administrators can link user accounts.");
+
+            var hashedSourceSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.SourceAdSid);
+            var hashedTargetSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.TargetAdSid);
+
+            var sourceProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedSourceSid);
+            var targetProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedTargetSid);
+
+            if (sourceProfile == null || targetProfile == null)
+                return NotFound("One or both user profiles not found. Ensure both users have logged in at least once or have been made admin.");
+
+            // Assign the target's PersonId to the source, linking them physically
+            sourceProfile.PersonId = targetProfile.PersonId;
+            await _db.SaveChangesAsync();
+            
+            return Ok();
+        }
+
         [HttpGet("pending")]
         public async Task<ActionResult<List<VaultRecoveryRequest>>> GetPendingRequests()
         {
