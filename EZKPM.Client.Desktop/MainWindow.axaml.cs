@@ -34,7 +34,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        var httpClient = new HttpClient { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) };
+        var handler = new HttpClientHandler { UseDefaultCredentials = true };
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) };
         _apiClient = new VaultApiClient(httpClient);
         _cryptoService = cryptoService;
 
@@ -885,7 +886,8 @@ public partial class MainWindow : Window
             Services.ConfigurationManager.SaveConfig();
             
             // Re-instantiate the API client with the new URL
-            var httpClient = new HttpClient { BaseAddress = new Uri(Services.ConfigurationManager.CurrentConfig.ServerUrl) };
+            var handler = new HttpClientHandler { UseDefaultCredentials = true };
+            var httpClient = new HttpClient(handler) { BaseAddress = new Uri(Services.ConfigurationManager.CurrentConfig.ServerUrl) };
             var newApiClient = new VaultApiClient(httpClient);
             
             // To properly apply the new API client to this window, we can just restart the application or swap it

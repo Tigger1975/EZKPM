@@ -37,20 +37,20 @@ namespace EZKPM.Client.Desktop.Views
 
         private void YesButton_Click(object sender, RoutedEventArgs e)
         {
-            _tcs.TrySetResult(true);
+            _tcs?.TrySetResult(true);
             this.Close();
         }
 
         private void NoButton_Click(object sender, RoutedEventArgs e)
         {
-            _tcs.TrySetResult(false);
+            _tcs?.TrySetResult(false);
             this.Close();
         }
 
         protected override void OnClosed(System.EventArgs e)
         {
             base.OnClosed(e);
-            _tcs.TrySetResult(false);
+            _tcs?.TrySetResult(false);
         }
     }
 }
