@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:contracts="clr-namespace:EZKPM.Shared.Contracts;assembly=EZKPM.Shared.Contracts"
         xmlns:local="clr-namespace:EZKPM.Client.Desktop.Views"
+        xmlns:res="using:EZKPM.Client.Desktop.Resources"
         x:Class="EZKPM.Client.Desktop.Views.AssetEditorWindow"
         Title="Asset Editor" Width="900" Height="750"
         FontFamily="Inter, sans-serif, Segoe UI Emoji, Apple Color Emoji, Noto Color Emoji, Segoe UI Symbol"
@@ -66,8 +67,8 @@
                                     <StackPanel Orientation="Horizontal" Spacing="10">
                                         <TextBlock Text="⚠️" FontSize="24" VerticalAlignment="Center" />
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="ACHTUNG: Dieses Asset ist abgelaufen!" FontWeight="Bold" Foreground="#991B1B" FontSize="14" />
-                                            <TextBlock Text="Die Lebensdauer (max. 365 Tage) wurde überschritten. Bitte ändern Sie das Passwort umgehend und speichern Sie, um den Zugriff (z.B. Autofill) wieder zu ermöglichen." Foreground="#7F1D1D" FontSize="12" TextWrapping="Wrap" />
+                                            <TextBlock Text="{x:Static res:AppStrings.AssetEditor_ExpiredWarningTitle}" FontWeight="Bold" Foreground="#991B1B" FontSize="14" />
+                                            <TextBlock Text="{x:Static res:AppStrings.AssetEditor_ExpiredWarningDesc}" Foreground="#7F1D1D" FontSize="12" TextWrapping="Wrap" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Border>
@@ -216,17 +217,17 @@
                                 <TextBox x:Name="NotesTextBox" AcceptsReturn="True" MinHeight="80" PlaceholderText="Additional information..." />
                                 
                                 <TextBlock Classes="label" Text="Detailed Description"/>
-                                <TextBox x:Name="DetailedDescriptionTextBox" AcceptsReturn="True" MinHeight="80" PlaceholderText="Genauere Beschreibung..." />
+                                <TextBox x:Name="DetailedDescriptionTextBox" AcceptsReturn="True" MinHeight="80" PlaceholderText="{x:Static res:AppStrings.AssetEditor_DescWatermark}" />
                             </StackPanel>
                         </TabItem>
                         <TabItem Header="Custom Variables">
                             <StackPanel Spacing="10" Margin="10">
-                                <TextBlock Text="Spezifiziere Variablen für die Webseiten-Automatisierung. Ist der Wert leer, wirst du bei Verwendung gefragt." Foreground="#6B7280"/>
+                                <TextBlock Text="{x:Static res:AppStrings.AssetEditor_CustomVarsDesc}" Foreground="#6B7280"/>
                                 
                                 <Grid ColumnDefinitions="2*, 3*, 4*, 50" Margin="0,10,0,5">
-                                    <TextBlock Grid.Column="0" Text="Name" FontWeight="SemiBold" Foreground="#374151"/>
-                                    <TextBlock Grid.Column="1" Text="Wert" FontWeight="SemiBold" Foreground="#374151"/>
-                                    <TextBlock Grid.Column="2" Text="Beschreibung" FontWeight="SemiBold" Foreground="#374151"/>
+                                    <TextBlock Grid.Column="0" Text="{x:Static res:AppStrings.AssetEditor_ColName}" FontWeight="SemiBold" Foreground="#374151"/>
+                                    <TextBlock Grid.Column="1" Text="{x:Static res:AppStrings.AssetEditor_ColValue}" FontWeight="SemiBold" Foreground="#374151"/>
+                                    <TextBlock Grid.Column="2" Text="{x:Static res:AppStrings.AssetEditor_ColDesc}" FontWeight="SemiBold" Foreground="#374151"/>
                                 </Grid>
                                 
                                 <ListBox x:Name="CustomFieldsListBox" MinHeight="150" MaxHeight="300" Background="Transparent" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto">
@@ -247,12 +248,12 @@
                         </TabItem>
                         <TabItem Header="Permissions (ACL)">
                             <StackPanel Spacing="10" Margin="10">
-                                <TextBlock Text="Verwalte Benutzer, die Zugriff auf dieses Asset/diesen Ordner haben." Foreground="#6B7280"/>
-                                <CheckBox x:Name="IsInheritingCheckBox" Content="Vererbung vom übergeordneten Ordner aktivieren" IsVisible="False" Foreground="#2563EB" FontWeight="SemiBold" Click="IsInheritingCheckBox_Click"/>
+                                <TextBlock Text="{x:Static res:AppStrings.AssetEditor_AclDesc}" Foreground="#6B7280"/>
+                                <CheckBox x:Name="IsInheritingCheckBox" Content="{x:Static res:AppStrings.AssetEditor_AclInherit}" IsVisible="False" Foreground="#2563EB" FontWeight="SemiBold" Click="IsInheritingCheckBox_Click"/>
                                 
                                 <Grid ColumnDefinitions="*, Auto, 130, Auto" Margin="0,10,0,5">
-                                    <TextBlock Grid.Column="0" Text="Benutzer / SID" FontWeight="SemiBold" Foreground="#374151"/>
-                                    <TextBlock Grid.Column="2" Text="Rolle" FontWeight="SemiBold" Foreground="#374151"/>
+                                    <TextBlock Grid.Column="0" Text="{x:Static res:AppStrings.AssetEditor_ColUser}" FontWeight="SemiBold" Foreground="#374151"/>
+                                    <TextBlock Grid.Column="2" Text="{x:Static res:AppStrings.AssetEditor_ColRole}" FontWeight="SemiBold" Foreground="#374151"/>
                                 </Grid>
                                 
                                 <ListBox x:Name="AclsListBox" MinHeight="150" MaxHeight="300" Background="Transparent" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto">
@@ -263,14 +264,14 @@
                                                 
                                                 <Grid Grid.Column="1" Margin="0,0,5,0">
                                                     <TextBlock Text="{Binding NameWithSource}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#111827" FontSize="14"/>
-                                                    <TextBlock Text="[Geerbt]" IsVisible="{Binding IsInherited}" Foreground="#9CA3AF" FontSize="11" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,2,25,0" IsHitTestVisible="False"/>
+                                                    <TextBlock Text="{x:Static res:AppStrings.AssetEditor_Inherited}" IsVisible="{Binding IsInherited}" Foreground="#9CA3AF" FontSize="11" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,2,25,0" IsHitTestVisible="False"/>
                                                 </Grid>
                                                 
                                                 <Button Grid.Column="2" IsVisible="False" />
                                                 
                                                 <ComboBox Grid.Column="3" SelectedIndex="{Binding UiPermissionIndex}" Margin="0,0,10,0" HorizontalAlignment="Stretch">
                                                     <ComboBoxItem Content="Deny (-1)" Foreground="Red"/>
-                                                    <ComboBoxItem Content="Keine Rechte (0)" />
+                                                    <ComboBoxItem Content="{x:Static res:AppStrings.AssetEditor_AclNone}" />
                                                     <ComboBoxItem Content="Execute (1)" />
                                                     <ComboBoxItem Content="Read (2)" />
                                                     <ComboBoxItem Content="Owner (3)" />
@@ -284,7 +285,7 @@
                                 
                                 <Button Classes="outline" Content="➕" ToolTip.Tip="Benutzer/Gruppe hinzufügen" Click="AddAclButton_Click" HorizontalAlignment="Left"/>
                                 
-                                <CheckBox x:Name="ApplyToChildrenCheckBox" Content="Zugriffsrechte (ACL) an alle untergeordneten Assets vererben (Überschreibt bestehende Rechte)" IsVisible="False" Foreground="#6B7280" Margin="0,10,0,0"/>
+                                <CheckBox x:Name="ApplyToChildrenCheckBox" Content="{x:Static res:AppStrings.AssetEditor_AclApplyChildren}" IsVisible="False" Foreground="#6B7280" Margin="0,10,0,0"/>
                             </StackPanel>
                         </TabItem>
                         <TabItem Header="Attachments">

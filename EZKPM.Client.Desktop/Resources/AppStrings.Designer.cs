@@ -61,6 +61,132 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Propagate access rights (ACL) to all child assets (Overwrites existing rights) ähnelt.
+        /// </summary>
+        public static string AssetEditor_AclApplyChildren {
+            get {
+                return ResourceManager.GetString("AssetEditor_AclApplyChildren", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Manage users who have access to this asset/folder. ähnelt.
+        /// </summary>
+        public static string AssetEditor_AclDesc {
+            get {
+                return ResourceManager.GetString("AssetEditor_AclDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Enable inheritance from parent folder ähnelt.
+        /// </summary>
+        public static string AssetEditor_AclInherit {
+            get {
+                return ResourceManager.GetString("AssetEditor_AclInherit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die No Access (0) ähnelt.
+        /// </summary>
+        public static string AssetEditor_AclNone {
+            get {
+                return ResourceManager.GetString("AssetEditor_AclNone", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Description ähnelt.
+        /// </summary>
+        public static string AssetEditor_ColDesc {
+            get {
+                return ResourceManager.GetString("AssetEditor_ColDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Name ähnelt.
+        /// </summary>
+        public static string AssetEditor_ColName {
+            get {
+                return ResourceManager.GetString("AssetEditor_ColName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Role ähnelt.
+        /// </summary>
+        public static string AssetEditor_ColRole {
+            get {
+                return ResourceManager.GetString("AssetEditor_ColRole", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die User / SID ähnelt.
+        /// </summary>
+        public static string AssetEditor_ColUser {
+            get {
+                return ResourceManager.GetString("AssetEditor_ColUser", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Value ähnelt.
+        /// </summary>
+        public static string AssetEditor_ColValue {
+            get {
+                return ResourceManager.GetString("AssetEditor_ColValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Specify variables for website automation. If the value is empty, you will be prompted when used. ähnelt.
+        /// </summary>
+        public static string AssetEditor_CustomVarsDesc {
+            get {
+                return ResourceManager.GetString("AssetEditor_CustomVarsDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Detailed description... ähnelt.
+        /// </summary>
+        public static string AssetEditor_DescWatermark {
+            get {
+                return ResourceManager.GetString("AssetEditor_DescWatermark", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die The validity period (max 365 days) has been exceeded. Please update the password immediately and save to restore access (e.g. Autofill). ähnelt.
+        /// </summary>
+        public static string AssetEditor_ExpiredWarningDesc {
+            get {
+                return ResourceManager.GetString("AssetEditor_ExpiredWarningDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die WARNING: This asset has expired! ähnelt.
+        /// </summary>
+        public static string AssetEditor_ExpiredWarningTitle {
+            get {
+                return ResourceManager.GetString("AssetEditor_ExpiredWarningTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die [Inherited] ähnelt.
+        /// </summary>
+        public static string AssetEditor_Inherited {
+            get {
+                return ResourceManager.GetString("AssetEditor_Inherited", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Amount (e.g. 49.99 USD) ähnelt.
         /// </summary>
         public static string AuditDialog_AmountWatermark {
@@ -124,6 +250,123 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die No ähnelt.
+        /// </summary>
+        public static string ConfirmDialog_BtnNo {
+            get {
+                return ResourceManager.GetString("ConfirmDialog_BtnNo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Yes ähnelt.
+        /// </summary>
+        public static string ConfirmDialog_BtnYes {
+            get {
+                return ResourceManager.GetString("ConfirmDialog_BtnYes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Confirmation ähnelt.
+        /// </summary>
+        public static string ConfirmDialog_Title {
+            get {
+                return ResourceManager.GetString("ConfirmDialog_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Cancel ähnelt.
+        /// </summary>
+        public static string CsvMapping_BtnCancel {
+            get {
+                return ResourceManager.GetString("CsvMapping_BtnCancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Import ähnelt.
+        /// </summary>
+        public static string CsvMapping_BtnImport {
+            get {
+                return ResourceManager.GetString("CsvMapping_BtnImport", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Please map the columns of your CSV file to the EZKPM fields: ähnelt.
+        /// </summary>
+        public static string CsvMapping_Desc {
+            get {
+                return ResourceManager.GetString("CsvMapping_Desc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die CSV Import Mapping ähnelt.
+        /// </summary>
+        public static string CsvMapping_Header {
+            get {
+                return ResourceManager.GetString("CsvMapping_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Name / Title: ähnelt.
+        /// </summary>
+        public static string CsvMapping_LblName {
+            get {
+                return ResourceManager.GetString("CsvMapping_LblName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Notes: ähnelt.
+        /// </summary>
+        public static string CsvMapping_LblNotes {
+            get {
+                return ResourceManager.GetString("CsvMapping_LblNotes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Password: ähnelt.
+        /// </summary>
+        public static string CsvMapping_LblPass {
+            get {
+                return ResourceManager.GetString("CsvMapping_LblPass", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Website / URL: ähnelt.
+        /// </summary>
+        public static string CsvMapping_LblUrl {
+            get {
+                return ResourceManager.GetString("CsvMapping_LblUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Username: ähnelt.
+        /// </summary>
+        public static string CsvMapping_LblUser {
+            get {
+                return ResourceManager.GetString("CsvMapping_LblUser", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die CSV Column Mapping ähnelt.
+        /// </summary>
+        public static string CsvMapping_Title {
+            get {
+                return ResourceManager.GetString("CsvMapping_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Always Allow ähnelt.
         /// </summary>
         public static string LocalApp_AllowAlways {
@@ -169,6 +412,87 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Cancel ähnelt.
+        /// </summary>
+        public static string PwdPrompt_BtnCancel {
+            get {
+                return ResourceManager.GetString("PwdPrompt_BtnCancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die OK ähnelt.
+        /// </summary>
+        public static string PwdPrompt_BtnOk {
+            get {
+                return ResourceManager.GetString("PwdPrompt_BtnOk", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Select Key File ähnelt.
+        /// </summary>
+        public static string PwdPrompt_BtnSelectKey {
+            get {
+                return ResourceManager.GetString("PwdPrompt_BtnSelectKey", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Please enter the Master Password and/or select a Key File for the KeePass database: ähnelt.
+        /// </summary>
+        public static string PwdPrompt_Desc {
+            get {
+                return ResourceManager.GetString("PwdPrompt_Desc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die No file selected ähnelt.
+        /// </summary>
+        public static string PwdPrompt_NoFile {
+            get {
+                return ResourceManager.GetString("PwdPrompt_NoFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Password / Key File Required ähnelt.
+        /// </summary>
+        public static string PwdPrompt_Title {
+            get {
+                return ResourceManager.GetString("PwdPrompt_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Master Password ähnelt.
+        /// </summary>
+        public static string PwdPrompt_Watermark {
+            get {
+                return ResourceManager.GetString("PwdPrompt_Watermark", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Launch automatically in background at Windows startup (System Tray) ähnelt.
+        /// </summary>
+        public static string ServerConfig_AutoStart {
+            get {
+                return ResourceManager.GetString("ServerConfig_AutoStart", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Cancel ähnelt.
+        /// </summary>
+        public static string ServerConfig_BtnCancel {
+            get {
+                return ResourceManager.GetString("ServerConfig_BtnCancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Save &amp; Restart ähnelt.
         /// </summary>
         public static string ServerConfig_BtnSave {
@@ -183,6 +507,15 @@ namespace EZKPM.Client.Desktop.Resources {
         public static string ServerConfig_Desc {
             get {
                 return ResourceManager.GetString("ServerConfig_Desc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Setup Server Connection ähnelt.
+        /// </summary>
+        public static string ServerConfig_Header {
+            get {
+                return ResourceManager.GetString("ServerConfig_Header", resourceCulture);
             }
         }
         
@@ -273,6 +606,132 @@ namespace EZKPM.Client.Desktop.Resources {
         public static string SsoDialog_Title {
             get {
                 return ResourceManager.GetString("SsoDialog_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Create new vault ähnelt.
+        /// </summary>
+        public static string Startup_BtnCreateVault {
+            get {
+                return ResourceManager.GetString("Startup_BtnCreateVault", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Migrate password &amp; Unlock ähnelt.
+        /// </summary>
+        public static string Startup_BtnMigrate {
+            get {
+                return ResourceManager.GetString("Startup_BtnMigrate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Request 4-Eyes Recovery ähnelt.
+        /// </summary>
+        public static string Startup_BtnRecovery {
+            get {
+                return ResourceManager.GetString("Startup_BtnRecovery", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Pair device ähnelt.
+        /// </summary>
+        public static string Startup_BtnSetupDevice {
+            get {
+                return ResourceManager.GetString("Startup_BtnSetupDevice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Unlock with Windows Credentials ähnelt.
+        /// </summary>
+        public static string Startup_BtnUnlock {
+            get {
+                return ResourceManager.GetString("Startup_BtnUnlock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Please enter your old Master Password to safely migrate it to the new DPAPI system: ähnelt.
+        /// </summary>
+        public static string Startup_MigrateDesc {
+            get {
+                return ResourceManager.GetString("Startup_MigrateDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Migration to Seamless SSO ähnelt.
+        /// </summary>
+        public static string Startup_MigrateTitle {
+            get {
+                return ResourceManager.GetString("Startup_MigrateTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Setup new device ähnelt.
+        /// </summary>
+        public static string Startup_NewDevice {
+            get {
+                return ResourceManager.GetString("Startup_NewDevice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠️ DPAPI Error: Windows password may have been reset. ähnelt.
+        /// </summary>
+        public static string Startup_RecoveryError {
+            get {
+                return ResourceManager.GetString("Startup_RecoveryError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Enter your 34-character Secret Key: ähnelt.
+        /// </summary>
+        public static string Startup_SecretKeyDesc {
+            get {
+                return ResourceManager.GetString("Startup_SecretKeyDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Decrypting Vault... ähnelt.
+        /// </summary>
+        public static string Startup_SplashDecr {
+            get {
+                return ResourceManager.GetString("Startup_SplashDecr", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die EZKPM Startup ähnelt.
+        /// </summary>
+        public static string Startup_Title {
+            get {
+                return ResourceManager.GetString("Startup_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Unlock securely via Windows Profile (Seamless SSO). ähnelt.
+        /// </summary>
+        public static string Startup_UnlockDesc {
+            get {
+                return ResourceManager.GetString("Startup_UnlockDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Vault is locked. ähnelt.
+        /// </summary>
+        public static string Startup_VaultLocked {
+            get {
+                return ResourceManager.GetString("Startup_VaultLocked", resourceCulture);
             }
         }
     }

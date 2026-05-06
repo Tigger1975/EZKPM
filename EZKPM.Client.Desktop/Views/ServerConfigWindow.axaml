@@ -1,7 +1,8 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:res="using:EZKPM.Client.Desktop.Resources"
         x:Class="EZKPM.Client.Desktop.Views.ServerConfigWindow"
-        Title="EZKPM Server Konfiguration"
+        Title="{x:Static res:AppStrings.ServerConfig_Title}"
         Width="450" SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
         Background="#111827"
@@ -11,26 +12,26 @@
 
     <Border BorderBrush="#1F2937" BorderThickness="1" CornerRadius="20" Background="#111827" Margin="10" BoxShadow="0 10 30 0 #000000">
         <StackPanel Margin="30" Spacing="20">
-            <TextBlock Text="Server-Verbindung einrichten" 
+            <TextBlock Text="{x:Static res:AppStrings.ServerConfig_Header}" 
                        FontSize="20" 
                        FontWeight="Bold" 
                        Foreground="White" 
                        HorizontalAlignment="Center" />
 
-            <TextBlock Text="Bitte geben Sie die Adresse des EZKPM Servers (PDP) ein. (z.B. https://ezkpm.firma.local:5000)" 
+            <TextBlock Text="{x:Static res:AppStrings.ServerConfig_Desc}" 
                        Foreground="#9CA3AF" 
                        TextWrapping="Wrap" 
                        TextAlignment="Center" />
 
             <TextBox x:Name="UrlTextBox" 
-                     Watermark="Server URL (IP/FQDN : Port)" 
+                     PlaceholderText="{x:Static res:AppStrings.ServerConfig_UrlWatermark}" 
                      Background="#1F2937" 
                      Foreground="White" 
                      BorderBrush="#374151" 
                      Padding="12" />
 
             <CheckBox x:Name="AutostartCheckBox" 
-                      Content="Bei Windows-Start automatisch im Hintergrund laden (System-Tray)" 
+                      Content="{x:Static res:AppStrings.ServerConfig_AutoStart}" 
                       Foreground="White" 
                       Margin="0,10,0,0" />
 
@@ -48,13 +49,13 @@
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="15" Margin="0,10,0,0">
                 <Button x:Name="CancelButton" 
-                        Content="Abbrechen" 
+                        Content="{x:Static res:AppStrings.ServerConfig_BtnCancel}" 
                         Click="CancelButton_Click" 
                         Background="Transparent" 
                         Foreground="#9CA3AF" 
                         Padding="20,10" />
                 <Button x:Name="SaveButton" 
-                        Content="Verbinden &amp; Speichern" 
+                        Content="{x:Static res:AppStrings.ServerConfig_BtnSave}" 
                         Click="SaveButton_Click" 
                         Background="#3B82F6" 
                         Foreground="White" 

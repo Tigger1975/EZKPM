@@ -1,7 +1,8 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:res="using:EZKPM.Client.Desktop.Resources"
         x:Class="EZKPM.Client.Desktop.Views.StartupWindow"
-        Title="EZKPM Startup"
+        Title="{x:Static res:AppStrings.Startup_Title}"
         Width="450" MinHeight="400" SizeToContent="Height"
         SystemDecorations="None"
         WindowStartupLocation="CenterScreen"
@@ -16,22 +17,22 @@
             
             <!-- SERVER CONFIG PANEL -->
             <StackPanel x:Name="ServerConfigPanel" IsVisible="False" Spacing="15">
-                <TextBlock Text="Server-Verbindung einrichten" FontSize="16" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" />
-                <TextBlock Text="Bitte geben Sie die Adresse des EZKPM Servers (PDP) ein. (z.B. https://ezkpm.firma.local:5000)" Foreground="#9CA3AF" TextWrapping="Wrap" TextAlignment="Center" FontSize="12" />
+                <TextBlock Text="{x:Static res:AppStrings.ServerConfig_Header}" FontSize="16" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" />
+                <TextBlock Text="{x:Static res:AppStrings.ServerConfig_Desc}" Foreground="#9CA3AF" TextWrapping="Wrap" TextAlignment="Center" FontSize="12" />
                 
-                <TextBox x:Name="UrlTextBox" PlaceholderText="Server URL (IP/FQDN : Port)" Background="#1F2937" Foreground="White" BorderBrush="#374151" Padding="12" />
+                <TextBox x:Name="UrlTextBox" PlaceholderText="{x:Static res:AppStrings.ServerConfig_UrlWatermark}" Background="#1F2937" Foreground="White" BorderBrush="#374151" Padding="12" />
                 <TextBlock x:Name="ConfigStatusText" Foreground="Red" IsVisible="False" TextWrapping="Wrap" HorizontalAlignment="Center" FontSize="12" />
                 <ProgressBar x:Name="ConfigTestProgress" IsIndeterminate="True" IsVisible="False" Height="4" Foreground="#3B82F6" />
                 
-                <Button x:Name="SaveConfigButton" Content="Verbinden &amp; Speichern" Click="SaveConfigButton_Click" Background="#3B82F6" Foreground="White" FontWeight="Bold" Padding="20,10" CornerRadius="8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+                <Button x:Name="SaveConfigButton" Content="{x:Static res:AppStrings.ServerConfig_BtnSave}" Click="SaveConfigButton_Click" Background="#3B82F6" Foreground="White" FontWeight="Bold" Padding="20,10" CornerRadius="8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
             </StackPanel>
 
             <!-- AUTH PANEL -->
             <StackPanel x:Name="AuthPanel" IsVisible="False" Spacing="15">
-                <TextBlock Text="Tresor ist gesperrt." Foreground="#94A3B8" HorizontalAlignment="Center" />
-                <TextBlock Text="Entsperrung erfolgt sicher via Windows-Profil (Seamless SSO)." FontSize="12" Foreground="#64748B" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+                <TextBlock Text="{x:Static res:AppStrings.Startup_VaultLocked}" Foreground="#94A3B8" HorizontalAlignment="Center" />
+                <TextBlock Text="{x:Static res:AppStrings.Startup_UnlockDesc}" FontSize="12" Foreground="#64748B" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
                 
-                <Button x:Name="UnlockButton" Content="Mit Windows-Credentials entsperren" 
+                <Button x:Name="UnlockButton" Content="{x:Static res:AppStrings.Startup_BtnUnlock}" 
                         Background="#3B82F6" Foreground="White" 
                         HorizontalAlignment="Center" Padding="15,10"
                         Click="UnlockButton_Click"/>
@@ -41,36 +42,36 @@
                 <TextBlock x:Name="StatusText" Text="" Foreground="#10B981" HorizontalAlignment="Center" IsVisible="False" />
                 
                 <StackPanel x:Name="SetupPanel" IsVisible="False" Spacing="10" Margin="0,10,0,0">
-                    <TextBlock Text="Neues Gerät einrichten" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" />
-                    <TextBlock Text="Geben Sie Ihren 34-stelligen Secret Key ein:" FontSize="12" Foreground="#94A3B8" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+                    <TextBlock Text="{x:Static res:AppStrings.Startup_NewDevice}" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" />
+                    <TextBlock Text="{x:Static res:AppStrings.Startup_SecretKeyDesc}" FontSize="12" Foreground="#94A3B8" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
                     <TextBox x:Name="SecretKeyTextBox" PlaceholderText="EZ-XXXXX-XXXXX-XXXXX-XXXXX-XXXXXX" PasswordChar="•" HorizontalAlignment="Stretch"/>
-                    <Button x:Name="SetupDeviceButton" Content="Gerät koppeln" 
+                    <Button x:Name="SetupDeviceButton" Content="{x:Static res:AppStrings.Startup_BtnSetupDevice}" 
                             Background="#10B981" Foreground="White" 
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="15,10"
                             Click="SetupDeviceButton_Click"/>
-                    <Button x:Name="CreateVaultButton" Content="Neuen Tresor erstellen" 
+                    <Button x:Name="CreateVaultButton" Content="{x:Static res:AppStrings.Startup_BtnCreateVault}" 
                             Background="Transparent" Foreground="#3B82F6" 
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="10,5"
                             Click="CreateVaultButton_Click"/>
                 </StackPanel>
                 
                 <StackPanel x:Name="MigrationPanel" IsVisible="False" Spacing="10" Margin="0,10,0,0">
-                    <TextBlock Text="Migration zu Seamless SSO" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" />
-                    <TextBlock Text="Bitte geben Sie Ihr altes Master-Passwort ein, um es sicher in das neue DPAPI-System zu überführen:" FontSize="12" Foreground="#94A3B8" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
-                    <TextBox x:Name="LegacyPasswordTextBox" PlaceholderText="Altes Master-Passwort" PasswordChar="•" HorizontalAlignment="Stretch"/>
-                    <Button x:Name="MigrateButton" Content="Passwort migrieren &amp; Entsperren" 
+                    <TextBlock Text="{x:Static res:AppStrings.Startup_MigrateTitle}" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" />
+                    <TextBlock Text="{x:Static res:AppStrings.Startup_MigrateDesc}" FontSize="12" Foreground="#94A3B8" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+                    <TextBox x:Name="LegacyPasswordTextBox" PlaceholderText="Legacy Master-Password" PasswordChar="•" HorizontalAlignment="Stretch"/>
+                    <Button x:Name="MigrateButton" Content="{x:Static res:AppStrings.Startup_BtnMigrate}" 
                             Background="#8B5CF6" Foreground="White" 
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="15,10"
                             Click="MigrateButton_Click"/>
                 </StackPanel>
                 
                 <StackPanel x:Name="RecoveryPanel" IsVisible="False" Spacing="10" Margin="0,10,0,0">
-                    <TextBlock Text="⚠️ DPAPI-Fehler: Windows-Passwort wurde ggf. zurückgesetzt." Foreground="#EF4444" FontSize="12" TextWrapping="Wrap" TextAlignment="Center" />
-                    <Button x:Name="RecoveryButton" Content="4-Augen-Recovery anfordern" 
+                    <TextBlock Text="{x:Static res:AppStrings.Startup_RecoveryError}" Foreground="#EF4444" FontSize="12" TextWrapping="Wrap" TextAlignment="Center" />
+                    <Button x:Name="RecoveryButton" Content="{x:Static res:AppStrings.Startup_BtnRecovery}" 
                             Background="#EF4444" Foreground="White" 
                             HorizontalAlignment="Center" Padding="10,5"
                             Click="RecoveryButton_Click"/>
-                    <Button x:Name="SimulateAdminButton" Content="[Test] Als Admin freigeben" 
+                    <Button x:Name="SimulateAdminButton" Content="[Test] Admin Approve" 
                             Background="#8B5CF6" Foreground="White" 
                             HorizontalAlignment="Center" Padding="10,5"
                             IsVisible="False"
@@ -80,7 +81,7 @@
 
             <!-- SPLASH PANEL -->
             <StackPanel x:Name="SplashPanel" IsVisible="False" Spacing="15">
-                <TextBlock x:Name="SplashStatusText" Text="Entschlüssele Tresor..." Foreground="#9CA3AF" FontSize="14" HorizontalAlignment="Center" />
+                <TextBlock x:Name="SplashStatusText" Text="{x:Static res:AppStrings.Startup_SplashDecr}" Foreground="#9CA3AF" FontSize="14" HorizontalAlignment="Center" />
                 <ProgressBar IsIndeterminate="True" Height="4" Width="250" Margin="0,10,0,0" CornerRadius="2" Foreground="#3B82F6" Background="#374151" />
             </StackPanel>
 

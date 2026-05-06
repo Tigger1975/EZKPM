@@ -136,4 +136,163 @@
     <value>Save &amp; Restart</value>
   </data>
 
+  <data name="ConfirmDialog_Title" xml:space="preserve">
+    <value>Confirmation</value>
+  </data>
+  <data name="ConfirmDialog_BtnYes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="ConfirmDialog_BtnNo" xml:space="preserve">
+    <value>No</value>
+  </data>
+
+  <data name="ServerConfig_Header" xml:space="preserve">
+    <value>Setup Server Connection</value>
+  </data>
+  <data name="ServerConfig_AutoStart" xml:space="preserve">
+    <value>Launch automatically in background at Windows startup (System Tray)</value>
+  </data>
+  <data name="Startup_Title" xml:space="preserve">
+    <value>EZKPM Startup</value>
+  </data>
+  <data name="Startup_VaultLocked" xml:space="preserve">
+    <value>Vault is locked.</value>
+  </data>
+  <data name="Startup_UnlockDesc" xml:space="preserve">
+    <value>Unlock securely via Windows Profile (Seamless SSO).</value>
+  </data>
+  <data name="Startup_BtnUnlock" xml:space="preserve">
+    <value>Unlock with Windows Credentials</value>
+  </data>
+  <data name="Startup_NewDevice" xml:space="preserve">
+    <value>Setup new device</value>
+  </data>
+  <data name="Startup_SecretKeyDesc" xml:space="preserve">
+    <value>Enter your 34-character Secret Key:</value>
+  </data>
+  <data name="Startup_BtnSetupDevice" xml:space="preserve">
+    <value>Pair device</value>
+  </data>
+  <data name="Startup_BtnCreateVault" xml:space="preserve">
+    <value>Create new vault</value>
+  </data>
+  <data name="Startup_MigrateTitle" xml:space="preserve">
+    <value>Migration to Seamless SSO</value>
+  </data>
+  <data name="Startup_MigrateDesc" xml:space="preserve">
+    <value>Please enter your old Master Password to safely migrate it to the new DPAPI system:</value>
+  </data>
+  <data name="Startup_BtnMigrate" xml:space="preserve">
+    <value>Migrate password &amp; Unlock</value>
+  </data>
+  <data name="Startup_RecoveryError" xml:space="preserve">
+    <value>⚠️ DPAPI Error: Windows password may have been reset.</value>
+  </data>
+  <data name="Startup_BtnRecovery" xml:space="preserve">
+    <value>Request 4-Eyes Recovery</value>
+  </data>
+  <data name="Startup_SplashDecr" xml:space="preserve">
+    <value>Decrypting Vault...</value>
+  </data>
+
+  <data name="CsvMapping_Title" xml:space="preserve">
+    <value>CSV Column Mapping</value>
+  </data>
+  <data name="CsvMapping_Header" xml:space="preserve">
+    <value>CSV Import Mapping</value>
+  </data>
+  <data name="CsvMapping_Desc" xml:space="preserve">
+    <value>Please map the columns of your CSV file to the EZKPM fields:</value>
+  </data>
+  <data name="CsvMapping_LblName" xml:space="preserve">
+    <value>Name / Title:</value>
+  </data>
+  <data name="CsvMapping_LblUser" xml:space="preserve">
+    <value>Username:</value>
+  </data>
+  <data name="CsvMapping_LblPass" xml:space="preserve">
+    <value>Password:</value>
+  </data>
+  <data name="CsvMapping_LblUrl" xml:space="preserve">
+    <value>Website / URL:</value>
+  </data>
+  <data name="CsvMapping_LblNotes" xml:space="preserve">
+    <value>Notes:</value>
+  </data>
+  <data name="CsvMapping_BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CsvMapping_BtnImport" xml:space="preserve">
+    <value>Import</value>
+  </data>
+
+  <data name="PwdPrompt_Title" xml:space="preserve">
+    <value>Password / Key File Required</value>
+  </data>
+  <data name="PwdPrompt_Desc" xml:space="preserve">
+    <value>Please enter the Master Password and/or select a Key File for the KeePass database:</value>
+  </data>
+  <data name="PwdPrompt_Watermark" xml:space="preserve">
+    <value>Master Password</value>
+  </data>
+  <data name="PwdPrompt_BtnSelectKey" xml:space="preserve">
+    <value>Select Key File</value>
+  </data>
+  <data name="PwdPrompt_NoFile" xml:space="preserve">
+    <value>No file selected</value>
+  </data>
+  <data name="PwdPrompt_BtnOk" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="PwdPrompt_BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+
+  <data name="AssetEditor_ExpiredWarningTitle" xml:space="preserve">
+    <value>WARNING: This asset has expired!</value>
+  </data>
+  <data name="AssetEditor_ExpiredWarningDesc" xml:space="preserve">
+    <value>The validity period (max 365 days) has been exceeded. Please update the password immediately and save to restore access (e.g. Autofill).</value>
+  </data>
+  <data name="AssetEditor_DescWatermark" xml:space="preserve">
+    <value>Detailed description...</value>
+  </data>
+  <data name="AssetEditor_CustomVarsDesc" xml:space="preserve">
+    <value>Specify variables for website automation. If the value is empty, you will be prompted when used.</value>
+  </data>
+  <data name="AssetEditor_ColName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="AssetEditor_ColValue" xml:space="preserve">
+    <value>Value</value>
+  </data>
+  <data name="AssetEditor_ColDesc" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="AssetEditor_AclDesc" xml:space="preserve">
+    <value>Manage users who have access to this asset/folder.</value>
+  </data>
+  <data name="AssetEditor_AclInherit" xml:space="preserve">
+    <value>Enable inheritance from parent folder</value>
+  </data>
+  <data name="AssetEditor_ColUser" xml:space="preserve">
+    <value>User / SID</value>
+  </data>
+  <data name="AssetEditor_ColRole" xml:space="preserve">
+    <value>Role</value>
+  </data>
+  <data name="AssetEditor_Inherited" xml:space="preserve">
+    <value>[Inherited]</value>
+  </data>
+  <data name="AssetEditor_AclNone" xml:space="preserve">
+    <value>No Access (0)</value>
+  </data>
+  <data name="AssetEditor_AclApplyChildren" xml:space="preserve">
+    <value>Propagate access rights (ACL) to all child assets (Overwrites existing rights)</value>
+  </data>
+
+  <data name="ServerConfig_BtnCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+
 </root>

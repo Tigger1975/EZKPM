@@ -1,12 +1,13 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:res="using:EZKPM.Client.Desktop.Resources"
         x:Class="EZKPM.Client.Desktop.Views.ConfirmationDialog"
-        Title="Bestätigung" Width="400" Height="200" WindowStartupLocation="CenterOwner">
+        Title="{x:Static res:AppStrings.ConfirmDialog_Title}" Width="400" Height="200" WindowStartupLocation="CenterOwner">
     <StackPanel Margin="20" Spacing="20">
         <TextBlock x:Name="MessageTextBlock" TextWrapping="Wrap" />
         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
-            <Button Content="Ja" Click="YesButton_Click" Background="#EF4444" Foreground="White" />
-            <Button Content="Nein" Click="NoButton_Click" />
+            <Button Content="{x:Static res:AppStrings.ConfirmDialog_BtnYes}" Click="YesButton_Click" Background="#EF4444" Foreground="White" />
+            <Button Content="{x:Static res:AppStrings.ConfirmDialog_BtnNo}" Click="NoButton_Click" />
         </StackPanel>
     </StackPanel>
 </Window>
