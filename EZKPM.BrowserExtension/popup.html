@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            width: 350px;
+            height: 450px;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+            overflow-y: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background-color: #252526;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+        .header img {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .search-container {
+            padding: 15px;
+            background-color: #1e1e1e;
+            border-bottom: 1px solid #333;
+        }
+        .search-input {
+            width: 100%;
+            padding: 8px 12px;
+            background-color: #2d2d2d;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            color: #fff;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .search-input:focus {
+            border-color: #007acc;
+        }
+        .results-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .asset-item {
+            background-color: #252526;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+            transition: border-color 0.2s;
+        }
+        .asset-item:hover {
+            border-color: #555;
+        }
+        .asset-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: #e0e0e0;
+        }
+        .asset-username {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 8px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .btn {
+            flex: 1;
+            background-color: #333337;
+            color: #ccc;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 6px 0;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:hover {
+            background-color: #3e3e42;
+            color: #fff;
+        }
+        .btn.autofill {
+            background-color: #0e639c;
+            color: #fff;
+            border-color: #0e639c;
+        }
+        .btn.autofill:hover {
+            background-color: #1177bb;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-size: 14px;
+        }
+        .status-msg {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="icons/icon_green.png" alt="Logo">
+        <h1>EZKPM Vault</h1>
+    </div>
+    
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search Vault...">
+    </div>
+    
+    <div class="results-container" id="resultsContainer">
+        <div class="loading">Loading credentials...</div>
+    </div>
+    
+    <div id="statusMsg" class="status-msg">Copied!</div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

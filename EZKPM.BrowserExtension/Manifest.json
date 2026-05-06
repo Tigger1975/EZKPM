@@ -18,7 +18,8 @@
   },
   "action": {
     "default_icon": "icons/icon_gray.png",
-    "default_title": "EZKPM Native Bridge"
+    "default_title": "EZKPM Native Bridge",
+    "default_popup": "popup.html"
   },
   "background": {
     "service_worker": "background.js"

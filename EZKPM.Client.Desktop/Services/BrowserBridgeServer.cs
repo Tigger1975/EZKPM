@@ -137,6 +137,33 @@ namespace EZKPM.Client.Desktop.Services
                     }
                     return JsonSerializer.Serialize(new { Type = "NO_MATCH" });
                 }
+                else if (action == "REQUEST_SEARCH")
+                {
+                    string query = root.TryGetProperty("Query", out var qProp) ? qProp.GetString()?.ToLowerInvariant() : "";
+                    var assets = _getDecryptedAssetsFunc();
+                    var matches = assets.Where(a => 
+                    {
+                        if (a.IsDeleted) return false;
+                        if (a.AssetType == "Folder") return false;
+                        if (string.IsNullOrEmpty(query)) return true;
+                        return (a.Title?.ToLowerInvariant().Contains(query) == true) || 
+                               (a.Url?.ToLowerInvariant().Contains(query) == true) || 
+                               (a.Username?.ToLowerInvariant().Contains(query) == true);
+                    }).Take(20).ToList();
+
+                    var list = matches.Select(m => new {
+                        AssetId = m.TransientAssetId,
+                        Title = m.Title,
+                        Username = m.Username,
+                        AssetType = m.AssetType,
+                        Url = m.Url
+                    }).ToList();
+                    
+                    return JsonSerializer.Serialize(new { 
+                        Type = "SEARCH_RESULTS",
+                        Results = list
+                    });
+                }
                 else if (action == "REQUEST_CREDENTIAL_DATA")
                 {
                     if (root.TryGetProperty("AssetId", out var idProp) && Guid.TryParse(idProp.GetString(), out Guid assetId))
@@ -158,6 +185,7 @@ namespace EZKPM.Client.Desktop.Services
                                 return JsonSerializer.Serialize(new {
                                     Type = "CREDENTIAL_DATA_RESPONSE",
                                     Password = asset.Password,
+                                    TotpCode = !string.IsNullOrEmpty(asset.TotpSecret) ? EZKPM.Client.Desktop.Views.AssetEditorWindow.GetTotpCode(asset.TotpSecret) : null,
                                     CustomFields = asset.CustomFields != null ? asset.CustomFields.Select(cf => new {
                                         Name = cf.Name,
                                         Value = cf.Value

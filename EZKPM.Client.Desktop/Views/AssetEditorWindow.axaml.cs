@@ -457,7 +457,7 @@ public partial class AssetEditorWindow : Window
         }
     }
 
-    private static string GetTotpCode(string base32Secret)
+    public static string GetTotpCode(string base32Secret)
     {
         if (string.IsNullOrWhiteSpace(base32Secret)) return "------";
         try {

@@ -54,10 +54,13 @@ function connectToNativeHost() {
         console.log("Nachricht vom sicheren Desktop-Client erhalten.");
         setExtensionIcon('connected'); // we know it's alive!
         
+        // Broadcast to extension pages (like popup)
+        try { chrome.runtime.sendMessage(message); } catch(e) {}
+        
         // Leite die entschlüsselten Daten oder Audit-Prompts an den Content-Script des aktiven Tabs weiter
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (tabs[0]) {
-                chrome.tabs.sendMessage(tabs[0].id, message);
+                try { chrome.tabs.sendMessage(tabs[0].id, message); } catch(e) {}
             }
         });
     });
@@ -114,6 +117,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 Url: request.url,
                 Username: request.username,
                 Password: request.password
+            });
+        }
+    } else if (request.type === "REQUEST_SEARCH") {
+        if (!nativePort) connectToNativeHost();
+        if (nativePort) {
+            nativePort.postMessage({
+                Type: "REQUEST_SEARCH",
+                Query: request.query
             });
         }
     }

@@ -19,12 +19,26 @@ function scanForForms() {
         if (passField) {
             console.log("EZKPM: Zweischritt-Login (Reload) erkannt. Injiziere autorisiertes Passwort...");
             blockUserInput();
-            setTimeout(() => performStealthInjection(cred.Username, cred.Password, cred.CustomFields), 200);
+            setTimeout(() => performStealthInjection(cred.Username, cred.Password, cred.CustomFields, cred.TotpCode), 200);
             
             // ANTI-FORENSIK: Storage sofort leeren
             sessionStorage.removeItem('ezkpm_active_autofill');
             return;
         } else {
+            // TOTP only view check
+            const totpFields = Array.from(document.querySelectorAll('input')).filter(el => {
+                const nm = (el.name || '').toLowerCase();
+                const id = (el.id || '').toLowerCase();
+                const autocomplete = (el.getAttribute('autocomplete') || '').toLowerCase();
+                return nm.includes('totp') || nm.includes('otp') || nm.includes('2fa') || nm.includes('mfa') || nm.includes('authenticator') || autocomplete === 'one-time-code';
+            });
+            if (totpFields.length > 0 && cred.TotpCode) {
+                console.log("EZKPM: TOTP (Reload) erkannt. Injiziere TOTP...");
+                blockUserInput();
+                setTimeout(() => performStealthInjection(cred.Username, cred.Password, cred.CustomFields, cred.TotpCode), 200);
+                sessionStorage.removeItem('ezkpm_active_autofill');
+                return;
+            }
             // Fallback: Wenn wir geladen wurden, aber kein Passwortfeld da ist (z.B. Fehlerseite),
             // heben wir den Blocker nach kurzer Zeit wieder auf und brechen den Auto-Flow ab.
             sessionStorage.removeItem('ezkpm_active_autofill');
@@ -85,10 +99,11 @@ chrome.runtime.onMessage.addListener((message) => {
             sessionStorage.setItem('ezkpm_active_autofill', JSON.stringify({ 
                 Username: pendingInjectionUsername, 
                 Password: message.Password, 
+                TotpCode: message.TotpCode,
                 CustomFields: message.CustomFields 
             }));
             blockUserInput();
-            performStealthInjection(pendingInjectionUsername, message.Password, message.CustomFields);
+            performStealthInjection(pendingInjectionUsername, message.Password, message.CustomFields, message.TotpCode);
             pendingInjectionUsername = null;
         }
     }
@@ -286,7 +301,7 @@ function removeBlocker() {
     }
 }
 
-function performStealthInjection(username, password, customFields = []) {
+function performStealthInjection(username, password, customFields = [], totpCode = null) {
     let injected = false;
     const injectedFields = new Set(); // Merkt sich, welche Felder wir schon befüllt haben
 
@@ -395,6 +410,26 @@ function performStealthInjection(username, password, customFields = []) {
         passField.dispatchEvent(new Event('input', { bubbles: true }));
         passField.dispatchEvent(new Event('change', { bubbles: true }));
         injected = true;
+    }
+
+    // 4. TOTP Code injizieren (falls vorhanden)
+    if (totpCode) {
+        const totpFields = Array.from(document.querySelectorAll('input')).filter(el => {
+            if (!isVisible(el)) return false;
+            const nm = (el.name || '').toLowerCase();
+            const id = (el.id || '').toLowerCase();
+            const autocomplete = (el.getAttribute('autocomplete') || '').toLowerCase();
+            return nm.includes('totp') || nm.includes('otp') || nm.includes('2fa') || nm.includes('mfa') || nm.includes('authenticator') || autocomplete === 'one-time-code';
+        });
+        
+        if (totpFields.length > 0) {
+            const field = totpFields[0];
+            field.value = totpCode;
+            field.dispatchEvent(new Event('input', { bubbles: true }));
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+            injectedFields.add(field);
+            injected = true;
+        }
     }
 
     if (injected) {
