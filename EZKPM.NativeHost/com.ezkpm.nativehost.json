@@ -1,0 +1,9 @@
+﻿{
+  "name": "com.ezkpm.nativehost",
+  "description": "EZKPM Native Messaging Host",
+  "path": "C:\\Users\\adm-kh\\source\\repos\\EZKPM\\EZKPM.NativeHost\\bin\\Debug\\net10.0\\EZKPM.NativeHost.exe",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://ofiilabemldhhdggobjdbdfelbmpmklf/"
+  ]
+}
