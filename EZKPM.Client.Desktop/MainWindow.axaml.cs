@@ -303,13 +303,13 @@ public partial class MainWindow : Window
         }
 
         string searchText = SearchTextBox?.Text?.ToLower() ?? "";
-        string selectedType = (TypeFilterComboBox?.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() ?? "Alle Typen";
+        string selectedType = (TypeFilterComboBox?.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() ?? EZKPM.Client.Desktop.Resources.AppStrings.Main_FilterAll;
 
         bool isSearching = !string.IsNullOrWhiteSpace(searchText);
 
         var filtered = _decryptedAssets.AsEnumerable();
 
-        if (selectedType == "Papierkorb")
+        if (selectedType == EZKPM.Client.Desktop.Resources.AppStrings.Main_FilterTrash)
         {
             filtered = filtered.Where(a => a.IsDeleted);
         }
@@ -322,11 +322,11 @@ public partial class MainWindow : Window
                 filtered = filtered.Where(a => a.ParentFolderId == parentId);
             }
 
-            if (selectedType == "Abgelaufen (Rotation)")
+            if (selectedType == EZKPM.Client.Desktop.Resources.AppStrings.Main_FilterExpired)
             {
                 filtered = filtered.Where(a => a.IsExpired);
             }
-            else if (selectedType != "Alle Typen")
+            else if (selectedType != EZKPM.Client.Desktop.Resources.AppStrings.Main_FilterAll)
             {
                 filtered = filtered.Where(a => a.AssetType == selectedType);
             }
@@ -361,8 +361,8 @@ public partial class MainWindow : Window
         
         if (RestoreSelectedAssetsButton != null && TypeFilterComboBox != null)
         {
-            string selectedType = (TypeFilterComboBox.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() ?? "Alle Typen";
-            RestoreSelectedAssetsButton.IsVisible = selectedType == "Papierkorb";
+            string selectedType = (TypeFilterComboBox.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() ?? EZKPM.Client.Desktop.Resources.AppStrings.Main_FilterAll;
+            RestoreSelectedAssetsButton.IsVisible = selectedType == EZKPM.Client.Desktop.Resources.AppStrings.Main_FilterTrash;
         }
     }
 
@@ -371,7 +371,7 @@ public partial class MainWindow : Window
         if (AssetsDataGrid.SelectedItems.Count == 0) return;
 
         var items = AssetsDataGrid.SelectedItems.Cast<VaultAssetPayload>().ToList();
-        var isPapierkorb = (TypeFilterComboBox.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() == "Papierkorb";
+        var isPapierkorb = (TypeFilterComboBox.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() == EZKPM.Client.Desktop.Resources.AppStrings.Main_FilterTrash;
         string msg = isPapierkorb 
             ? $"Möchten Sie {items.Count} Asset(s) wirklich unwiderruflich löschen?" 
             : $"Möchten Sie {items.Count} Asset(s) wirklich in den Papierkorb verschieben?";
