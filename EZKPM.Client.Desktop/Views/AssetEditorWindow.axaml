@@ -127,8 +127,8 @@
                             <StackPanel x:Name="PaymentPanel" IsVisible="True" Spacing="12">
                                 <TextBlock Classes="label" Text="{x:Static res:AppStrings.AssetEditor_LblPaymentMethod}"/>
                                 <ComboBox x:Name="PaymentSubTypeComboBox" SelectedIndex="0" HorizontalAlignment="Stretch" CornerRadius="4" SelectionChanged="PaymentSubTypeComboBox_SelectionChanged">
-                                    <ComboBoxItem>{x:Static res:AppStrings.AssetEditor_PayCard}</ComboBoxItem>
-                                    <ComboBoxItem>{x:Static res:AppStrings.AssetEditor_PayService}</ComboBoxItem>
+                                    <ComboBoxItem Content="{x:Static res:AppStrings.AssetEditor_PayCard}" />
+                                    <ComboBoxItem Content="{x:Static res:AppStrings.AssetEditor_PayService}" />
                                 </ComboBox>
 
                                 <StackPanel x:Name="CardDetailsPanel" Spacing="12">
@@ -318,10 +318,10 @@
                                     <StackPanel Spacing="12" Margin="10">
                                         <TextBlock Classes="label" Text="{x:Static res:AppStrings.AssetEditor_LblMethod}"/>
                                         <ComboBox x:Name="LoginMethodComboBox" SelectedIndex="0" HorizontalAlignment="Stretch" CornerRadius="4">
-                                            <ComboBoxItem>{x:Static res:AppStrings.AssetEditor_ComboAuto}</ComboBoxItem>
-                                            <ComboBoxItem>{x:Static res:AppStrings.AssetEditor_ComboOne}</ComboBoxItem>
-                                            <ComboBoxItem>TwoStep (Username -> Next -> Password)</ComboBoxItem>
-                                            <ComboBoxItem>{x:Static res:AppStrings.AssetEditor_ComboBasic}</ComboBoxItem>
+                                            <ComboBoxItem Content="{x:Static res:AppStrings.AssetEditor_ComboAuto}" />
+                                            <ComboBoxItem Content="{x:Static res:AppStrings.AssetEditor_ComboOne}" />
+                                            <ComboBoxItem Content="TwoStep (Username -> Next -> Password)" />
+                                            <ComboBoxItem Content="{x:Static res:AppStrings.AssetEditor_ComboBasic}" />
                                         </ComboBox>
                                         <CheckBox x:Name="AutoLearnEnabledCheck" Content="{x:Static res:AppStrings.AssetEditor_ChkAutoLearn}" IsChecked="True" Foreground="#4B5563"/>
                                         
