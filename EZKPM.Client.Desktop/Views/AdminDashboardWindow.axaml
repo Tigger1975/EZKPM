@@ -75,6 +75,29 @@
                     
                     <Button Grid.Row="2" Content="Recovery anfordern" Click="InitiateRecoveryButton_Click" HorizontalAlignment="Right" Background="#F59E0B" Foreground="White" />
                 </Grid>
+        </TabItem>
+
+            <TabItem Header="Identitäten (Mapping)">
+                <Grid RowDefinitions="Auto, *, Auto" Margin="10">
+                    <StackPanel Grid.Row="0" Spacing="10" Margin="0,0,0,10">
+                        <TextBlock Text="Separation of Duties (6-Augen-Prinzip sichern)" FontWeight="Bold"/>
+                        <TextBlock Text="Verknüpfen Sie hier den administrativen AD-Account (z.B. adm-kh) mit dem Standard-Account (z.B. kh) einer Person. Dadurch wird sichergestellt, dass das 6-Augen-Prinzip nicht durch Mehrfach-Accounts derselben Person untergraben werden kann." Foreground="Gray" TextWrapping="Wrap"/>
+                        
+                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,15,0,0">
+                            <TextBlock Text="Quell-Account (Wird verknüpft):" Width="200" VerticalAlignment="Center"/>
+                            <Button Content="Suchen..." Click="PickSourcePersonButton_Click" />
+                            <TextBlock x:Name="SourcePersonText" Text="Keine Auswahl" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#3B82F6"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+                            <TextBlock Text="Ziel-Account (Haupt-Identität):" Width="200" VerticalAlignment="Center"/>
+                            <Button Content="Suchen..." Click="PickTargetPersonButton_Click" />
+                            <TextBlock x:Name="TargetPersonText" Text="Keine Auswahl" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#10B981"/>
+                        </StackPanel>
+                    </StackPanel>
+                    
+                    <Button Grid.Row="2" Content="Accounts zu einer Person zusammenführen" Click="LinkPersonsButton_Click" HorizontalAlignment="Right" Background="#8B5CF6" Foreground="White" />
+                </Grid>
             </TabItem>
         </TabControl>
     </Grid>

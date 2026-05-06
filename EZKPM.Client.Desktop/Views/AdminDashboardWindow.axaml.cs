@@ -165,4 +165,72 @@ public partial class AdminDashboardWindow : Window
             await dialog.ShowDialog(this);
         }
     }
+
+    private EZKPM.Client.Desktop.Services.AdPrincipal _sourcePerson;
+    private EZKPM.Client.Desktop.Services.AdPrincipal _targetPerson;
+
+    private async void PickSourcePersonButton_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new AdPickerWindow();
+        await picker.ShowDialog(this);
+        if (picker.SelectedPrincipal != null)
+        {
+            _sourcePerson = picker.SelectedPrincipal;
+            SourcePersonText.Text = $"{_sourcePerson.DisplayName} ({_sourcePerson.Sid})";
+        }
+    }
+
+    private async void PickTargetPersonButton_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new AdPickerWindow();
+        await picker.ShowDialog(this);
+        if (picker.SelectedPrincipal != null)
+        {
+            _targetPerson = picker.SelectedPrincipal;
+            TargetPersonText.Text = $"{_targetPerson.DisplayName} ({_targetPerson.Sid})";
+        }
+    }
+
+    private async void LinkPersonsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_sourcePerson == null || _targetPerson == null)
+        {
+            var err = new ConfirmationDialog("Bitte wählen Sie Quell- und Ziel-Account aus.");
+            await err.ShowDialog(this);
+            return;
+        }
+
+        try
+        {
+            var req = new LinkPersonDto 
+            { 
+                SourceAdSid = _sourcePerson.Sid,
+                TargetAdSid = _targetPerson.Sid
+            };
+            
+            var response = await _apiClient.HttpClient.PostAsJsonAsync("/api/v1/recovery/link-person", req);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var dialog = new ConfirmationDialog($"Erfolg! {_sourcePerson.DisplayName} ist nun physisch mit {_targetPerson.DisplayName} verknüpft.");
+                await dialog.ShowDialog(this);
+                
+                _sourcePerson = null;
+                _targetPerson = null;
+                SourcePersonText.Text = "Keine Auswahl";
+                TargetPersonText.Text = "Keine Auswahl";
+            }
+            else
+            {
+                string errMsg = await response.Content.ReadAsStringAsync();
+                var dialog = new ConfirmationDialog($"Fehler: {errMsg}");
+                await dialog.ShowDialog(this);
+            }
+        }
+        catch (Exception ex)
+        {
+            var dialog = new ConfirmationDialog($"Fehler: {ex.Message}");
+            await dialog.ShowDialog(this);
+        }
+    }
 }
