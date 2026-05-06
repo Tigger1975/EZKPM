@@ -604,7 +604,20 @@ public partial class AssetEditorWindow : Window
                                 return a;
                             })
                             .GroupBy(a => a.AdSid)
-                            .Select(g => g.First())
+                            .Select(g => 
+                            {
+                                var entries = g.ToList();
+                                var finalEntry = entries.First();
+                                if (entries.Any(e => e.PermissionLevel <= 0))
+                                {
+                                    finalEntry.PermissionLevel = entries.Where(e => e.PermissionLevel <= 0).Min(e => e.PermissionLevel);
+                                }
+                                else
+                                {
+                                    finalEntry.PermissionLevel = entries.Max(e => e.PermissionLevel);
+                                }
+                                return finalEntry;
+                            })
                             .ToList(),
                 IsInheriting = this.FindControl<CheckBox>("IsInheritingCheckBox")?.IsChecked == true
             };
@@ -927,7 +940,7 @@ public partial class AssetEditorWindow : Window
                 {
                     foreach (var member in members)
                     {
-                        if (!_acls.Any(a => a.AdSid == member.Sid))
+                        if (!_acls.Any(a => a.AdSid == member.Sid && a.SourceGroupSid == result.Sid))
                         {
                             _acls.Add(new AclEntryDto 
                             { 
