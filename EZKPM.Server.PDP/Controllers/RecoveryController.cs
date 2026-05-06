@@ -143,8 +143,12 @@ namespace EZKPM.Server.PDP.Controllers
             if (recovery == null) return NotFound("Recovery request not found.");
             if (recovery.IsCompleted) return BadRequest("Recovery already completed.");
 
-            if (hashedAdminSid == recovery.RequesterSid)
-                return BadRequest("The admin who initiated the recovery request cannot approve it (6-eyes principle requires 2 other admins).");
+            // Get Requester's PersonId
+            var requesterProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == recovery.RequesterSid);
+            if (requesterProfile != null && adminProfile.PersonId == requesterProfile.PersonId)
+            {
+                return BadRequest("The physical person who initiated the recovery request cannot approve it, even using a different linked account (6-eyes principle requires 2 distinct persons).");
+            }
 
             // Zeitfenster-Prüfung (z.B. max 1 Stunde)
             if (DateTime.UtcNow > recovery.RequestedAt.AddHours(1))
@@ -162,8 +166,14 @@ namespace EZKPM.Server.PDP.Controllers
                 return BadRequest("The recovery request has expired.");
             }
 
-            if (recovery.ProvidedShares.Any(s => s.AdminSid == hashedAdminSid))
-                return BadRequest("Admin has already provided a share.");
+            // Check if this PersonId has already provided a share
+            var existingSharePersonIds = await _db.VaultRecoveryShares
+                .Where(s => s.RecoveryRequestId == recovery.Id)
+                .Join(_db.UserProfiles, s => s.AdminSid, u => u.AdSid, (s, u) => u.PersonId)
+                .ToListAsync();
+
+            if (existingSharePersonIds.Contains(adminProfile.PersonId))
+                return BadRequest("A linked account belonging to you has already provided a share.");
 
             var share = new VaultRecoveryShare
             {

@@ -186,6 +186,7 @@ namespace EZKPM.Server.PDP.Data
     public class UserProfile
     {
         public string AdSid { get; set; }
+        public Guid PersonId { get; set; } = Guid.NewGuid(); // Maps multiple AD accounts (e.g. admin & standard) to one physical human
         public string EncryptedMasterKeyBackup { get; set; }
         public bool IsAdmin { get; set; }
     }
