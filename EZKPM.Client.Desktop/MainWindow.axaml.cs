@@ -77,7 +77,44 @@ public partial class MainWindow : Window
         // Auto-load assets on startup
         _ = LoadAssetsAndShowAsync(splash);
 
+        // Daily vulnerability scan for admins
+        StartVulnerabilityScanner();
+
         this.Closing += MainWindow_Closing;
+    }
+
+    private void StartVulnerabilityScanner()
+    {
+        var scanner = new Services.VulnerabilityScannerService(_apiClient);
+        
+        // Start a background timer that triggers every 1 hour (the scanner internally checks if 24 hours have passed)
+        var timer = new Avalonia.Threading.DispatcherTimer { Interval = TimeSpan.FromHours(1) };
+        timer.Tick += async (s, e) => 
+        {
+            await scanner.CheckForVulnerabilitiesAsync(async (report) => 
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+                {
+                    var dialog = new Views.ConfirmationDialog(report);
+                    await dialog.ShowDialogAsync(this);
+                });
+            });
+        };
+        timer.Start();
+
+        // Run immediately on startup after a small delay
+        Task.Run(async () => 
+        {
+            await Task.Delay(TimeSpan.FromSeconds(30));
+            await scanner.CheckForVulnerabilitiesAsync(async (report) => 
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+                {
+                    var dialog = new Views.ConfirmationDialog(report);
+                    await dialog.ShowDialogAsync(this);
+                });
+            });
+        });
     }
 
     private void MainWindow_Closing(object? sender, Avalonia.Controls.WindowClosingEventArgs e)

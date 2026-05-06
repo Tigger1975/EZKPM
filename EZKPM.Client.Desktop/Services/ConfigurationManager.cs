@@ -9,6 +9,7 @@ namespace EZKPM.Client.Desktop.Services
     public class AppConfig
     {
         public string ServerUrl { get; set; } = "";
+        public DateTime LastVulnerabilityScan { get; set; } = DateTime.MinValue;
     }
 
     public static class ConfigurationManager
