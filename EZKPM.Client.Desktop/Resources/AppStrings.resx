@@ -397,4 +397,7 @@ Please write it down! Login in 8s...</value>
   <data name="Startup_StatusDecryptAsset" xml:space="preserve">
     <value>Decrypting Asset {0} of {1}...</value>
   </data>
+  <data name="Main_PrivateFolder" xml:space="preserve">
+    <value>Private</value>
+  </data>
 </root>

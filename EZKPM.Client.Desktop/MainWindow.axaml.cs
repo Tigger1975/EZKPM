@@ -234,7 +234,41 @@ public partial class MainWindow : Window
                     Console.WriteLine($"Decryption failed for asset {dto.AssetId}: {ex.Message}");
                 }
             }
+            // Ensure Private Folder exists
+            string privateName = EZKPM.Client.Desktop.Resources.AppStrings.Main_PrivateFolder ?? "Private";
+            bool hasPrivateFolder = _decryptedAssets.Any(a => a.AssetType == "Folder" && !a.IsDeleted && (a.Title == privateName || a.Title == "Privat" || a.Title == "Private"));
             
+            if (!hasPrivateFolder)
+            {
+                var currentUser = EZKPM.Client.Desktop.Services.AdSearchService.GetCurrentUser()?.Sid ?? "S-1-5-21-DUMMY-TEST-USER";
+                var newFolder = new VaultAssetPayload
+                {
+                    AssetType = "Folder",
+                    Title = privateName,
+                    IsInheriting = false,
+                    Acls = new List<EZKPM.Shared.Contracts.AclEntryDto> { 
+                        new EZKPM.Shared.Contracts.AclEntryDto { 
+                            AdSid = currentUser, 
+                            PermissionLevel = 3 
+                        } 
+                    },
+                    TransientAssetId = Guid.NewGuid(),
+                    ParentFolderId = null
+                };
+                
+                try 
+                {
+                    var requestDto = _cryptoService.EncryptAsset(newFolder);
+                    Guid realId = await _apiClient.CreateAssetAsync(requestDto);
+                    newFolder.TransientAssetId = realId;
+                    _decryptedAssets.Add(newFolder);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to create Private folder: {ex.Message}");
+                }
+            }
+
             BuildTree();
         }
         catch (Exception ex)
@@ -277,6 +311,16 @@ public partial class MainWindow : Window
             {
                 _treeNodes.Add(node);
             }
+        }
+        
+        // Sort root nodes: Private first, then alphabetically
+        string pName = EZKPM.Client.Desktop.Resources.AppStrings.Main_PrivateFolder ?? "Private";
+        var sortedRoot = _treeNodes.OrderByDescending(n => n.Payload.Title == "Privat" || n.Payload.Title == "Private" || n.Payload.Title == pName)
+                                   .ThenBy(n => n.Payload.Title).ToList();
+        _treeNodes.Clear();
+        foreach (var node in sortedRoot)
+        {
+            _treeNodes.Add(node);
         }
         
         // Update DataGrid with root assets initially
