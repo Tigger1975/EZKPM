@@ -15,8 +15,8 @@ namespace EZKPM.Client.Desktop.Views
 
         public SsoApprovalDialog(string appId, string originServerUrl) : this()
         {
-            this.FindControl<TextBlock>("AppIdText").Text = $"Anwendung: {appId}";
-            this.FindControl<TextBlock>("OriginServerText").Text = $"Server: {originServerUrl}";
+            this.FindControl<TextBlock>("AppIdText").Text = string.Format(Resources.AppStrings.SsoDialog_AppId, appId);
+            this.FindControl<TextBlock>("OriginServerText").Text = string.Format(Resources.AppStrings.SsoDialog_Server, originServerUrl);
         }
 
         private void Approve_Click(object sender, RoutedEventArgs e)

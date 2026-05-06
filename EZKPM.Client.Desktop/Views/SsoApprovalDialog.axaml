@@ -1,29 +1,30 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:res="using:EZKPM.Client.Desktop.Resources"
         x:Class="EZKPM.Client.Desktop.Views.SsoApprovalDialog"
-        Title="Ironclad Vault - SSO Login Anfrage" Width="450" Height="250"
+        Title="{x:Static res:AppStrings.SsoDialog_Title}" Width="450" Height="250"
         WindowStartupLocation="CenterScreen"
         Topmost="True"
         Background="#1E1E1E">
 
     <Border Padding="20">
         <StackPanel Spacing="15">
-            <TextBlock Text="🚨 Web-SSO Anmeldeversuch erkannt!" FontSize="18" FontWeight="Bold" Foreground="#4DB8FF" />
+            <TextBlock Text="{x:Static res:AppStrings.SsoDialog_Header}" FontSize="18" FontWeight="Bold" Foreground="#4DB8FF" />
             
-            <TextBlock Text="Eine Anwendung möchte sich über Ihr Ironclad Vault Konto anmelden." TextWrapping="Wrap" Foreground="White" />
+            <TextBlock Text="{x:Static res:AppStrings.SsoDialog_Desc1}" TextWrapping="Wrap" Foreground="White" />
             
             <Border Background="#2D2D30" Padding="15" CornerRadius="5">
                 <StackPanel Spacing="5">
-                    <TextBlock x:Name="AppIdText" Text="Anwendung: [Lade...]" FontWeight="Bold" Foreground="White" />
-                    <TextBlock x:Name="OriginServerText" Text="Server: [Lade...]" FontSize="12" Foreground="#A0A0A0" />
+                    <TextBlock x:Name="AppIdText" FontWeight="Bold" Foreground="White" />
+                    <TextBlock x:Name="OriginServerText" FontSize="12" Foreground="#A0A0A0" />
                 </StackPanel>
             </Border>
             
-            <TextBlock Text="Möchten Sie diese Anmeldung zulassen?" TextWrapping="Wrap" Foreground="White" />
+            <TextBlock Text="{x:Static res:AppStrings.SsoDialog_Desc2}" TextWrapping="Wrap" Foreground="White" />
 
             <Grid ColumnDefinitions="*,*" Margin="0,15,0,0">
-                <Button Grid.Column="0" Content="❌ Ablehnen" Click="Deny_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="#D32F2F" Foreground="White" Margin="0,0,5,0" />
-                <Button Grid.Column="1" Content="✅ Zulassen" Click="Approve_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="#4CAF50" Foreground="White" Margin="5,0,0,0" />
+                <Button Grid.Column="0" Content="{x:Static res:AppStrings.SsoDialog_Deny}" Click="Deny_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="#D32F2F" Foreground="White" Margin="0,0,5,0" />
+                <Button Grid.Column="1" Content="{x:Static res:AppStrings.SsoDialog_Approve}" Click="Approve_Click" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="#4CAF50" Foreground="White" Margin="5,0,0,0" />
             </Grid>
         </StackPanel>
     </Border>

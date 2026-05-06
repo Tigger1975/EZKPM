@@ -122,5 +122,158 @@ namespace EZKPM.Client.Desktop.Resources {
                 return ResourceManager.GetString("AuditDialog_Title", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Always Allow ähnelt.
+        /// </summary>
+        public static string LocalApp_AllowAlways {
+            get {
+                return ResourceManager.GetString("LocalApp_AllowAlways", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Allow Once ähnelt.
+        /// </summary>
+        public static string LocalApp_AllowOnce {
+            get {
+                return ResourceManager.GetString("LocalApp_AllowOnce", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Block Access ähnelt.
+        /// </summary>
+        public static string LocalApp_Deny {
+            get {
+                return ResourceManager.GetString("LocalApp_Deny", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠️ Local Application Access ähnelt.
+        /// </summary>
+        public static string LocalApp_Header {
+            get {
+                return ResourceManager.GetString("LocalApp_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Local App Authorization ähnelt.
+        /// </summary>
+        public static string LocalApp_Title {
+            get {
+                return ResourceManager.GetString("LocalApp_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Save &amp; Restart ähnelt.
+        /// </summary>
+        public static string ServerConfig_BtnSave {
+            get {
+                return ResourceManager.GetString("ServerConfig_BtnSave", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Please enter the URL of your Ironclad Vault Server. ähnelt.
+        /// </summary>
+        public static string ServerConfig_Desc {
+            get {
+                return ResourceManager.GetString("ServerConfig_Desc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Server Configuration ähnelt.
+        /// </summary>
+        public static string ServerConfig_Title {
+            get {
+                return ResourceManager.GetString("ServerConfig_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Server URL (e.g. https://vault.mycompany.com) ähnelt.
+        /// </summary>
+        public static string ServerConfig_UrlWatermark {
+            get {
+                return ResourceManager.GetString("ServerConfig_UrlWatermark", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Application: {0} ähnelt.
+        /// </summary>
+        public static string SsoDialog_AppId {
+            get {
+                return ResourceManager.GetString("SsoDialog_AppId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die ✅ Approve ähnelt.
+        /// </summary>
+        public static string SsoDialog_Approve {
+            get {
+                return ResourceManager.GetString("SsoDialog_Approve", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die ❌ Deny ähnelt.
+        /// </summary>
+        public static string SsoDialog_Deny {
+            get {
+                return ResourceManager.GetString("SsoDialog_Deny", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die An application is requesting to login via your Ironclad Vault account. ähnelt.
+        /// </summary>
+        public static string SsoDialog_Desc1 {
+            get {
+                return ResourceManager.GetString("SsoDialog_Desc1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Do you want to approve this login? ähnelt.
+        /// </summary>
+        public static string SsoDialog_Desc2 {
+            get {
+                return ResourceManager.GetString("SsoDialog_Desc2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die 🚨 Web-SSO Login Attempt Detected! ähnelt.
+        /// </summary>
+        public static string SsoDialog_Header {
+            get {
+                return ResourceManager.GetString("SsoDialog_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Server: {0} ähnelt.
+        /// </summary>
+        public static string SsoDialog_Server {
+            get {
+                return ResourceManager.GetString("SsoDialog_Server", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Ironclad Vault - SSO Login Request ähnelt.
+        /// </summary>
+        public static string SsoDialog_Title {
+            get {
+                return ResourceManager.GetString("SsoDialog_Title", resourceCulture);
+            }
+        }
     }
 }
