@@ -597,16 +597,16 @@ function injectGeneratorIcon() {
             ui.style.left = (rect.left - 100 + window.scrollX) + 'px';
 
             ui.innerHTML = `
-                <div style="margin-bottom:10px; font-weight:bold; color:#3B82F6;">Passwort Generator</div>
+                <div style="margin-bottom:10px; font-weight:bold; color:#3B82F6 !important;">Passwort Generator</div>
                 <div style="margin-bottom:10px;">
-                    <label style="font-size:12px;">Länge: <span id="ezkpm-len-val">${minLen}</span></label>
+                    <label style="font-size:12px; color:white !important;">Länge: <span id="ezkpm-len-val" style="color:white !important;">${minLen}</span></label>
                     <input type="range" id="ezkpm-len" min="8" max="64" value="${minLen}" style="width:100%;">
                 </div>
-                <div style="font-size:12px; margin-bottom:15px; display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-                    <label><input type="checkbox" id="ezkpm-uc" checked> A-Z</label>
-                    <label><input type="checkbox" id="ezkpm-lc" checked> a-z</label>
-                    <label><input type="checkbox" id="ezkpm-num" checked> 0-9</label>
-                    <label><input type="checkbox" id="ezkpm-spec" checked> !@#$</label>
+                <div style="font-size:12px; margin-bottom:15px; display:grid; grid-template-columns: 1fr 1fr; gap:5px; color:white !important;">
+                    <label style="color:white !important; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="ezkpm-uc" checked> A-Z</label>
+                    <label style="color:white !important; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="ezkpm-lc" checked> a-z</label>
+                    <label style="color:white !important; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="ezkpm-num" checked> 0-9</label>
+                    <label style="color:white !important; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="ezkpm-spec" checked> !@#$</label>
                 </div>
                 <button id="ezkpm-gen-btn" style="width:100%; background:#10B981; color:white; border:none; padding:8px; border-radius:4px; cursor:pointer; font-weight:bold;">Generieren & Einfüllen</button>
             `;
