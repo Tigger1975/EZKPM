@@ -608,7 +608,7 @@ public partial class AssetEditorWindow : Window
             if (_currentEditingAssetId.HasValue)
             {
                 await _apiClient.UpdateAssetAsync(_currentEditingAssetId.Value, requestDto);
-                ShowStatus("Erfolgreich aktualisiert!");
+                ShowStatus("Updated successfully!");
 
                 // Check for inheritance
                 var applyToChildren = this.FindControl<CheckBox>("ApplyToChildrenCheckBox")?.IsChecked == true;
@@ -622,7 +622,7 @@ public partial class AssetEditorWindow : Window
             {
                 Guid newId = await _apiClient.CreateAssetAsync(requestDto);
                 _currentEditingAssetId = newId;
-                ShowStatus("Erfolgreich gespeichert!");
+                ShowStatus("Saved successfully!");
             }
 
             // 3. Close the window if successful
@@ -630,7 +630,7 @@ public partial class AssetEditorWindow : Window
         }
         catch (Exception ex)
         {
-            ShowStatus($"Fehler beim Speichern: {ex.Message}", isError: true);
+            ShowStatus($"Save Error: {ex.Message}", isError: true);
             return false;
         }
     }
