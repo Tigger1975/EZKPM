@@ -684,4 +684,8 @@ $RECYCLE.BIN/
 *.db-shm
 *.db-wal
 ezkpm_vault.db
-EZKPM.Server.PDP/ezkpm_vault.db
+EZKPM.Server.PDP/ezkpm_vault.db* . d b  
+ * . d b - s h m  
+ * . d b - w a l  
+ * . b a k  
+ 

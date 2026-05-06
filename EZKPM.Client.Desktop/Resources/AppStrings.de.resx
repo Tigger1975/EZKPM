@@ -662,4 +662,10 @@ Bitte schreiben Sie es auf! Einloggen in 8 Sekunden...</value>
   <data name="AssetEditor_ChkUpper" xml:space="preserve">
     <value>Großbuchstaben (A-Z)</value>
   </data>
+  <data name="AssetEditor_ChkAuditLog" xml:space="preserve">
+    <value>Sensibles Asset (Audit-Protokoll erforderlich)</value>
+  </data>
+  <data name="AssetEditor_TipAuditLog" xml:space="preserve">
+    <value>Wenn diese Option aktiviert ist, wird beim Abrufen oder Kopieren dieses Kennworts ein stiller Audit-Protokolleintrag generiert.</value>
+  </data>
 </root>
