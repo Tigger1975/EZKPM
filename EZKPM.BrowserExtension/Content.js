@@ -298,6 +298,8 @@ function removeBlocker() {
     }
 }
 
+let lastInjectedPassword = null;
+
 function performStealthInjection(username, password, customFields = [], totpCode = null) {
     let injected = false;
     const injectedFields = new Set(); // Merkt sich, welche Felder wir schon befüllt haben
@@ -407,6 +409,7 @@ function performStealthInjection(username, password, customFields = [], totpCode
         passField.dispatchEvent(new Event('input', { bubbles: true }));
         passField.dispatchEvent(new Event('change', { bubbles: true }));
         injected = true;
+        lastInjectedPassword = password;
     }
 
     // 4. TOTP Code injizieren (falls vorhanden)
@@ -691,6 +694,8 @@ document.addEventListener('submit', (e) => {
         const password = pwdField.value;
         
         // Anti-Loop: Dont save if we injected it recently
+        if (password === lastInjectedPassword) return;
+        
         const lastAutofill = sessionStorage.getItem('ezkpm_active_autofill');
         if (lastAutofill) {
             const parsed = JSON.parse(lastAutofill);
