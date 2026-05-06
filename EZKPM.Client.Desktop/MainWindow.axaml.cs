@@ -158,14 +158,14 @@ public partial class MainWindow : Window
 
     private async Task LoadAssetsAndShowAsync(Views.StartupWindow? splash)
     {
-        if (splash != null) splash.UpdateStatus("Verbinde mit Vault Server...", 20);
+        if (splash != null) splash.UpdateStatus(EZKPM.Client.Desktop.Resources.AppStrings.Startup_StatusConnect, 20);
         await Task.Delay(500); // Artificial delay to let the splash screen render
 
         await LoadAssetsAsync(splash);
         
         if (splash != null)
         {
-            splash.UpdateStatus("Starte Desktop Client...", 100);
+            splash.UpdateStatus(EZKPM.Client.Desktop.Resources.AppStrings.Startup_StatusStartClient, 100);
             await Task.Delay(500); // Artificial delay to ensure user sees 100%
             
             if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
@@ -199,7 +199,7 @@ public partial class MainWindow : Window
                 if (splash != null && total > 0)
                 {
                     double progress = 20.0 + (80.0 * ((double)current / total));
-                    splash.UpdateStatus($"Entschlüssele Asset {current} von {total}...", progress);
+                    splash.UpdateStatus(string.Format(EZKPM.Client.Desktop.Resources.AppStrings.Startup_StatusDecryptAsset, current, total), progress);
                 }
 
                 try

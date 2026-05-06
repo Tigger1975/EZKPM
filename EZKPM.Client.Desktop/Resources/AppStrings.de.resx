@@ -138,4 +138,306 @@
   <data name="AuditDialog_BtnAuthorize" xml:space="preserve">
     <value>Autorisieren und protokollieren</value>
   </data>
+  <data name="SsoDialog_Title" xml:space="preserve">
+    <value>Ironclad Vault – SSO-Anmeldeanfrage</value>
+  </data>
+  <data name="SsoDialog_Header" xml:space="preserve">
+    <value>🚨 Web-SSO-Anmeldeversuch erkannt!</value>
+  </data>
+  <data name="SsoDialog_Desc1" xml:space="preserve">
+    <value>Eine Anwendung fordert die Anmeldung über Ihr Ironclad Vault-Konto an.</value>
+  </data>
+  <data name="SsoDialog_AppId" xml:space="preserve">
+    <value>Anwendung: {0}</value>
+  </data>
+  <data name="SsoDialog_Server" xml:space="preserve">
+    <value>Server: {0}</value>
+  </data>
+  <data name="SsoDialog_Desc2" xml:space="preserve">
+    <value>Möchten Sie diese Anmeldung genehmigen?</value>
+  </data>
+  <data name="SsoDialog_Deny" xml:space="preserve">
+    <value>❌ Verbieten</value>
+  </data>
+  <data name="SsoDialog_Approve" xml:space="preserve">
+    <value>✅ Genehmigen</value>
+  </data>
+  <data name="LocalApp_Title" xml:space="preserve">
+    <value>Lokale App-Autorisierung</value>
+  </data>
+  <data name="LocalApp_Header" xml:space="preserve">
+    <value>⚠️ Lokaler Anwendungszugriff</value>
+  </data>
+  <data name="LocalApp_AllowOnce" xml:space="preserve">
+    <value>Einmal zulassen</value>
+  </data>
+  <data name="LocalApp_AllowAlways" xml:space="preserve">
+    <value>Immer zulassen</value>
+  </data>
+  <data name="LocalApp_Deny" xml:space="preserve">
+    <value>Zugriff blockiert</value>
+  </data>
+  <data name="ServerConfig_Title" xml:space="preserve">
+    <value>Serverkonfiguration</value>
+  </data>
+  <data name="ServerConfig_Desc" xml:space="preserve">
+    <value>Bitte geben Sie die URL Ihres Ironclad Vault Servers ein.</value>
+  </data>
+  <data name="ServerConfig_UrlWatermark" xml:space="preserve">
+    <value>Server-URL (z. B. https://vault.mycompany.com)</value>
+  </data>
+  <data name="ServerConfig_BtnSave" xml:space="preserve">
+    <value>Speichern und neu starten</value>
+  </data>
+  <data name="ConfirmDialog_Title" xml:space="preserve">
+    <value>Bestätigung</value>
+  </data>
+  <data name="ConfirmDialog_BtnYes" xml:space="preserve">
+    <value>Ja</value>
+  </data>
+  <data name="ConfirmDialog_BtnNo" xml:space="preserve">
+    <value>NEIN</value>
+  </data>
+  <data name="ServerConfig_Header" xml:space="preserve">
+    <value>Serververbindung einrichten</value>
+  </data>
+  <data name="ServerConfig_AutoStart" xml:space="preserve">
+    <value>Wird beim Windows-Start automatisch im Hintergrund gestartet (Taskleiste).</value>
+  </data>
+  <data name="Startup_Title" xml:space="preserve">
+    <value>EZKPM-Startup</value>
+  </data>
+  <data name="Startup_VaultLocked" xml:space="preserve">
+    <value>Der Tresor ist gesperrt.</value>
+  </data>
+  <data name="Startup_UnlockDesc" xml:space="preserve">
+    <value>Sicheres Entsperren über das Windows-Profil (Seamless SSO).</value>
+  </data>
+  <data name="Startup_BtnUnlock" xml:space="preserve">
+    <value>Mit Windows-Anmeldeinformationen entsperren</value>
+  </data>
+  <data name="Startup_NewDevice" xml:space="preserve">
+    <value>Neues Gerät einrichten</value>
+  </data>
+  <data name="Startup_SecretKeyDesc" xml:space="preserve">
+    <value>Geben Sie Ihren 34-stelligen Geheimschlüssel ein:</value>
+  </data>
+  <data name="Startup_BtnSetupDevice" xml:space="preserve">
+    <value>Gerät koppeln</value>
+  </data>
+  <data name="Startup_BtnCreateVault" xml:space="preserve">
+    <value>Neuen Tresor erstellen</value>
+  </data>
+  <data name="Startup_MigrateTitle" xml:space="preserve">
+    <value>Migration zu Seamless SSO</value>
+  </data>
+  <data name="Startup_MigrateDesc" xml:space="preserve">
+    <value>Bitte geben Sie Ihr altes Master-Passwort ein, um es sicher auf das neue DPAPI-System zu migrieren:</value>
+  </data>
+  <data name="Startup_BtnMigrate" xml:space="preserve">
+    <value>Passwort migrieren und entsperren</value>
+  </data>
+  <data name="Startup_RecoveryError" xml:space="preserve">
+    <value>⚠️ DPAPI-Fehler: Möglicherweise wurde das Windows-Passwort zurückgesetzt.</value>
+  </data>
+  <data name="Startup_BtnRecovery" xml:space="preserve">
+    <value>Fordern Sie 4-Eyes Recovery an</value>
+  </data>
+  <data name="Startup_SplashDecr" xml:space="preserve">
+    <value>Tresor wird entschlüsselt...</value>
+  </data>
+  <data name="CsvMapping_Title" xml:space="preserve">
+    <value>CSV-Spaltenzuordnung</value>
+  </data>
+  <data name="CsvMapping_Header" xml:space="preserve">
+    <value>CSV-Importzuordnung</value>
+  </data>
+  <data name="CsvMapping_Desc" xml:space="preserve">
+    <value>Bitte ordnen Sie die Spalten Ihrer CSV-Datei den EZKPM-Feldern zu:</value>
+  </data>
+  <data name="CsvMapping_LblName" xml:space="preserve">
+    <value>Name / Titel:</value>
+  </data>
+  <data name="CsvMapping_LblUser" xml:space="preserve">
+    <value>Benutzername:</value>
+  </data>
+  <data name="CsvMapping_LblPass" xml:space="preserve">
+    <value>Passwort:</value>
+  </data>
+  <data name="CsvMapping_LblUrl" xml:space="preserve">
+    <value>Website/URL:</value>
+  </data>
+  <data name="CsvMapping_LblNotes" xml:space="preserve">
+    <value>Hinweise:</value>
+  </data>
+  <data name="CsvMapping_BtnCancel" xml:space="preserve">
+    <value>Stornieren</value>
+  </data>
+  <data name="CsvMapping_BtnImport" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="PwdPrompt_Title" xml:space="preserve">
+    <value>Passwort/Schlüsseldatei erforderlich</value>
+  </data>
+  <data name="PwdPrompt_Desc" xml:space="preserve">
+    <value>Bitte geben Sie das Master-Passwort ein und/oder wählen Sie eine Schlüsseldatei für die KeePass-Datenbank aus:</value>
+  </data>
+  <data name="PwdPrompt_Watermark" xml:space="preserve">
+    <value>Master-Passwort</value>
+  </data>
+  <data name="PwdPrompt_BtnSelectKey" xml:space="preserve">
+    <value>Wählen Sie Schlüsseldatei aus</value>
+  </data>
+  <data name="PwdPrompt_NoFile" xml:space="preserve">
+    <value>Keine Datei ausgewählt</value>
+  </data>
+  <data name="PwdPrompt_BtnOk" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="PwdPrompt_BtnCancel" xml:space="preserve">
+    <value>Stornieren</value>
+  </data>
+  <data name="AssetEditor_ExpiredWarningTitle" xml:space="preserve">
+    <value>ACHTUNG: Dieses Asset ist abgelaufen!</value>
+  </data>
+  <data name="AssetEditor_ExpiredWarningDesc" xml:space="preserve">
+    <value>Der Gültigkeitszeitraum (maximal 365 Tage) wurde überschritten. Bitte aktualisieren Sie das Passwort sofort und speichern Sie es, um den Zugriff wiederherzustellen (z. B. Autofill).</value>
+  </data>
+  <data name="AssetEditor_DescWatermark" xml:space="preserve">
+    <value>Ausführliche Beschreibung...</value>
+  </data>
+  <data name="AssetEditor_CustomVarsDesc" xml:space="preserve">
+    <value>Geben Sie Variablen für die Website-Automatisierung an. Wenn der Wert leer ist, werden Sie bei der Verwendung dazu aufgefordert.</value>
+  </data>
+  <data name="AssetEditor_ColName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="AssetEditor_ColValue" xml:space="preserve">
+    <value>Wert</value>
+  </data>
+  <data name="AssetEditor_ColDesc" xml:space="preserve">
+    <value>Beschreibung</value>
+  </data>
+  <data name="AssetEditor_AclDesc" xml:space="preserve">
+    <value>Verwalten Sie Benutzer, die Zugriff auf dieses Asset/diesen Ordner haben.</value>
+  </data>
+  <data name="AssetEditor_AclInherit" xml:space="preserve">
+    <value>Aktivieren Sie die Vererbung vom übergeordneten Ordner</value>
+  </data>
+  <data name="asset" xml:space="preserve">
+    <value>Benutzer/SID</value>
+  </data>
+  <data name="AssetEditor_ColRole" xml:space="preserve">
+    <value>Rolle</value>
+  </data>
+  <data name="AssetEditor_Inherited" xml:space="preserve">
+    <value>[Geerbt]</value>
+  </data>
+  <data name="AssetEditor_AclNone" xml:space="preserve">
+    <value>Kein Zugriff (0)</value>
+  </data>
+  <data name="ServerConfig_BtnCancel" xml:space="preserve">
+    <value>Stornieren</value>
+  </data>
+  <data name="Main_MenuSettings" xml:space="preserve">
+    <value>Einstellungen &amp; Server ändern</value>
+  </data>
+  <data name="Main_TabAssets" xml:space="preserve">
+    <value>🗂️ Einträge</value>
+  </data>
+  <data name="Main_SearchWatermark" xml:space="preserve">
+    <value>Suchen...</value>
+  </data>
+  <data name="Main_FilterAll" xml:space="preserve">
+    <value>Alle Typen</value>
+  </data>
+  <data name="Main_FilterExpired" xml:space="preserve">
+    <value>Abgelaufen (Rotation)</value>
+  </data>
+  <data name="Main_FilterTrash" xml:space="preserve">
+    <value>Papierkorb</value>
+  </data>
+  <data name="Main_BtnImport" xml:space="preserve">
+    <value>📥 Importieren</value>
+  </data>
+  <data name="Main_BtnClean" xml:space="preserve">
+    <value>🗑️ Aufräumen</value>
+  </data>
+  <data name="Main_BtnCleanTooltip" xml:space="preserve">
+    <value>Löscht alle verwaisten Assets dauerhaft</value>
+  </data>
+  <data name="Main_BtnRestore" xml:space="preserve">
+    <value>🔄 Wiederherstellen</value>
+  </data>
+  <data name="Main_BtnDelete" xml:space="preserve">
+    <value>🗑️ Löschen</value>
+  </data>
+  <data name="Main_ColType" xml:space="preserve">
+    <value>Typ</value>
+  </data>
+  <data name="Main_ColName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Main_LblExpired" xml:space="preserve">
+    <value>ABGELAUFEN</value>
+  </data>
+  <data name="Main_ColPath" xml:space="preserve">
+    <value>Weg</value>
+  </data>
+  <data name="Main_ColDesc" xml:space="preserve">
+    <value>Beschreibung</value>
+  </data>
+  <data name="AssetEditor_AclApplyChildren" xml:space="preserve">
+    <value>Zugriffsrechte (ACL) an alle untergeordneten Assets weitergeben (überschreibt vorhandene Rechte)</value>
+  </data>
+  <data name="Startup_ErrNoUrl" xml:space="preserve">
+    <value>Bitte geben Sie eine URL ein.</value>
+  </data>
+  <data name="Startup_ErrServerUnreachable" xml:space="preserve">
+    <value>Server nicht erreichbar. Bitte überprüfen Sie die URL.</value>
+  </data>
+  <data name="Startup_DeviceNotPaired" xml:space="preserve">
+    <value>Gerät nicht gekoppelt.</value>
+  </data>
+  <data name="Startup_DecryptingSso" xml:space="preserve">
+    <value>Nahtloses SSO über DPAPI entschlüsseln...</value>
+  </data>
+  <data name="Startup_SecurityLock" xml:space="preserve">
+    <value>Sicherheitssperre: Bitte mit Windows-Anmeldeinformationen bestätigen (App-Start verzögert sich).</value>
+  </data>
+  <data name="Startup_AuthCanceled" xml:space="preserve">
+    <value>Die Windows-Authentifizierung wurde abgebrochen.</value>
+  </data>
+  <data name="Startup_CriticalError" xml:space="preserve">
+    <value>Kritischer Systemfehler: {0}</value>
+  </data>
+  <data name="Startup_Error" xml:space="preserve">
+    <value>Fehler: {0}</value>
+  </data>
+  <data name="Startup_RecoveryKey" xml:space="preserve">
+    <value>WICHTIG! Ihr Wiederherstellungsschlüssel:
+{0}
+Bitte schreiben Sie es auf! Einloggen in 8 Sekunden...</value>
+  </data>
+  <data name="Startup_WrongLegacyPwd" xml:space="preserve">
+    <value>Falsches altes Passwort!</value>
+  </data>
+  <data name="Startup_RecoveryRequested" xml:space="preserve">
+    <value>Wiederherstellung beantragt. Temporäres Schlüsselpaar wird generiert...</value>
+  </data>
+  <data name="Startup_RecoveryWaitAdmin" xml:space="preserve">
+    <value>Warten auf Administratorgenehmigungen (Shamir's Secret Sharing) ...</value>
+  </data>
+  <data name="Startup_RecoverySuccess" xml:space="preserve">
+    <value>Wiederherstellung erfolgreich! Hauptschlüssel wird wiederhergestellt...</value>
+  </data>
+  <data name="Startup_StatusConnect" xml:space="preserve">
+    <value>Verbindung zum Vault-Server wird hergestellt...</value>
+  </data>
+  <data name="Startup_StatusStartClient" xml:space="preserve">
+    <value>Desktop-Client starten...</value>
+  </data>
+  <data name="Startup_StatusDecryptAsset" xml:space="preserve">
+    <value>Asset {0} von {1} wird entschlüsselt...</value>
+  </data>
 </root>

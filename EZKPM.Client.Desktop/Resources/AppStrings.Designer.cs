@@ -61,6 +61,15 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die User / SID ähnelt.
+        /// </summary>
+        public static string asset {
+            get {
+                return ResourceManager.GetString("asset", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Propagate access rights (ACL) to all child assets (Overwrites existing rights) ähnelt.
         /// </summary>
         public static string AssetEditor_AclApplyChildren {
@@ -115,7 +124,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Role ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die Role / Rights ähnelt.
         /// </summary>
         public static string AssetEditor_ColRole {
             get {
@@ -124,7 +133,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die User / SID ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die User / Group ähnelt.
         /// </summary>
         public static string AssetEditor_ColUser {
             get {
@@ -754,6 +763,15 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Windows authentication canceled. ähnelt.
+        /// </summary>
+        public static string Startup_AuthCanceled {
+            get {
+                return ResourceManager.GetString("Startup_AuthCanceled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Create new vault ähnelt.
         /// </summary>
         public static string Startup_BtnCreateVault {
@@ -799,6 +817,60 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Critical System Error: {0} ähnelt.
+        /// </summary>
+        public static string Startup_CriticalError {
+            get {
+                return ResourceManager.GetString("Startup_CriticalError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Decrypting Seamless SSO via DPAPI... ähnelt.
+        /// </summary>
+        public static string Startup_DecryptingSso {
+            get {
+                return ResourceManager.GetString("Startup_DecryptingSso", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Device not paired. ähnelt.
+        /// </summary>
+        public static string Startup_DeviceNotPaired {
+            get {
+                return ResourceManager.GetString("Startup_DeviceNotPaired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Please enter a URL. ähnelt.
+        /// </summary>
+        public static string Startup_ErrNoUrl {
+            get {
+                return ResourceManager.GetString("Startup_ErrNoUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Error: {0} ähnelt.
+        /// </summary>
+        public static string Startup_Error {
+            get {
+                return ResourceManager.GetString("Startup_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Server unreachable. Please check the URL. ähnelt.
+        /// </summary>
+        public static string Startup_ErrServerUnreachable {
+            get {
+                return ResourceManager.GetString("Startup_ErrServerUnreachable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Please enter your old Master Password to safely migrate it to the new DPAPI system: ähnelt.
         /// </summary>
         public static string Startup_MigrateDesc {
@@ -835,6 +907,44 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die IMPORTANT! Your Recovery Key:
+        ///{0}
+        ///Please write it down! Login in 8s... ähnelt.
+        /// </summary>
+        public static string Startup_RecoveryKey {
+            get {
+                return ResourceManager.GetString("Startup_RecoveryKey", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Recovery requested. Generating temporary key pair... ähnelt.
+        /// </summary>
+        public static string Startup_RecoveryRequested {
+            get {
+                return ResourceManager.GetString("Startup_RecoveryRequested", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Recovery successful! Restoring Master Key... ähnelt.
+        /// </summary>
+        public static string Startup_RecoverySuccess {
+            get {
+                return ResourceManager.GetString("Startup_RecoverySuccess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Waiting for admin approvals (Shamir&apos;s Secret Sharing)... ähnelt.
+        /// </summary>
+        public static string Startup_RecoveryWaitAdmin {
+            get {
+                return ResourceManager.GetString("Startup_RecoveryWaitAdmin", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Enter your 34-character Secret Key: ähnelt.
         /// </summary>
         public static string Startup_SecretKeyDesc {
@@ -844,11 +954,47 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Security Lock: Please confirm with Windows Credentials (app start delayed). ähnelt.
+        /// </summary>
+        public static string Startup_SecurityLock {
+            get {
+                return ResourceManager.GetString("Startup_SecurityLock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Decrypting Vault... ähnelt.
         /// </summary>
         public static string Startup_SplashDecr {
             get {
                 return ResourceManager.GetString("Startup_SplashDecr", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Connecting to Vault Server... ähnelt.
+        /// </summary>
+        public static string Startup_StatusConnect {
+            get {
+                return ResourceManager.GetString("Startup_StatusConnect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Decrypting Asset {0} of {1}... ähnelt.
+        /// </summary>
+        public static string Startup_StatusDecryptAsset {
+            get {
+                return ResourceManager.GetString("Startup_StatusDecryptAsset", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Starting Desktop Client... ähnelt.
+        /// </summary>
+        public static string Startup_StatusStartClient {
+            get {
+                return ResourceManager.GetString("Startup_StatusStartClient", resourceCulture);
             }
         }
         
@@ -876,6 +1022,15 @@ namespace EZKPM.Client.Desktop.Resources {
         public static string Startup_VaultLocked {
             get {
                 return ResourceManager.GetString("Startup_VaultLocked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Wrong old password! ähnelt.
+        /// </summary>
+        public static string Startup_WrongLegacyPwd {
+            get {
+                return ResourceManager.GetString("Startup_WrongLegacyPwd", resourceCulture);
             }
         }
     }

@@ -54,7 +54,7 @@ namespace EZKPM.Client.Desktop.Views
             string input = urlTextBox.Text;
             if (string.IsNullOrWhiteSpace(input))
             {
-                statusText.Text = "Bitte eine URL eingeben.";
+                statusText.Text = EZKPM.Client.Desktop.Resources.AppStrings.Startup_ErrNoUrl;
                 statusText.IsVisible = true;
                 return;
             }
@@ -82,7 +82,7 @@ namespace EZKPM.Client.Desktop.Views
             }
             else
             {
-                statusText.Text = "Server nicht erreichbar. Bitte URL prüfen.";
+                statusText.Text = EZKPM.Client.Desktop.Resources.AppStrings.Startup_ErrServerUnreachable;
                 statusText.IsVisible = true;
             }
         }
@@ -104,7 +104,7 @@ namespace EZKPM.Client.Desktop.Views
                 if (unlockBtn != null) unlockBtn.IsVisible = false;
                 if (status != null) 
                 {
-                    status.Text = "Gerät nicht gekoppelt.";
+                    status.Text = EZKPM.Client.Desktop.Resources.AppStrings.Startup_DeviceNotPaired;
                     status.Foreground = Avalonia.Media.Brushes.Yellow;
                     status.IsVisible = true;
                 }
@@ -123,7 +123,7 @@ namespace EZKPM.Client.Desktop.Views
             if (prog != null) prog.IsVisible = true;
             if (status != null) 
             {
-                status.Text = "Entschlüssele Seamless SSO via DPAPI...";
+                status.Text = EZKPM.Client.Desktop.Resources.AppStrings.Startup_DecryptingSso;
                 status.Foreground = Avalonia.Media.Brushes.Orange;
                 status.IsVisible = true;
             }
@@ -139,12 +139,12 @@ namespace EZKPM.Client.Desktop.Views
                 {
                     if (Services.SessionManager.RequiresStartupAuth && Services.SessionManager.IsLocked)
                     {
-                        bool success = Services.SessionManager.EnsureAuthenticated("Sicherheitssperre: Bitte mit Windows-Credentials bestätigen (App-Start verzögert).");
+                        bool success = Services.SessionManager.EnsureAuthenticated(EZKPM.Client.Desktop.Resources.AppStrings.Startup_SecurityLock);
                         if (!success)
                         {
                             if (status != null)
                             {
-                                status.Text = "Windows-Authentifizierung abgebrochen.";
+                                status.Text = EZKPM.Client.Desktop.Resources.AppStrings.Startup_AuthCanceled;
                                 status.Foreground = Avalonia.Media.Brushes.Red;
                                 status.IsVisible = true;
                             }
@@ -177,7 +177,7 @@ namespace EZKPM.Client.Desktop.Views
             {
                 if (status != null)
                 {
-                    status.Text = $"Kritischer Systemfehler: {ex.Message}";
+                    status.Text = string.Format(EZKPM.Client.Desktop.Resources.AppStrings.Startup_CriticalError, ex.Message);
                     status.Foreground = Avalonia.Media.Brushes.Red;
                     status.IsVisible = true;
                 }
@@ -225,7 +225,7 @@ namespace EZKPM.Client.Desktop.Views
             {
                 if (status != null)
                 {
-                    status.Text = "Fehler: " + ex.Message;
+                    status.Text = string.Format(EZKPM.Client.Desktop.Resources.AppStrings.Startup_Error, ex.Message);
                     status.Foreground = Avalonia.Media.Brushes.Red;
                     status.IsVisible = true;
                 }
@@ -244,7 +244,7 @@ namespace EZKPM.Client.Desktop.Views
 
             if (status != null)
             {
-                status.Text = $"WICHTIG! Ihr Recovery-Key:\n{newKey}\nBitte notieren! Login in 8s...";
+                status.Text = string.Format(EZKPM.Client.Desktop.Resources.AppStrings.Startup_RecoveryKey, newKey);
                 status.Foreground = Avalonia.Media.Brushes.Yellow;
                 status.IsVisible = true;
             }
@@ -271,7 +271,7 @@ namespace EZKPM.Client.Desktop.Views
             {
                 if (status != null)
                 {
-                    status.Text = "Falsches altes Passwort!";
+                    status.Text = EZKPM.Client.Desktop.Resources.AppStrings.Startup_WrongLegacyPwd;
                     status.Foreground = Avalonia.Media.Brushes.Red;
                     status.IsVisible = true;
                 }
@@ -287,7 +287,7 @@ namespace EZKPM.Client.Desktop.Views
             if (recBtn != null) recBtn.IsEnabled = false;
             if (status != null)
             {
-                status.Text = "Recovery angefordert. Generiere temporäres Schlüsselpaar...";
+                status.Text = EZKPM.Client.Desktop.Resources.AppStrings.Startup_RecoveryRequested;
                 status.Foreground = Avalonia.Media.Brushes.Orange;
                 status.IsVisible = true;
             }
@@ -306,7 +306,7 @@ namespace EZKPM.Client.Desktop.Views
                     EphemeralUserPubKey = ephemeralPubKey
                 });
 
-                if (status != null) status.Text = "Warte auf Admin-Freigaben (Shamir's Secret Sharing)...";
+                if (status != null) status.Text = EZKPM.Client.Desktop.Resources.AppStrings.Startup_RecoveryWaitAdmin;
                 var simBtn = this.FindControl<Button>("SimulateAdminButton");
                 if (simBtn != null) simBtn.IsVisible = true;
 
@@ -319,7 +319,7 @@ namespace EZKPM.Client.Desktop.Views
                     {
                         if (status != null)
                         {
-                            status.Text = "Recovery erfolgreich! Stelle Master-Key her...";
+                            status.Text = EZKPM.Client.Desktop.Resources.AppStrings.Startup_RecoverySuccess;
                             status.Foreground = Avalonia.Media.Brushes.Green;
                         }
                         
@@ -337,7 +337,7 @@ namespace EZKPM.Client.Desktop.Views
             {
                 if (status != null)
                 {
-                    status.Text = "Fehler: " + ex.Message;
+                    status.Text = string.Format(EZKPM.Client.Desktop.Resources.AppStrings.Startup_Error, ex.Message);
                     status.Foreground = Avalonia.Media.Brushes.Red;
                 }
             }
