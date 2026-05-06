@@ -22,6 +22,9 @@ namespace EZKPM.Server.PDP.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            
+            // Register OpenIddict models
+            modelBuilder.UseOpenIddict();
 
             // --- VaultAsset Configuration ---
             modelBuilder.Entity<VaultAsset>(entity =>
@@ -111,6 +114,8 @@ namespace EZKPM.Server.PDP.Data
         public DateTime ExpiresAt { get; set; }
 
         public bool IsDeleted { get; set; } // Soft-Delete flag (Papierkorb)
+        
+        public DateTime UpdatedUtc { get; set; } = DateTime.UtcNow;
 
         public ICollection<AssetAcl> Acls { get; set; }
     }

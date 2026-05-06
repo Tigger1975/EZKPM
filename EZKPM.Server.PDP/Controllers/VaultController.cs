@@ -20,10 +20,12 @@ namespace EZKPM.Server.PDP.Controllers
     public class VaultController : ControllerBase
     {
         private readonly EzkpmDbContext _db;
+        private readonly Services.P2PSyncTrigger _syncTrigger;
 
-        public VaultController(EzkpmDbContext db)
+        public VaultController(EzkpmDbContext db, Services.P2PSyncTrigger syncTrigger)
         {
             _db = db;
+            _syncTrigger = syncTrigger;
         }
 
         private string GetUserSid()
@@ -32,17 +34,17 @@ namespace EZKPM.Server.PDP.Controllers
             var sid = User.FindFirstValue(ClaimTypes.PrimarySid) ?? User.FindFirstValue("sid");
             if (!string.IsNullOrEmpty(sid)) return sid;
 
-            // Fallback for local testing: Get the true Windows SID of the running process
+            // Fallback for local testing (Cross-Platform safe)
             try 
             {
-                return System.Security.Principal.WindowsIdentity.GetCurrent().User?.Value ?? "S-1-5-21-DUMMY-FALLBACK";
+                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                {
+                    return System.Security.Principal.WindowsIdentity.GetCurrent().User?.Value ?? "S-1-5-21-DUMMY-FALLBACK";
+                }
             }
-            catch
-            {
-                var currentUser = Environment.UserDomainName + "\\" + Environment.UserName;
-                if (currentUser.StartsWith("\\")) currentUser = Environment.UserName;
-                return currentUser;
-            }
+            catch { /* Ignored */ }
+
+            return Environment.UserName; // Linux fallback
         }
 
         [HttpGet("assets/all")]
@@ -130,6 +132,7 @@ namespace EZKPM.Server.PDP.Controllers
             }
 
             await _db.SaveChangesAsync();
+            _syncTrigger.Trigger();
 
             return Ok(new { AssetId = newAsset.Id });
         }
@@ -153,6 +156,7 @@ namespace EZKPM.Server.PDP.Controllers
             asset.CipherBlob = Convert.FromBase64String(request.CipherBlob);
             asset.Nonce = Convert.FromBase64String(request.Nonce);
             asset.MetadataHash = metaHash;
+            asset.UpdatedUtc = DateTime.UtcNow;
             
             // ACLs updaten
             if (request.Acls != null && request.Acls.Count > 0)
@@ -160,8 +164,20 @@ namespace EZKPM.Server.PDP.Controllers
                 // Alte entfernen
                 _db.AssetAcls.RemoveRange(_db.AssetAcls.Where(a => a.AssetId == id));
                 
-                // Neue hinzufügen
-                foreach (var aclDto in request.Acls)
+                // Neue hinzufügen (deduplicated by SID)
+                var uniqueAcls = request.Acls.GroupBy(a => 
+                {
+                    var clean = a.AdSid;
+                    if (clean.Contains("(") && clean.Contains(")"))
+                    {
+                        var start = clean.LastIndexOf("(") + 1;
+                        var end = clean.LastIndexOf(")");
+                        if (end > start) clean = clean.Substring(start, end - start);
+                    }
+                    return string.IsNullOrWhiteSpace(clean) ? userSid : clean;
+                }).Select(g => g.First());
+
+                foreach (var aclDto in uniqueAcls)
                 {
                     var cleanSid = aclDto.AdSid;
                     if (cleanSid.Contains("(") && cleanSid.Contains(")"))
@@ -190,11 +206,12 @@ namespace EZKPM.Server.PDP.Controllers
             }
             
             await _db.SaveChangesAsync();
+            _syncTrigger.Trigger();
             return Ok();
         }
 
         [HttpDelete("assets/{id}")]
-        public async Task<IActionResult> DeleteAsset(Guid id)
+        public async Task<IActionResult> DeleteAsset(Guid id, [FromQuery] bool forceAdmin = false)
         {
             var userSid = GetUserSid();
             var dummySid = "S-1-5-21-DUMMY-TEST-USER";
@@ -204,12 +221,59 @@ namespace EZKPM.Server.PDP.Controllers
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (asset == null) return NotFound();
-            if (!asset.Acls.Any() || asset.Acls.First().PermissionLevel < 3) return Forbid(); // Only owner can delete
+            
+            if (!forceAdmin) 
+            {
+                if (!asset.Acls.Any() || asset.Acls.First().PermissionLevel < 3) return Forbid(); // Only owner can delete
+            }
 
-            asset.IsDeleted = true;
+            if (asset.IsDeleted)
+            {
+                _db.VaultAssets.Remove(asset);
+            }
+            else
+            {
+                asset.IsDeleted = true;
+                asset.UpdatedUtc = DateTime.UtcNow;
+            }
             await _db.SaveChangesAsync();
+            _syncTrigger.Trigger();
 
             return Ok();
+        }
+
+        [HttpDelete("maintenance/orphans")]
+        public async Task<IActionResult> CleanOrphanedAssets()
+        {
+            var userSid = GetUserSid();
+            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
+
+            var allAssets = await _db.VaultAssets
+                .Include(a => a.Acls)
+                .ToListAsync();
+
+            var orphanedAssets = allAssets.Where(a => 
+            {
+                // 1. Definitiv Müll: Es gibt überhaupt keinen Owner
+                if (!a.Acls.Any(acl => acl.PermissionLevel >= 3)) return true;
+
+                // 2. "Lost by me" (Spezialfall für das PoC):
+                // Da keine anderen echten Nutzer existieren, sind Assets, auf die 
+                // der aktuelle Benutzer (oder der Mock-User) gar keinen Zugriff mehr hat, 
+                // faktisch nicht mehr entschlüsselbar und somit verlorener Datenmüll.
+                bool hasAnyAccess = a.Acls.Any(acl => acl.AdSid == userSid || acl.AdSid == dummySid);
+                if (!hasAnyAccess) return true;
+
+                return false;
+            }).ToList();
+
+            if (orphanedAssets.Any())
+            {
+                _db.VaultAssets.RemoveRange(orphanedAssets);
+                await _db.SaveChangesAsync();
+            }
+
+            return Ok(new { DeletedCount = orphanedAssets.Count });
         }
 
         [HttpPut("assets/{id}/restore")]
@@ -225,7 +289,9 @@ namespace EZKPM.Server.PDP.Controllers
             if (asset == null || !asset.Acls.Any()) return Forbid();
 
             asset.IsDeleted = false;
+            asset.UpdatedUtc = DateTime.UtcNow;
             await _db.SaveChangesAsync();
+            _syncTrigger.Trigger();
 
             return Ok();
         }
@@ -343,6 +409,7 @@ namespace EZKPM.Server.PDP.Controllers
 
             _db.AuditLogs.Add(logEntry);
             await _db.SaveChangesAsync();
+            _syncTrigger.Trigger();
 
             return Ok();
         }

@@ -33,6 +33,9 @@ namespace EZKPM.Shared.Contracts
         public int PermissionLevel { get; set; } // -1=Deny, 0=None, 1=Execute, 2=Read, 3=Owner
         public string EncryptedKeyShare { get; set; } = "";
         public bool IsInherited { get; set; } = false;
+        
+        public string SourceGroupSid { get; set; } = ""; // Die SID der AD-Gruppe, über die der User berechtigt wurde
+        public string SourceGroupName { get; set; } = ""; // Der Name der AD-Gruppe
 
         [System.Text.Json.Serialization.JsonIgnore]
         public int UiPermissionIndex

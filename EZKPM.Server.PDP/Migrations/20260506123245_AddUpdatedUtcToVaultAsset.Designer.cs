@@ -3,6 +3,7 @@ using System;
 using EZKPM.Server.PDP.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EZKPM.Server.PDP.Migrations
 {
     [DbContext(typeof(EzkpmDbContext))]
-    partial class EzkpmDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260506123245_AddUpdatedUtcToVaultAsset")]
+    partial class AddUpdatedUtcToVaultAsset
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.7");
