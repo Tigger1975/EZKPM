@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using EZKPM.Server.PDP.Data;
 using EZKPM.Shared.Contracts;
+using Microsoft.AspNetCore.SignalR;
 
 namespace EZKPM.Server.PDP.Controllers
 {
@@ -13,10 +14,12 @@ namespace EZKPM.Server.PDP.Controllers
     public class RecoveryController : ControllerBase
     {
         private readonly EzkpmDbContext _db;
+        private readonly Microsoft.AspNetCore.SignalR.IHubContext<EZKPM.Server.PDP.Hubs.ClientSyncHub> _hubContext;
 
-        public RecoveryController(EzkpmDbContext db)
+        public RecoveryController(EzkpmDbContext db, Microsoft.AspNetCore.SignalR.IHubContext<EZKPM.Server.PDP.Hubs.ClientSyncHub> hubContext)
         {
             _db = db;
+            _hubContext = hubContext;
         }
 
         [HttpPost("setup")]
@@ -75,6 +78,26 @@ namespace EZKPM.Server.PDP.Controllers
             });
 
             await _db.SaveChangesAsync();
+
+            // Broadcast an die Administratoren über SignalR
+            var adminSids = await _db.UserProfiles
+                .Where(u => u.IsAdmin)
+                .Select(u => u.AdSid)
+                .ToListAsync();
+
+            foreach (var adminSid in adminSids)
+            {
+                var connectionId = EZKPM.Server.PDP.Hubs.ClientSyncHub.GetConnectionIdForSid(adminSid);
+                if (!string.IsNullOrEmpty(connectionId))
+                {
+                    await _hubContext.Clients.Client(connectionId).SendAsync("RecoveryRequested", currentRequestId, hashedSid);
+                }
+            }
+
+            // Fallback: Zusätzlich ein genereller Broadcast für angemeldete Admins, 
+            // deren SID im Hub ggf. nicht exakt registriert wurde.
+            await _hubContext.Clients.All.SendAsync("GlobalRecoveryRequested", currentRequestId, hashedSid);
+
             return Ok();
         }
 
