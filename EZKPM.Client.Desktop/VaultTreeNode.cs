@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.ObjectModel;
 using EZKPM.Shared.Contracts;
 

@@ -41,6 +41,7 @@ namespace EZKPM.Client.Desktop
 
         private async Task InitializeAppAsync(IClassicDesktopStyleApplicationLifetime desktop)
         {
+            await Task.Yield();
             var startup = new Views.StartupWindow();
             startup.Closed += (s, e) =>
             {
