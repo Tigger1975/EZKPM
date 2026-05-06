@@ -1,0 +1,59 @@
+using System;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Avalonia.Threading;
+using Microsoft.AspNetCore.SignalR.Client;
+
+namespace EZKPM.Client.Desktop.Services
+{
+    public class SsoSyncClient
+    {
+        private HubConnection _connection;
+        private readonly Func<string, string, string, Task<bool>> _showApprovalDialogFunc;
+
+        public SsoSyncClient(Func<string, string, string, Task<bool>> showApprovalDialogFunc)
+        {
+            _showApprovalDialogFunc = showApprovalDialogFunc;
+        }
+
+        public async Task ConnectAsync(string serverUrl, string userSid)
+        {
+            if (_connection != null)
+            {
+                await _connection.DisposeAsync();
+            }
+
+            var hubUrl = $"{serverUrl.TrimEnd('/')}/hubs/sync?sid={Uri.EscapeDataString(userSid)}";
+
+            _connection = new HubConnectionBuilder()
+                .WithUrl(hubUrl)
+                .WithAutomaticReconnect()
+                .Build();
+
+            _connection.On<JsonElement>("PingAuthRequest", async (payload) =>
+            {
+                string requestId = payload.GetProperty("RequestId").GetString();
+                string appId = payload.GetProperty("AppId").GetString();
+                string originServerUrl = payload.TryGetProperty("OriginServerUrl", out var oUrl) ? oUrl.GetString() : serverUrl;
+
+                // Bring this to the UI Thread to show the Dialog
+                bool isApproved = await _showApprovalDialogFunc(requestId, appId, originServerUrl);
+
+                if (_connection.State == HubConnectionState.Connected)
+                {
+                    await _connection.InvokeAsync("SubmitAuthResult", requestId, isApproved);
+                }
+            });
+
+            try
+            {
+                await _connection.StartAsync();
+                Console.WriteLine($"SSO Sync Client connected to {hubUrl}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to connect SSO Sync Client: {ex.Message}");
+            }
+        }
+    }
+}
