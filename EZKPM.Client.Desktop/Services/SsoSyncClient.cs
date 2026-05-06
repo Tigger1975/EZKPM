@@ -45,6 +45,39 @@ namespace EZKPM.Client.Desktop.Services
                 }
             });
 
+            _connection.On<string, string>("RecoveryRequested", (requestId, requesterSid) =>
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    // Basic notification for Admins
+                    var notifyIcon = new System.Windows.Forms.NotifyIcon
+                    {
+                        Icon = System.Drawing.SystemIcons.Warning,
+                        Visible = true,
+                        BalloonTipTitle = "EZKPM Notfall-Recovery",
+                        BalloonTipText = $"Neuer Recovery Request von SID {requesterSid}."
+                    };
+                    notifyIcon.ShowBalloonTip(5000);
+                });
+            });
+
+            _connection.On<string, string>("GlobalRecoveryRequested", (requestId, requesterSid) =>
+            {
+                // Only act if the current user is an Admin (can be checked via local rights)
+                // For now, we show the same notification
+                Dispatcher.UIThread.Post(() =>
+                {
+                    var notifyIcon = new System.Windows.Forms.NotifyIcon
+                    {
+                        Icon = System.Drawing.SystemIcons.Warning,
+                        Visible = true,
+                        BalloonTipTitle = "EZKPM Notfall-Recovery (Global)",
+                        BalloonTipText = $"Neuer Recovery Request von SID {requesterSid}."
+                    };
+                    notifyIcon.ShowBalloonTip(5000);
+                });
+            });
+
             try
             {
                 await _connection.StartAsync();
