@@ -110,7 +110,7 @@
                                         <MenuItem Header="{x:Static res:AppStrings.Main_MenuDeleteFolder}" Click="DeleteFolderMenuItem_Click" Foreground="#EF4444" />
                                     </ContextMenu>
                                 </StackPanel.ContextMenu>
-                                <TextBlock Text="{Binding Icon}" FontSize="18" VerticalAlignment="Center" Foreground="#FACC15"/>
+                                <TextBlock Text="{Binding Icon}" FontFamily="Segoe UI Emoji" FontSize="18" VerticalAlignment="Center" Foreground="#FACC15"/>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="{Binding Title}" FontWeight="Medium" Foreground="White" FontSize="14" />
                                     <TextBlock Text="{Binding Url}" FontSize="11" Foreground="#94A3B8" IsVisible="{Binding HasUrl}" Margin="0,2,0,0"/>
@@ -161,7 +161,7 @@
                                 <DataGridTemplateColumn Header="{x:Static res:AppStrings.Main_ColType}" Width="60" SortMemberPath="AssetType">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="contracts:VaultAssetPayload">
-                                            <TextBlock Text="{Binding AssetType, Converter={StaticResource IconConverter}}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding AssetType, Converter={StaticResource IconConverter}}" FontFamily="Segoe UI Emoji" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
