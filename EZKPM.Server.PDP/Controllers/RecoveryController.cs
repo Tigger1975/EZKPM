@@ -243,12 +243,50 @@ namespace EZKPM.Server.PDP.Controllers
             return Ok(response);
         }
 
+        [HttpGet("admin-status")]
+        public async Task<IActionResult> GetAdminStatus()
+        {
+            var callerHashedSid = GetUserSid();
+            var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == callerHashedSid);
+            bool isCallerAdmin = callerProfile?.IsAdmin == true;
+            bool anyAdminExists = await _db.UserProfiles.AnyAsync(u => u.IsAdmin);
+
+            return Ok(new 
+            { 
+                IsAdmin = isCallerAdmin, 
+                IsBootstrapActive = !anyAdminExists,
+                HasAccessToAdminPanel = isCallerAdmin || !anyAdminExists
+            });
+        }
+
         [HttpPost("set-admin")]
         public async Task<IActionResult> SetAdmin([FromBody] SetAdminRequestDto request)
         {
-            // Security Note: In a real environment, this should be protected by an Authorize attribute
-            // requiring an existing Admin or Domain Admin role from the token.
+            var callerHashedSid = GetUserSid();
+            var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == callerHashedSid);
+            bool isCallerAdmin = callerProfile?.IsAdmin == true;
+
+            // Bootstrap Logic: Check if ANY admin exists in the entire database
+            bool anyAdminExists = await _db.UserProfiles.AnyAsync(u => u.IsAdmin);
+
+            if (anyAdminExists && !isCallerAdmin)
+            {
+                return Forbid("Only existing administrators can modify admin rights.");
+            }
+
             var hashedTargetSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.TargetAdSid);
+
+            // Prevent removing the last admin
+            if (!request.IsAdmin && anyAdminExists)
+            {
+                int adminCount = await _db.UserProfiles.CountAsync(u => u.IsAdmin);
+                var targetProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedTargetSid);
+                if (targetProfile != null && targetProfile.IsAdmin && adminCount <= 1)
+                {
+                    return BadRequest("Cannot remove the last administrator from the system.");
+                }
+            }
+
             var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedTargetSid);
             
             if (profile == null)
