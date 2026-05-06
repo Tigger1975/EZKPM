@@ -89,6 +89,45 @@ namespace EZKPM.Server.PDP.Data
                 entity.HasKey(e => e.Id);
             });
         }
+
+        private void EnforceImmutability()
+        {
+            var entries = ChangeTracker.Entries();
+            foreach (var entry in entries)
+            {
+                if (entry.Entity is AuditLog || entry.Entity is RecoveryAuditLog)
+                {
+                    if (entry.State == EntityState.Modified || entry.State == EntityState.Deleted)
+                    {
+                        throw new InvalidOperationException("Compliance Violation: Audit-Logs sind revisionssicher (WORM) und können nachträglich weder geändert noch gelöscht werden.");
+                    }
+                }
+            }
+        }
+
+        public override int SaveChanges()
+        {
+            EnforceImmutability();
+            return base.SaveChanges();
+        }
+
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            EnforceImmutability();
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
+        public override System.Threading.Tasks.Task<int> SaveChangesAsync(System.Threading.CancellationToken cancellationToken = default)
+        {
+            EnforceImmutability();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        public override System.Threading.Tasks.Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, System.Threading.CancellationToken cancellationToken = default)
+        {
+            EnforceImmutability();
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
     }
 
     /// <summary>
