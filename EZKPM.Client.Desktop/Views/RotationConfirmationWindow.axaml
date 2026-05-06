@@ -1,0 +1,27 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="EZKPM.Client.Desktop.Views.RotationConfirmationWindow"
+        Title="Manuelle Rotation Bestätigen" Width="500" Height="300"
+        WindowStartupLocation="CenterOwner"
+        Background="#F5F7FA" FontFamily="Inter, sans-serif">
+    
+    <Grid RowDefinitions="Auto, *, Auto" Margin="20">
+        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+            <TextBlock Text="⚠️ Assisted Password Rotation" FontWeight="Bold" FontSize="18" Foreground="#111827"/>
+            <TextBlock Text="Schritt 1: Kopieren Sie das neue Passwort." Foreground="#6B7280" Margin="0,5,0,0"/>
+            <TextBlock Text="Schritt 2: Ändern Sie das Passwort auf der Ziel-Webseite/Application." Foreground="#6B7280"/>
+            <TextBlock Text="Schritt 3: Bestätigen Sie hier, wenn die Änderung erfolgreich war." Foreground="#6B7280"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="10">
+            <TextBlock Text="Neues generiertes Passwort:" FontWeight="SemiBold"/>
+            <TextBox x:Name="NewPasswordBox" IsReadOnly="True" Text="" FontSize="16" FontFamily="Consolas" Padding="10"/>
+            <Button Content="📋 In Zwischenablage kopieren" Click="CopyButton_Click" Background="#3B82F6" Foreground="White" HorizontalAlignment="Left" Padding="10,5" CornerRadius="4"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0" Spacing="10">
+            <Button Content="Abbrechen" Click="CancelButton_Click" Background="Transparent" BorderBrush="#D1D5DB" BorderThickness="1" Foreground="#4B5563" CornerRadius="4" Padding="15,8" Cursor="Hand"/>
+            <Button Content="Erfolgreich geändert (Speichern)" Click="ConfirmButton_Click" Background="#10B981" Foreground="White" FontWeight="SemiBold" CornerRadius="4" Padding="15,8" Cursor="Hand"/>
+        </StackPanel>
+    </Grid>
+</Window>

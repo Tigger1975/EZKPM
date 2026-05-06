@@ -40,21 +40,28 @@ namespace EZKPM.Client.Desktop.Views
                 try
                 {
                     btn.IsEnabled = false;
-                    btn.Content = "⏳";
 
                     // 1. Generate new password
                     string newPassword = _cryptoService.GeneratePassword(payload.PasswordSettings);
-                    payload.Password = newPassword;
                     
-                    // Note: In a fully automated Rotation Assistant, this would ALSO try to connect 
-                    // to the target website (or use an API like Microsoft Graph for AD passwords) 
-                    // to actually change the password remotely. For now, we rotate it in the Vault.
+                    // 2. Zeige den Assisted Rotation Dialog an
+                    var confirmDialog = new RotationConfirmationWindow(newPassword);
+                    await confirmDialog.ShowDialog(this);
 
-                    // 2. Encrypt and save (this resets ExpiresAt on the server)
+                    if (!confirmDialog.IsConfirmed)
+                    {
+                        btn.IsEnabled = true;
+                        return; // User canceled the rotation
+                    }
+
+                    btn.Content = "⏳";
+                    payload.Password = newPassword;
+
+                    // 3. Encrypt and save (this resets ExpiresAt on the server)
                     var requestDto = _cryptoService.EncryptAsset(payload);
                     await _apiClient.UpdateAssetAsync(payload.TransientAssetId.Value, requestDto);
 
-                    // 3. Remove from list
+                    // 4. Remove from list
                     _expiredAssets.Remove(payload);
                     var listBox = this.FindControl<ListBox>("ExpiredAssetsListBox");
                     if (listBox != null)
