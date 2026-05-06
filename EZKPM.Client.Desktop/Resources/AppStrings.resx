@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
@@ -58,12 +58,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <!-- Unsere eigentlichen Übersetzungs-Keys -->
+  <!-- Unsere eigentlichen Ãœbersetzungs-Keys -->
   <data name="AuditDialog_Title" xml:space="preserve">
     <value>EZK-PM Security Audit</value>
   </data>
   <data name="AuditDialog_Header" xml:space="preserve">
-    <value>⚠️ Payment Authorization (FA 22)</value>
+    <value>âš ï¸ Payment Authorization (FA 22)</value>
   </data>
   <data name="AuditDialog_Description" xml:space="preserve">
     <value>The browser is requesting payment credentials. Enterprise policy requires a tamper-proof audit log of the amount and reference before autofill is authorized.</value>
@@ -84,7 +84,7 @@
     <value>Ironclad Vault - SSO Login Request</value>
   </data>
   <data name="SsoDialog_Header" xml:space="preserve">
-    <value>🚨 Web-SSO Login Attempt Detected!</value>
+    <value>ðŸš¨ Web-SSO Login Attempt Detected!</value>
   </data>
   <data name="SsoDialog_Desc1" xml:space="preserve">
     <value>An application is requesting to login via your Ironclad Vault account.</value>
@@ -99,16 +99,16 @@
     <value>Do you want to approve this login?</value>
   </data>
   <data name="SsoDialog_Deny" xml:space="preserve">
-    <value>❌ Deny</value>
+    <value>âŒ Deny</value>
   </data>
   <data name="SsoDialog_Approve" xml:space="preserve">
-    <value>✅ Approve</value>
+    <value>âœ… Approve</value>
   </data>
   <data name="LocalApp_Title" xml:space="preserve">
     <value>Local App Authorization</value>
   </data>
   <data name="LocalApp_Header" xml:space="preserve">
-    <value>⚠️ Local Application Access</value>
+    <value>âš ï¸ Local Application Access</value>
   </data>
   <data name="LocalApp_AllowOnce" xml:space="preserve">
     <value>Allow Once</value>
@@ -180,7 +180,7 @@
     <value>Migrate password &amp; Unlock</value>
   </data>
   <data name="Startup_RecoveryError" xml:space="preserve">
-    <value>⚠️ DPAPI Error: Windows password may have been reset.</value>
+    <value>âš ï¸ DPAPI Error: Windows password may have been reset.</value>
   </data>
   <data name="Startup_BtnRecovery" xml:space="preserve">
     <value>Request 4-Eyes Recovery</value>
@@ -291,7 +291,7 @@
     <value>Settings &amp; Change Server</value>
   </data>
   <data name="Main_TabAssets" xml:space="preserve">
-    <value>🗂️ Assets</value>
+    <value>ðŸ—‚ï¸ Assets</value>
   </data>
   <data name="Main_SearchWatermark" xml:space="preserve">
     <value>Search...</value>
@@ -306,19 +306,19 @@
     <value>Recycle Bin</value>
   </data>
   <data name="Main_BtnImport" xml:space="preserve">
-    <value>📥 Import</value>
+    <value>ðŸ“¥ Import</value>
   </data>
   <data name="Main_BtnClean" xml:space="preserve">
-    <value>🗑️ Clean Up</value>
+    <value>ðŸ—‘ï¸ Clean Up</value>
   </data>
   <data name="Main_BtnCleanTooltip" xml:space="preserve">
     <value>Permanently deletes all orphaned assets</value>
   </data>
   <data name="Main_BtnRestore" xml:space="preserve">
-    <value>🔄 Restore</value>
+    <value>ðŸ”„ Restore</value>
   </data>
   <data name="Main_BtnDelete" xml:space="preserve">
-    <value>🗑️ Delete</value>
+    <value>ðŸ—‘ï¸ Delete</value>
   </data>
   <data name="Main_ColType" xml:space="preserve">
     <value>Type</value>
@@ -399,5 +399,209 @@ Please write it down! Login in 8s...</value>
   </data>
   <data name="Main_PrivateFolder" xml:space="preserve">
     <value>Private</value>
+  </data>
+  <data name="AssetEditor_ComboTwo" xml:space="preserve">
+    <value>TwoStep (Username -&gt; Next -&gt; Password)</value>
+  </data>
+  <data name="AssetEditor_PhNoFile" xml:space="preserve">
+    <value>No file selected...</value>
+  </data>
+  <data name="AssetEditor_ChkLower" xml:space="preserve">
+    <value>Lowercase (a-z)</value>
+  </data>
+  <data name="AssetEditor_Duplicate" xml:space="preserve">
+    <value>Duplicate Asset</value>
+  </data>
+  <data name="AssetEditor_LblDetailedDesc" xml:space="preserve">
+    <value>Detailed Description</value>
+  </data>
+  <data name="AssetEditor_AclRead" xml:space="preserve">
+    <value>Read (2)</value>
+  </data>
+  <data name="AssetEditor_HdrAuto" xml:space="preserve">
+    <value>Login Automation Settings (Browser Extension)</value>
+  </data>
+  <data name="AssetEditor_PayCard" xml:space="preserve">
+    <value>Credit / Debit Card</value>
+  </data>
+  <data name="AssetEditor_TabSettings" xml:space="preserve">
+    <value>Settings &amp; Expiry</value>
+  </data>
+  <data name="AssetEditor_TabVars" xml:space="preserve">
+    <value>Custom Variables</value>
+  </data>
+  <data name="AssetEditor_PhTitle" xml:space="preserve">
+    <value>e.g. My Bank Account</value>
+  </data>
+  <data name="AssetEditor_ChkNumbers" xml:space="preserve">
+    <value>Numbers (0-9)</value>
+  </data>
+  <data name="AssetEditor_TabGeneral" xml:space="preserve">
+    <value>General &amp; Notes</value>
+  </data>
+  <data name="AssetEditor_TipRmSel" xml:space="preserve">
+    <value>Remove Selected</value>
+  </data>
+  <data name="AssetEditor_TabAcl" xml:space="preserve">
+    <value>Permissions (ACL)</value>
+  </data>
+  <data name="AssetEditor_PhUserSel" xml:space="preserve">
+    <value>Username Field Selector</value>
+  </data>
+  <data name="AssetEditor_TitleDetails" xml:space="preserve">
+    <value>Asset Details</value>
+  </data>
+  <data name="AssetEditor_PayService" xml:space="preserve">
+    <value>Payment Service (e.g. PayPal)</value>
+  </data>
+  <data name="AssetEditor_ChkShowSecret" xml:space="preserve">
+    <value>Show Secret</value>
+  </data>
+  <data name="AssetEditor_HdrGenerator" xml:space="preserve">
+    <value>Password Generator Settings</value>
+  </data>
+  <data name="AssetEditor_LblCardHolder" xml:space="preserve">
+    <value>Card Holder / Account Name</value>
+  </data>
+  <data name="AssetEditor_LblPrimaryFile" xml:space="preserve">
+    <value>Primary File (Certificate / Key / Container)</value>
+  </data>
+  <data name="AssetEditor_LblSecureNotes" xml:space="preserve">
+    <value>Secure Notes</value>
+  </data>
+  <data name="AssetEditor_LblPaymentMethod" xml:space="preserve">
+    <value>Payment Method</value>
+  </data>
+  <data name="AssetEditor_ChkSymbols" xml:space="preserve">
+    <value>Symbols (!@#$)</value>
+  </data>
+  <data name="AssetEditor_PhNextSel" xml:space="preserve">
+    <value>Next Button Selector</value>
+  </data>
+  <data name="AssetEditor_TipAddFile" xml:space="preserve">
+    <value>Add File(s)...</value>
+  </data>
+  <data name="AssetEditor_SaveNew" xml:space="preserve">
+    <value>Save and New</value>
+  </data>
+  <data name="AssetEditor_LblUsername" xml:space="preserve">
+    <value>Username / Email</value>
+  </data>
+  <data name="AssetEditor_LblValidity" xml:space="preserve">
+    <value>Password Validity (Days, max 365)</value>
+  </data>
+  <data name="AssetEditor_TipGenerate" xml:space="preserve">
+    <value>Generate</value>
+  </data>
+  <data name="AssetEditor_LblSecondaryFile" xml:space="preserve">
+    <value>Secondary File (e.g. Public Key / Cert)</value>
+  </data>
+  <data name="AssetEditor_TipClear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="AssetEditor_PhUsername" xml:space="preserve">
+    <value>user@example.com</value>
+  </data>
+  <data name="AssetEditor_PhSubSel" xml:space="preserve">
+    <value>Submit Button Selector</value>
+  </data>
+  <data name="AssetEditor_AclDeny" xml:space="preserve">
+    <value>Deny (-1)</value>
+  </data>
+  <data name="AssetEditor_LblTitle" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="AssetEditor_LblCurrentCode" xml:space="preserve">
+    <value>Current Code:</value>
+  </data>
+  <data name="AssetEditor_ComboBasic" xml:space="preserve">
+    <value>BasicAuth</value>
+  </data>
+  <data name="AssetEditor_AclOwner" xml:space="preserve">
+    <value>Owner (3)</value>
+  </data>
+  <data name="AssetEditor_LblMethod" xml:space="preserve">
+    <value>Login Method</value>
+  </data>
+  <data name="AssetEditor_TipCopy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="AssetEditor_AclExec" xml:space="preserve">
+    <value>Execute (1)</value>
+  </data>
+  <data name="AssetEditor_ComboAuto" xml:space="preserve">
+    <value>AutoLearn</value>
+  </data>
+  <data name="AssetEditor_TipDlSel" xml:space="preserve">
+    <value>Download Selected</value>
+  </data>
+  <data name="AssetEditor_LblExpiry" xml:space="preserve">
+    <value>Expiry (MM/YY)</value>
+  </data>
+  <data name="AssetEditor_SaveClose" xml:space="preserve">
+    <value>Save and Close</value>
+  </data>
+  <data name="AssetEditor_PhUserPrompt" xml:space="preserve">
+    <value>(User Prompt)</value>
+  </data>
+  <data name="AssetEditor_LblType" xml:space="preserve">
+    <value>Asset Type</value>
+  </data>
+  <data name="AssetEditor_ChkAutoLearn" xml:space="preserve">
+    <value>Enable AutoLearn Mode (Observe DOM)</value>
+  </data>
+  <data name="AssetEditor_LblParent" xml:space="preserve">
+    <value>Parent Folder</value>
+  </data>
+  <data name="AssetEditor_LblLength" xml:space="preserve">
+    <value>Length</value>
+  </data>
+  <data name="AssetEditor_PhNotes" xml:space="preserve">
+    <value>Additional information...</value>
+  </data>
+  <data name="AssetEditor_LblDom" xml:space="preserve">
+    <value>Learned DOM Selectors</value>
+  </data>
+  <data name="AssetEditor_LblCvc" xml:space="preserve">
+    <value>CVC / PIN</value>
+  </data>
+  <data name="AssetEditor_PhPassSel" xml:space="preserve">
+    <value>Password Field Selector</value>
+  </data>
+  <data name="AssetEditor_PhCardHolder" xml:space="preserve">
+    <value>Max Mustermann</value>
+  </data>
+  <data name="AssetEditor_LblLoginUrl" xml:space="preserve">
+    <value>Login URL</value>
+  </data>
+  <data name="AssetEditor_PopOut" xml:space="preserve">
+    <value>Pop Out Editor</value>
+  </data>
+  <data name="AssetEditor_ComboOne" xml:space="preserve">
+    <value>OneStep (Username &amp; Password)</value>
+  </data>
+  <data name="AssetEditor_TabAttachments" xml:space="preserve">
+    <value>Attachments</value>
+  </data>
+  <data name="AssetEditor_TipBrowse" xml:space="preserve">
+    <value>Browse...</value>
+  </data>
+  <data name="AssetEditor_ShowPassword" xml:space="preserve">
+    <value>Show Password</value>
+  </data>
+  <data name="AssetEditor_LblPassword" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="AssetEditor_TipAddVar" xml:space="preserve">
+    <value>Add Variable</value>
+  </data>
+  <data name="AssetEditor_LblTotpSecret" xml:space="preserve">
+    <value>TOTP Secret Key (Base32)</value>
+  </data>
+  <data name="AssetEditor_TipDownload" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="AssetEditor_ChkUpper" xml:space="preserve">
+    <value>Uppercase (A-Z)</value>
   </data>
 </root>

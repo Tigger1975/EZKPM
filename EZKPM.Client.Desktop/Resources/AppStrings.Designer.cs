@@ -79,11 +79,29 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Deny (-1) ähnelt.
+        /// </summary>
+        public static string AssetEditor_AclDeny {
+            get {
+                return ResourceManager.GetString("AssetEditor_AclDeny", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Manage users who have access to this asset/folder. ähnelt.
         /// </summary>
         public static string AssetEditor_AclDesc {
             get {
                 return ResourceManager.GetString("AssetEditor_AclDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Execute (1) ähnelt.
+        /// </summary>
+        public static string AssetEditor_AclExec {
+            get {
+                return ResourceManager.GetString("AssetEditor_AclExec", resourceCulture);
             }
         }
         
@@ -102,6 +120,78 @@ namespace EZKPM.Client.Desktop.Resources {
         public static string AssetEditor_AclNone {
             get {
                 return ResourceManager.GetString("AssetEditor_AclNone", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Owner (3) ähnelt.
+        /// </summary>
+        public static string AssetEditor_AclOwner {
+            get {
+                return ResourceManager.GetString("AssetEditor_AclOwner", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Read (2) ähnelt.
+        /// </summary>
+        public static string AssetEditor_AclRead {
+            get {
+                return ResourceManager.GetString("AssetEditor_AclRead", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Enable AutoLearn Mode (Observe DOM) ähnelt.
+        /// </summary>
+        public static string AssetEditor_ChkAutoLearn {
+            get {
+                return ResourceManager.GetString("AssetEditor_ChkAutoLearn", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Lowercase (a-z) ähnelt.
+        /// </summary>
+        public static string AssetEditor_ChkLower {
+            get {
+                return ResourceManager.GetString("AssetEditor_ChkLower", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Numbers (0-9) ähnelt.
+        /// </summary>
+        public static string AssetEditor_ChkNumbers {
+            get {
+                return ResourceManager.GetString("AssetEditor_ChkNumbers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Show Secret ähnelt.
+        /// </summary>
+        public static string AssetEditor_ChkShowSecret {
+            get {
+                return ResourceManager.GetString("AssetEditor_ChkShowSecret", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Symbols (!@#$) ähnelt.
+        /// </summary>
+        public static string AssetEditor_ChkSymbols {
+            get {
+                return ResourceManager.GetString("AssetEditor_ChkSymbols", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Uppercase (A-Z) ähnelt.
+        /// </summary>
+        public static string AssetEditor_ChkUpper {
+            get {
+                return ResourceManager.GetString("AssetEditor_ChkUpper", resourceCulture);
             }
         }
         
@@ -151,6 +241,42 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die AutoLearn ähnelt.
+        /// </summary>
+        public static string AssetEditor_ComboAuto {
+            get {
+                return ResourceManager.GetString("AssetEditor_ComboAuto", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die BasicAuth ähnelt.
+        /// </summary>
+        public static string AssetEditor_ComboBasic {
+            get {
+                return ResourceManager.GetString("AssetEditor_ComboBasic", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die OneStep (Username &amp; Password) ähnelt.
+        /// </summary>
+        public static string AssetEditor_ComboOne {
+            get {
+                return ResourceManager.GetString("AssetEditor_ComboOne", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die TwoStep (Username -&gt; Next -&gt; Password) ähnelt.
+        /// </summary>
+        public static string AssetEditor_ComboTwo {
+            get {
+                return ResourceManager.GetString("AssetEditor_ComboTwo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Specify variables for website automation. If the value is empty, you will be prompted when used. ähnelt.
         /// </summary>
         public static string AssetEditor_CustomVarsDesc {
@@ -165,6 +291,15 @@ namespace EZKPM.Client.Desktop.Resources {
         public static string AssetEditor_DescWatermark {
             get {
                 return ResourceManager.GetString("AssetEditor_DescWatermark", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Duplicate Asset ähnelt.
+        /// </summary>
+        public static string AssetEditor_Duplicate {
+            get {
+                return ResourceManager.GetString("AssetEditor_Duplicate", resourceCulture);
             }
         }
         
@@ -187,11 +322,488 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Login Automation Settings (Browser Extension) ähnelt.
+        /// </summary>
+        public static string AssetEditor_HdrAuto {
+            get {
+                return ResourceManager.GetString("AssetEditor_HdrAuto", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Password Generator Settings ähnelt.
+        /// </summary>
+        public static string AssetEditor_HdrGenerator {
+            get {
+                return ResourceManager.GetString("AssetEditor_HdrGenerator", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die [Inherited] ähnelt.
         /// </summary>
         public static string AssetEditor_Inherited {
             get {
                 return ResourceManager.GetString("AssetEditor_Inherited", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Card Holder / Account Name ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblCardHolder {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblCardHolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Current Code: ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblCurrentCode {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblCurrentCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die CVC / PIN ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblCvc {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblCvc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Detailed Description ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblDetailedDesc {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblDetailedDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Learned DOM Selectors ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblDom {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblDom", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Expiry (MM/YY) ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblExpiry {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblExpiry", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Length ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblLength {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Login URL ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblLoginUrl {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblLoginUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Login Method ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblMethod {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblMethod", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Parent Folder ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblParent {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblParent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Password ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblPassword {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Payment Method ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblPaymentMethod {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblPaymentMethod", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Primary File (Certificate / Key / Container) ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblPrimaryFile {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblPrimaryFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Secondary File (e.g. Public Key / Cert) ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblSecondaryFile {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblSecondaryFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Secure Notes ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblSecureNotes {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblSecureNotes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Title ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblTitle {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die TOTP Secret Key (Base32) ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblTotpSecret {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblTotpSecret", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Asset Type ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblType {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Username / Email ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblUsername {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblUsername", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Password Validity (Days, max 365) ähnelt.
+        /// </summary>
+        public static string AssetEditor_LblValidity {
+            get {
+                return ResourceManager.GetString("AssetEditor_LblValidity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Credit / Debit Card ähnelt.
+        /// </summary>
+        public static string AssetEditor_PayCard {
+            get {
+                return ResourceManager.GetString("AssetEditor_PayCard", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Payment Service (e.g. PayPal) ähnelt.
+        /// </summary>
+        public static string AssetEditor_PayService {
+            get {
+                return ResourceManager.GetString("AssetEditor_PayService", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Max Mustermann ähnelt.
+        /// </summary>
+        public static string AssetEditor_PhCardHolder {
+            get {
+                return ResourceManager.GetString("AssetEditor_PhCardHolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Next Button Selector ähnelt.
+        /// </summary>
+        public static string AssetEditor_PhNextSel {
+            get {
+                return ResourceManager.GetString("AssetEditor_PhNextSel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die No file selected... ähnelt.
+        /// </summary>
+        public static string AssetEditor_PhNoFile {
+            get {
+                return ResourceManager.GetString("AssetEditor_PhNoFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Additional information... ähnelt.
+        /// </summary>
+        public static string AssetEditor_PhNotes {
+            get {
+                return ResourceManager.GetString("AssetEditor_PhNotes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Password Field Selector ähnelt.
+        /// </summary>
+        public static string AssetEditor_PhPassSel {
+            get {
+                return ResourceManager.GetString("AssetEditor_PhPassSel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Submit Button Selector ähnelt.
+        /// </summary>
+        public static string AssetEditor_PhSubSel {
+            get {
+                return ResourceManager.GetString("AssetEditor_PhSubSel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die e.g. My Bank Account ähnelt.
+        /// </summary>
+        public static string AssetEditor_PhTitle {
+            get {
+                return ResourceManager.GetString("AssetEditor_PhTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die user@example.com ähnelt.
+        /// </summary>
+        public static string AssetEditor_PhUsername {
+            get {
+                return ResourceManager.GetString("AssetEditor_PhUsername", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die (User Prompt) ähnelt.
+        /// </summary>
+        public static string AssetEditor_PhUserPrompt {
+            get {
+                return ResourceManager.GetString("AssetEditor_PhUserPrompt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Username Field Selector ähnelt.
+        /// </summary>
+        public static string AssetEditor_PhUserSel {
+            get {
+                return ResourceManager.GetString("AssetEditor_PhUserSel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Pop Out Editor ähnelt.
+        /// </summary>
+        public static string AssetEditor_PopOut {
+            get {
+                return ResourceManager.GetString("AssetEditor_PopOut", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Save and Close ähnelt.
+        /// </summary>
+        public static string AssetEditor_SaveClose {
+            get {
+                return ResourceManager.GetString("AssetEditor_SaveClose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Save and New ähnelt.
+        /// </summary>
+        public static string AssetEditor_SaveNew {
+            get {
+                return ResourceManager.GetString("AssetEditor_SaveNew", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Show Password ähnelt.
+        /// </summary>
+        public static string AssetEditor_ShowPassword {
+            get {
+                return ResourceManager.GetString("AssetEditor_ShowPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Permissions (ACL) ähnelt.
+        /// </summary>
+        public static string AssetEditor_TabAcl {
+            get {
+                return ResourceManager.GetString("AssetEditor_TabAcl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Attachments ähnelt.
+        /// </summary>
+        public static string AssetEditor_TabAttachments {
+            get {
+                return ResourceManager.GetString("AssetEditor_TabAttachments", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die General &amp; Notes ähnelt.
+        /// </summary>
+        public static string AssetEditor_TabGeneral {
+            get {
+                return ResourceManager.GetString("AssetEditor_TabGeneral", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Settings &amp; Expiry ähnelt.
+        /// </summary>
+        public static string AssetEditor_TabSettings {
+            get {
+                return ResourceManager.GetString("AssetEditor_TabSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Custom Variables ähnelt.
+        /// </summary>
+        public static string AssetEditor_TabVars {
+            get {
+                return ResourceManager.GetString("AssetEditor_TabVars", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Add File(s)... ähnelt.
+        /// </summary>
+        public static string AssetEditor_TipAddFile {
+            get {
+                return ResourceManager.GetString("AssetEditor_TipAddFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Add Variable ähnelt.
+        /// </summary>
+        public static string AssetEditor_TipAddVar {
+            get {
+                return ResourceManager.GetString("AssetEditor_TipAddVar", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Browse... ähnelt.
+        /// </summary>
+        public static string AssetEditor_TipBrowse {
+            get {
+                return ResourceManager.GetString("AssetEditor_TipBrowse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Clear ähnelt.
+        /// </summary>
+        public static string AssetEditor_TipClear {
+            get {
+                return ResourceManager.GetString("AssetEditor_TipClear", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Copy ähnelt.
+        /// </summary>
+        public static string AssetEditor_TipCopy {
+            get {
+                return ResourceManager.GetString("AssetEditor_TipCopy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Download Selected ähnelt.
+        /// </summary>
+        public static string AssetEditor_TipDlSel {
+            get {
+                return ResourceManager.GetString("AssetEditor_TipDlSel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Download ähnelt.
+        /// </summary>
+        public static string AssetEditor_TipDownload {
+            get {
+                return ResourceManager.GetString("AssetEditor_TipDownload", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Generate ähnelt.
+        /// </summary>
+        public static string AssetEditor_TipGenerate {
+            get {
+                return ResourceManager.GetString("AssetEditor_TipGenerate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Remove Selected ähnelt.
+        /// </summary>
+        public static string AssetEditor_TipRmSel {
+            get {
+                return ResourceManager.GetString("AssetEditor_TipRmSel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Asset Details ähnelt.
+        /// </summary>
+        public static string AssetEditor_TitleDetails {
+            get {
+                return ResourceManager.GetString("AssetEditor_TitleDetails", resourceCulture);
             }
         }
         
@@ -232,7 +844,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠️ Payment Authorization (FA 22) ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die âš ï¸ Payment Authorization (FA 22) ähnelt.
         /// </summary>
         public static string AuditDialog_Header {
             get {
@@ -403,7 +1015,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠️ Local Application Access ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die âš ï¸ Local Application Access ähnelt.
         /// </summary>
         public static string LocalApp_Header {
             get {
@@ -421,7 +1033,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die 🗑️ Clean Up ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die ðŸ—‘ï¸ Clean Up ähnelt.
         /// </summary>
         public static string Main_BtnClean {
             get {
@@ -439,7 +1051,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die 🗑️ Delete ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die ðŸ—‘ï¸ Delete ähnelt.
         /// </summary>
         public static string Main_BtnDelete {
             get {
@@ -448,7 +1060,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die 📥 Import ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die ðŸ“¥ Import ähnelt.
         /// </summary>
         public static string Main_BtnImport {
             get {
@@ -475,7 +1087,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die 🔄 Restore ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die ðŸ”„ Restore ähnelt.
         /// </summary>
         public static string Main_BtnRestore {
             get {
@@ -601,7 +1213,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die 🗂️ Assets ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die ðŸ—‚ï¸ Assets ähnelt.
         /// </summary>
         public static string Main_TabAssets {
             get {
@@ -745,7 +1357,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ✅ Approve ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die âœ… Approve ähnelt.
         /// </summary>
         public static string SsoDialog_Approve {
             get {
@@ -754,7 +1366,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ❌ Deny ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die âŒ Deny ähnelt.
         /// </summary>
         public static string SsoDialog_Deny {
             get {
@@ -781,7 +1393,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die 🚨 Web-SSO Login Attempt Detected! ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die ðŸš¨ Web-SSO Login Attempt Detected! ähnelt.
         /// </summary>
         public static string SsoDialog_Header {
             get {
@@ -943,7 +1555,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠️ DPAPI Error: Windows password may have been reset. ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die âš ï¸ DPAPI Error: Windows password may have been reset. ähnelt.
         /// </summary>
         public static string Startup_RecoveryError {
             get {
