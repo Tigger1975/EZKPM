@@ -7,7 +7,7 @@ namespace EZKPM.NativeHost
 {
     public static class NativeMessagingProtocol
     {
-        public static string Read()
+        public static string? Read()
         {
             var stdin = Console.OpenStandardInput();
             var lengthBytes = new byte[4];

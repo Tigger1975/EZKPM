@@ -11,8 +11,8 @@ namespace EZKPM.Client.Core.Cryptography
         private readonly HybridPqcKeyWrapper _keyWrapper;
         
         // True private keys securely loaded via DPAPI + Password (Argon2id)
-        private SecureMemory _myPrivateKeyX25519;
-        private SecureMemory _myPrivateKeyKyber;
+        private SecureMemory? _myPrivateKeyX25519;
+        private SecureMemory? _myPrivateKeyKyber;
         private readonly byte[] _testPreviousHash = new byte[32]; // Genesis block
 
         public VaultCryptoService(HybridPqcKeyWrapper keyWrapper)
@@ -81,7 +81,7 @@ namespace EZKPM.Client.Core.Cryptography
             }
         }
 
-        public VaultAssetPayload DecryptAsset(VaultAssetResponseDto assetDto)
+        public VaultAssetPayload? DecryptAsset(VaultAssetResponseDto assetDto)
         {
             byte[] encryptedKeyShare = Convert.FromBase64String(assetDto.EncryptedKeyShare);
             

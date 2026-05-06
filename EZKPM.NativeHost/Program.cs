@@ -9,8 +9,8 @@ namespace EZKPM.NativeHost
     class LogTextWriter : TextWriter
     {
         public override Encoding Encoding => Encoding.UTF8;
-        public override void WriteLine(string value) => Program.Log("STDOUT: " + value);
-        public override void Write(string value) => Program.Log("STDOUT: " + value);
+        public override void WriteLine(string? value) => Program.Log("STDOUT: " + value);
+        public override void Write(string? value) => Program.Log("STDOUT: " + value);
     }
 
     class Program
@@ -83,7 +83,7 @@ namespace EZKPM.NativeHost
                 writer.AutoFlush = true;
                 await writer.WriteLineAsync(jsonMessage);
 
-                string response = await reader.ReadLineAsync();
+                string? response = await reader.ReadLineAsync();
                 return response ?? "{\"error\": \"Empty response from desktop client\"}";
             }
             catch (TimeoutException)
