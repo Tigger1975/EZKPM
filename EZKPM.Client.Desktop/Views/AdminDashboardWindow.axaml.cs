@@ -43,7 +43,8 @@ public partial class AdminDashboardWindow : Window
 
         if (picker.SelectedPrincipal != null)
         {
-            AdminSearchResultsList.ItemsSource = new[] { picker.SelectedPrincipal };
+            _selectedUserForAdmin = picker.SelectedPrincipal;
+            SelectedAdminText.Text = $"{_selectedUserForAdmin.DisplayName} ({_selectedUserForAdmin.SamAccountName})";
         }
     }
 
@@ -80,60 +81,67 @@ public partial class AdminDashboardWindow : Window
         }
     }
 
+    private EZKPM.Client.Desktop.Services.AdPrincipal _selectedUserForAdmin;
+
+
     private async void MakeAdminButton_Click(object sender, RoutedEventArgs e)
     {
-        var selected = AdminSearchResultsList.SelectedItem as EZKPM.Client.Desktop.Services.AdPrincipal;
-        if (selected == null) return;
+        if (_selectedUserForAdmin == null) return;
 
         try
         {
-            var req = new SetAdminRequestDto { TargetAdSid = selected.Sid, IsAdmin = true };
+            var req = new SetAdminRequestDto { TargetAdSid = _selectedUserForAdmin.Sid, IsAdmin = true };
             var response = await _apiClient.HttpClient.PostAsJsonAsync("/api/v1/recovery/set-admin", req);
             if (response.IsSuccessStatusCode)
             {
-                var dialog = new ConfirmationDialog($"{selected.DisplayName} ist nun Admin.");
-                await dialog.ShowDialog(this);
+                var dialog = new ConfirmationDialog($"{_selectedUserForAdmin.DisplayName} ist nun Admin.");
+                await dialog.ShowDialogAsync(this);
                 LoadAdminStatus(); // Refresh status (might disable bootstrap mode)
+                
+                _selectedUserForAdmin = null;
+                SelectedAdminText.Text = "Keine Auswahl";
             }
             else
             {
                 string err = await response.Content.ReadAsStringAsync();
                 var dialog = new ConfirmationDialog($"Fehler: {err}");
-                await dialog.ShowDialog(this);
+                await dialog.ShowDialogAsync(this);
             }
         }
         catch (Exception ex)
         {
             var dialog = new ConfirmationDialog($"Fehler: {ex.Message}");
-            await dialog.ShowDialog(this);
+            await dialog.ShowDialogAsync(this);
         }
     }
 
     private async void RemoveAdminButton_Click(object sender, RoutedEventArgs e)
     {
-        var selected = AdminSearchResultsList.SelectedItem as EZKPM.Client.Desktop.Services.AdPrincipal;
-        if (selected == null) return;
+        if (_selectedUserForAdmin == null) return;
 
         try
         {
-            var req = new SetAdminRequestDto { TargetAdSid = selected.Sid, IsAdmin = false };
+            var req = new SetAdminRequestDto { TargetAdSid = _selectedUserForAdmin.Sid, IsAdmin = false };
             var response = await _apiClient.HttpClient.PostAsJsonAsync("/api/v1/recovery/set-admin", req);
             if (response.IsSuccessStatusCode)
             {
-                var dialog = new ConfirmationDialog($"{selected.DisplayName} ist nun KEIN Admin mehr.");
-                await dialog.ShowDialog(this);
+                var dialog = new ConfirmationDialog($"{_selectedUserForAdmin.DisplayName} ist nun KEIN Admin mehr.");
+                await dialog.ShowDialogAsync(this);
+                
+                _selectedUserForAdmin = null;
+                SelectedAdminText.Text = "Keine Auswahl";
             }
             else
             {
                 string err = await response.Content.ReadAsStringAsync();
                 var dialog = new ConfirmationDialog($"Fehler: {err}");
-                await dialog.ShowDialog(this);
+                await dialog.ShowDialogAsync(this);
             }
         }
         catch (Exception ex)
         {
             var dialog = new ConfirmationDialog($"Fehler: {ex.Message}");
-            await dialog.ShowDialog(this);
+            await dialog.ShowDialogAsync(this);
         }
     }
 
