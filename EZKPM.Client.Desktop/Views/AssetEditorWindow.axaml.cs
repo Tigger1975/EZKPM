@@ -1263,12 +1263,9 @@ public partial class AssetEditorWindow : Window
 
     private async Task ApplyAclsToChildrenAsync(Guid folderId, List<AclEntryDto> parentAcls)
     {
-            var log = new System.Text.StringBuilder();
-            log.AppendLine($"[{DateTime.Now}] ApplyAclsToChildrenAsync started for FolderId: {folderId}");
             try
             {
                 var serverAssets = await _apiClient.GetAllAssetsAsync();
-                log.AppendLine($"[{DateTime.Now}] GetAllAssetsAsync returned {serverAssets.Count} assets.");
                 var allDecrypted = new List<VaultAssetPayload>();
                 foreach (var dto in serverAssets) 
                 {
@@ -1279,26 +1276,21 @@ public partial class AssetEditorWindow : Window
                     }
                     catch (Exception dx)
                     {
-                        log.AppendLine($"[{DateTime.Now}] DecryptAsset failed for {dto.AssetId}: {dx.Message}");
+                        System.Diagnostics.Debug.WriteLine($"DecryptAsset failed for {dto.AssetId}: {dx.Message}");
                     }
                 }
-                log.AppendLine($"[{DateTime.Now}] Decrypted {allDecrypted.Count} assets.");
 
                 var childrenToUpdate = GetDescendantsRespectingInheritance(folderId, allDecrypted);
-                log.AppendLine($"[{DateTime.Now}] GetDescendantsRespectingInheritance found {childrenToUpdate.Count} children to update.");
 
                 if (childrenToUpdate.Count == 0) 
                 {
-                    System.IO.File.AppendAllText(@"C:\temp\ezkpm_acl_debug.txt", log.ToString());
                     return;
                 }
 
                 foreach (var child in childrenToUpdate)
                 {
-                    log.AppendLine($"[{DateTime.Now}] Processing child: {child.Title} ({child.TransientAssetId})");
                     // Remove old inherited ACLs
                     int removed = child.Acls.RemoveAll(a => a.IsInherited);
-                    log.AppendLine($"[{DateTime.Now}] Removed {removed} old inherited ACLs.");
 
                     // Add new inherited ACLs from parent
                     int added = 0;
@@ -1319,30 +1311,21 @@ public partial class AssetEditorWindow : Window
                             added++;
                         }
                     }
-                    log.AppendLine($"[{DateTime.Now}] Added {added} new inherited ACLs.");
 
                     try
                     {
                         var req = _cryptoService.EncryptAsset(child);
                         await _apiClient.UpdateAssetAsync(child.TransientAssetId.Value, req);
-                        log.AppendLine($"[{DateTime.Now}] Successfully updated child: {child.Title}");
                     }
                     catch (Exception ex)
                     {
-                        log.AppendLine($"[{DateTime.Now}] Fehler beim Vererben an {child.Title}: {ex.Message}");
                         System.Diagnostics.Debug.WriteLine($"Fehler beim Vererben an {child.Title}: {ex.Message}");
                     }
                 }
                 ShowStatus($"Vererbung abgeschlossen: {childrenToUpdate.Count} Elemente aktualisiert.");
-                log.AppendLine($"[{DateTime.Now}] Completed ApplyAclsToChildrenAsync.");
-                try { System.IO.Directory.CreateDirectory(@"C:\temp"); } catch {}
-                System.IO.File.AppendAllText(@"C:\temp\ezkpm_acl_debug.txt", log.ToString());
             }
             catch (Exception ex)
             {
-                log.AppendLine($"[{DateTime.Now}] Outer Exception: {ex}");
-                try { System.IO.Directory.CreateDirectory(@"C:\temp"); } catch {}
-                System.IO.File.AppendAllText(@"C:\temp\ezkpm_acl_debug.txt", log.ToString());
                 ShowStatus($"Fehler bei Vererbung: {ex.Message}", isError: true);
             }
     }
