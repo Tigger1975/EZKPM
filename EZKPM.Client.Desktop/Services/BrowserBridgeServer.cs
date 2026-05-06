@@ -19,7 +19,7 @@ namespace EZKPM.Client.Desktop.Services
         private CancellationTokenSource _cts;
 
         public Action<string> OnCredentialProvided { get; set; }
-        public Action<string, string, string> OnSaveNewCredentialRequested { get; set; }
+        public Action<VaultAssetPayload> OnSaveNewCredentialRequested { get; set; }
 
         public BrowserBridgeServer(Func<IEnumerable<VaultAssetPayload>> getDecryptedAssetsFunc, Func<Guid, Task<bool>> requestAuditFunc)
         {
@@ -186,6 +186,7 @@ namespace EZKPM.Client.Desktop.Services
                                     Type = "CREDENTIAL_DATA_RESPONSE",
                                     Password = asset.Password,
                                     TotpCode = !string.IsNullOrEmpty(asset.TotpSecret) ? EZKPM.Client.Desktop.Views.AssetEditorWindow.GetTotpCode(asset.TotpSecret) : null,
+                                    LoginFlow = asset.LoginFlow,
                                     CustomFields = asset.CustomFields != null ? asset.CustomFields.Select(cf => new {
                                         Name = cf.Name,
                                         Value = cf.Value
@@ -201,8 +202,40 @@ namespace EZKPM.Client.Desktop.Services
                     string url = root.TryGetProperty("Url", out var urlProp) ? urlProp.GetString() : "";
                     string username = root.TryGetProperty("Username", out var userProp) ? userProp.GetString() : "";
                     string password = root.TryGetProperty("Password", out var pwdProp) ? pwdProp.GetString() : "";
+                    string userSel = root.TryGetProperty("UserSelector", out var uSelProp) ? uSelProp.GetString() : "";
+                    string passSel = root.TryGetProperty("PassSelector", out var pSelProp) ? pSelProp.GetString() : "";
+                    string submitSel = root.TryGetProperty("SubmitSelector", out var subSelProp) ? subSelProp.GetString() : "";
                     
-                    OnSaveNewCredentialRequested?.Invoke(url, username, password);
+                    var payload = new VaultAssetPayload
+                    {
+                        AssetType = "Login",
+                        Title = string.IsNullOrEmpty(url) ? "New Login" : url + " Login",
+                        Url = url,
+                        Username = username,
+                        Password = password,
+                        LoginFlow = new LoginFlowConfig
+                        {
+                            AutoLearnEnabled = true,
+                            Method = "AutoLearn",
+                            UsernameSelector = userSel,
+                            PasswordSelector = passSel,
+                            SubmitButtonSelector = submitSel
+                        }
+                    };
+
+                    if (root.TryGetProperty("CustomFields", out var cfArray) && cfArray.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var cf in cfArray.EnumerateArray())
+                        {
+                            payload.CustomFields.Add(new CustomField
+                            {
+                                Name = cf.TryGetProperty("Name", out var nProp) ? nProp.GetString() : "",
+                                Value = cf.TryGetProperty("Value", out var vProp) ? vProp.GetString() : ""
+                            });
+                        }
+                    }
+
+                    OnSaveNewCredentialRequested?.Invoke(payload);
                     return JsonSerializer.Serialize(new { Type = "ACK" });
                 }
 

@@ -300,9 +300,20 @@ function removeBlocker() {
 
 let lastInjectedPassword = null;
 
-function performStealthInjection(username, password, customFields = [], totpCode = null) {
+function performStealthInjection(username, password, customFields = [], totpCode = null, loginFlow = null) {
     let injected = false;
     const injectedFields = new Set(); // Merkt sich, welche Felder wir schon befüllt haben
+
+    // Helper function to find element by explicit selector, fallback to heuristics
+    function findField(selector, fallbackFn) {
+        if (loginFlow && loginFlow.AutoLearnEnabled && selector) {
+            try {
+                const el = document.querySelector(selector);
+                if (el) return el;
+            } catch (e) {}
+        }
+        return fallbackFn();
+    }
 
     // Hilfsfunktion: Prüft Sichtbarkeit strenger
     const isVisible = (el) => {
@@ -383,17 +394,18 @@ function performStealthInjection(username, password, customFields = [], totpCode
 
 
     // 2. Standard Username injizieren (überspringt Felder, die schon per CustomField befüllt wurden)
-    let userField = null;
-    
-    // A) Explizite Username-Felder bevorzugen
-    const explicitUserFields = document.querySelectorAll('input[name*="user" i], input[name*="login" i], input[name*="alias" i], input[name*="account" i], input[id*="user" i], input[id*="login" i], input[type="email"]');
-    userField = Array.from(explicitUserFields).find(el => isVisible(el) && !injectedFields.has(el));
+    let userField = findField(loginFlow?.UsernameSelector, () => {
+        // A) Explizite Username-Felder bevorzugen
+        const explicitUserFields = document.querySelectorAll('input[name*="user" i], input[name*="login" i], input[name*="alias" i], input[name*="account" i], input[id*="user" i], input[id*="login" i], input[type="email"]');
+        let field = Array.from(explicitUserFields).find(el => isVisible(el) && !injectedFields.has(el));
 
-    // B) Fallback: Das erste Textfeld in einem Formular
-    if (!userField) {
-        const formInputs = document.querySelectorAll('form input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="password"])');
-        userField = Array.from(formInputs).find(el => isVisible(el) && !injectedFields.has(el));
-    }
+        // B) Fallback: Das erste Textfeld in einem Formular
+        if (!field) {
+            const formInputs = document.querySelectorAll('form input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="password"])');
+            field = Array.from(formInputs).find(el => isVisible(el) && !injectedFields.has(el));
+        }
+        return field;
+    });
 
     if (userField && username && userField.value !== username) {
         userField.value = username;
@@ -403,7 +415,7 @@ function performStealthInjection(username, password, customFields = [], totpCode
     }
 
     // 3. Passwort injizieren
-    const passField = document.querySelector('input[type="password"]');
+    const passField = findField(loginFlow?.PasswordSelector, () => document.querySelector('input[type="password"]'));
     if (passField && password && passField.value !== password) {
         passField.value = password;
         passField.dispatchEvent(new Event('input', { bubbles: true }));
@@ -452,15 +464,25 @@ function performStealthInjection(username, password, customFields = [], totpCode
             strictObserver.observe(passField, { attributes: true, attributeFilter: ['type'] });
         }
 
-        // 2. Auto-Submit: Formular automatisch absenden
-        setTimeout(() => {
+            // Auto-Submit Logic
             let submitted = false;
             
-            // Versuch 1: Das umgebende Formular
-            if (passField && passField.form) {
-                const submitBtn = passField.form.querySelector('button[type="submit"], input[type="submit"]');
-                if (submitBtn) {
-                    submitBtn.click();
+            const submitBtn = findField(loginFlow?.SubmitButtonSelector, () => {
+                // Return null intentionally so fallback handles forms gracefully if no strict selector exists
+                return null;
+            });
+            
+            // Versuch 1: Falls wir den Submit-Button per AutoLearn haben, klick ihn
+            if (submitBtn) {
+                submitBtn.click();
+                submitted = true;
+            }
+            
+            // Versuch 2: Das umgebende Formular absenden
+            if (!submitted && passField && passField.form) {
+                const fallbackBtn = passField.form.querySelector('button[type="submit"], input[type="submit"]');
+                if (fallbackBtn) {
+                    fallbackBtn.click();
                     submitted = true;
                 } else {
                     try {
@@ -473,7 +495,7 @@ function performStealthInjection(username, password, customFields = [], totpCode
                 }
             }
 
-            // Versuch 2: Heuristische Suche nach Anmelde-Buttons im gesamten DOM (für SPAs ohne echtes <form>)
+            // Versuch 3: Heuristische Suche nach Anmelde-Buttons im gesamten DOM (für SPAs ohne echtes <form>)
             if (!submitted) {
                 const buttons = Array.from(document.querySelectorAll('button, input[type="button"], div[role="button"]'));
                 const loginBtn = buttons.find(b => {
@@ -678,6 +700,17 @@ function injectGeneratorIcon() {
     });
 }
 
+function getCssSelector(el) {
+    if (!el) return "";
+    if (el.id) return '#' + CSS.escape(el.id);
+    if (el.name) return `input[name="${CSS.escape(el.name)}"]`;
+    let path = el.tagName.toLowerCase();
+    if (el.className && typeof el.className === 'string') {
+        path += "." + el.className.trim().replace(/\s+/g, '.');
+    }
+    return path;
+}
+
 document.addEventListener('submit', (e) => {
     const form = e.target;
     const pwdField = form.querySelector('input[type="password"]');
@@ -689,11 +722,13 @@ document.addEventListener('submit', (e) => {
         userField = Array.from(formInputs).find(el => el.value);
     }
     let username = userField ? userField.value : "";
+    let userSelector = getCssSelector(userField);
 
     if (!pwdField) {
         // Möglicherweise Schritt 1 eines 2-Schritt-Logins (nur Username eingetippt)
         if (username) {
             sessionStorage.setItem('ezkpm_last_typed_user', username);
+            sessionStorage.setItem('ezkpm_last_typed_user_sel', userSelector);
         }
         return;
     }
@@ -702,6 +737,7 @@ document.addEventListener('submit', (e) => {
         if (!username) {
             // Versuche Username aus Schritt 1 wiederherzustellen, falls auf dieser Seite keiner ist
             username = sessionStorage.getItem('ezkpm_last_typed_user') || "";
+            userSelector = sessionStorage.getItem('ezkpm_last_typed_user_sel') || "";
         }
         const password = pwdField.value;
         
@@ -719,12 +755,25 @@ document.addEventListener('submit', (e) => {
             return; // User aborted
         }
         
+        let customFields = [];
+        const extraInputs = Array.from(form.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="password"])'));
+        extraInputs.forEach(input => {
+            if (input !== userField && input.value) {
+                let name = input.name || input.id || input.placeholder || input.getAttribute('aria-label') || "Custom Field";
+                customFields.push({ Name: name, Value: input.value });
+            }
+        });
+        
         try {
             chrome.runtime.sendMessage({
                 type: "SAVE_NEW_CREDENTIAL",
                 url: window.location.hostname,
                 username: username,
-                password: password
+                password: password,
+                userSelector: userSelector,
+                passSelector: getCssSelector(pwdField),
+                submitSelector: getCssSelector(e.submitter || form.querySelector('button[type="submit"], input[type="submit"]')),
+                customFields: customFields
             });
         } catch (err) {
             console.error("EZKPM: Failed to send SAVE_NEW_CREDENTIAL", err);

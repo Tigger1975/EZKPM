@@ -116,7 +116,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 Type: "SAVE_NEW_CREDENTIAL",
                 Url: request.url,
                 Username: request.username,
-                Password: request.password
+                Password: request.password,
+                UserSelector: request.userSelector,
+                PassSelector: request.passSelector,
+                SubmitSelector: request.submitSelector,
+                CustomFields: request.customFields
             });
         }
     } else if (request.type === "REQUEST_SEARCH") {
