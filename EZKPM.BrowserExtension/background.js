@@ -123,6 +123,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 CustomFields: request.customFields
             });
         }
+    } else if (request.type === "UPDATE_LEARNED_SELECTORS") {
+        if (!nativePort) connectToNativeHost();
+        if (nativePort) {
+            nativePort.postMessage({
+                Type: "UPDATE_LEARNED_SELECTORS",
+                AssetId: request.assetId,
+                UserSelector: request.userSelector,
+                PassSelector: request.passSelector,
+                SubmitSelector: request.submitSelector,
+                CustomFields: request.customFields
+            });
+        }
     } else if (request.type === "REQUEST_SEARCH") {
         if (!nativePort) connectToNativeHost();
         if (nativePort) {

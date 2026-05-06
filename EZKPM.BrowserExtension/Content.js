@@ -540,9 +540,14 @@ const observer = new MutationObserver((mutations) => {
                 const savedSessionStr = sessionStorage.getItem('ezkpm_active_autofill');
                 if (savedSessionStr && addedPasswordNode) {
                     const cred = JSON.parse(savedSessionStr);
-                    console.log("EZKPM: SPA Two-Step Login detected. Auto-injecting approved password...");
-                    blockUserInput();
-                    setTimeout(() => performStealthInjection(cred.Username, cred.Password, cred.CustomFields), 200);
+                    // Wir haben auf Schritt 2 gewartet. Password-Feld ist da!
+                    setTimeout(() => {
+                        performStealthInjection(cred.Username, cred.Password, cred.CustomFields, cred.TotpCode, cred.LoginFlow);
+                    }, 200);
+                    // ID für AutoLearn aufbewahren
+                    if (cred.AssetId) sessionStorage.setItem('ezkpm_last_injected_asset_id', cred.AssetId);
+                    
+                    // Cleanup
                     sessionStorage.removeItem('ezkpm_active_autofill');
                 } else if (!savedSessionStr) {
                     // Trigger scanForForms to request autofill for the newly added fields
@@ -743,8 +748,34 @@ document.addEventListener('submit', (e) => {
         }
         const password = pwdField.value;
         
-        // Anti-Loop: Dont save if we injected it recently
-        if (password === lastInjectedPassword) return;
+        let customFields = [];
+        const extraInputs = Array.from(form.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="password"])'));
+        extraInputs.forEach(input => {
+            if (input !== userField && input.value) {
+                let name = input.name || input.id || input.placeholder || input.getAttribute('aria-label') || "Custom Field";
+                customFields.push({ Name: name, Value: input.value });
+            }
+        });
+        
+        // Anti-Loop / AutoLearn Feedback:
+        if (password === lastInjectedPassword) {
+            const assetId = sessionStorage.getItem('ezkpm_last_injected_asset_id');
+            if (assetId) {
+                try {
+                    chrome.runtime.sendMessage({
+                        type: "UPDATE_LEARNED_SELECTORS",
+                        assetId: assetId,
+                        userSelector: userSelector,
+                        passSelector: getCssSelector(pwdField),
+                        submitSelector: getCssSelector(e.submitter || form.querySelector('button[type="submit"], input[type="submit"]')),
+                        customFields: customFields
+                    });
+                } catch (err) {
+                    console.error("EZKPM: Failed to send UPDATE_LEARNED_SELECTORS", err);
+                }
+            }
+            return;
+        }
         
         const lastAutofill = sessionStorage.getItem('ezkpm_active_autofill');
         if (lastAutofill) {
@@ -756,15 +787,6 @@ document.addEventListener('submit', (e) => {
         if (!window.confirm(`EZKPM Security\n\nMöchten Sie diese neuen Zugangsdaten für ${window.location.hostname} im Ironclad Vault speichern?\n\nUsername: ${username}`)) {
             return; // User aborted
         }
-        
-        let customFields = [];
-        const extraInputs = Array.from(form.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="password"])'));
-        extraInputs.forEach(input => {
-            if (input !== userField && input.value) {
-                let name = input.name || input.id || input.placeholder || input.getAttribute('aria-label') || "Custom Field";
-                customFields.push({ Name: name, Value: input.value });
-            }
-        });
         
         try {
             chrome.runtime.sendMessage({

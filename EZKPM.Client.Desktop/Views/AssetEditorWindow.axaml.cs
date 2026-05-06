@@ -205,6 +205,20 @@ public partial class AssetEditorWindow : Window
                 FileName2TextBox.Text = _currentFileName2;
                 DownloadFile2Button.IsVisible = true;
             }
+            // Login Flow Fields
+            if (payload.LoginFlow != null)
+            {
+                if (payload.LoginFlow.Method == "OneStep") LoginMethodComboBox.SelectedIndex = 1;
+                else if (payload.LoginFlow.Method == "TwoStep") LoginMethodComboBox.SelectedIndex = 2;
+                else if (payload.LoginFlow.Method == "BasicAuth") LoginMethodComboBox.SelectedIndex = 3;
+                else LoginMethodComboBox.SelectedIndex = 0; // AutoLearn
+                
+                AutoLearnEnabledCheck.IsChecked = payload.LoginFlow.AutoLearnEnabled;
+                DomUserTextBox.Text = payload.LoginFlow.UsernameSelector ?? "";
+                DomPassTextBox.Text = payload.LoginFlow.PasswordSelector ?? "";
+                DomNextTextBox.Text = payload.LoginFlow.NextButtonSelector ?? "";
+                DomSubmitTextBox.Text = payload.LoginFlow.SubmitButtonSelector ?? "";
+            }
         }
         
         // Ensure UI matches the selected type initially
@@ -594,7 +608,7 @@ public partial class AssetEditorWindow : Window
             if (_currentEditingAssetId.HasValue)
             {
                 await _apiClient.UpdateAssetAsync(_currentEditingAssetId.Value, requestDto);
-                ShowStatus("Updated successfully!");
+                ShowStatus("Erfolgreich aktualisiert!");
 
                 // Check for inheritance
                 var applyToChildren = this.FindControl<CheckBox>("ApplyToChildrenCheckBox")?.IsChecked == true;
@@ -608,7 +622,7 @@ public partial class AssetEditorWindow : Window
             {
                 Guid newId = await _apiClient.CreateAssetAsync(requestDto);
                 _currentEditingAssetId = newId;
-                ShowStatus("Saved successfully!");
+                ShowStatus("Erfolgreich gespeichert!");
             }
 
             // 3. Close the window if successful
@@ -616,7 +630,7 @@ public partial class AssetEditorWindow : Window
         }
         catch (Exception ex)
         {
-            ShowStatus($"Save Error: {ex.Message}", isError: true);
+            ShowStatus($"Fehler beim Speichern: {ex.Message}", isError: true);
             return false;
         }
     }
