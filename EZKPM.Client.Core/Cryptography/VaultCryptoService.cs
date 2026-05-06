@@ -38,43 +38,47 @@ namespace EZKPM.Client.Core.Cryptography
             
             byte[] derivedMaterial = argon2.GetBytes(64);
             
-            // Split the 64-byte master key material into two 32-byte private keys
             byte[] x25519Material = new byte[32];
             byte[] kyberMaterial = new byte[32];
-            Buffer.BlockCopy(derivedMaterial, 0, x25519Material, 0, 32);
-            Buffer.BlockCopy(derivedMaterial, 32, kyberMaterial, 0, 32);
 
-            // Verify key check
-            string appDir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EZKPM");
-            string keyCheckPath = System.IO.Path.Combine(appDir, "keycheck.dat");
-
-            using var sha256 = SHA256.Create();
-            byte[] hash = sha256.ComputeHash(derivedMaterial);
-
-            if (System.IO.File.Exists(keyCheckPath))
+            try
             {
-                byte[] storedHash = System.IO.File.ReadAllBytes(keyCheckPath);
-                if (!System.Linq.Enumerable.SequenceEqual(hash, storedHash))
+                Buffer.BlockCopy(derivedMaterial, 0, x25519Material, 0, 32);
+                Buffer.BlockCopy(derivedMaterial, 32, kyberMaterial, 0, 32);
+
+                // Verify key check
+                string appDir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EZKPM");
+                string keyCheckPath = System.IO.Path.Combine(appDir, "keycheck.dat");
+
+                using var sha256 = SHA256.Create();
+                byte[] hash = sha256.ComputeHash(derivedMaterial);
+
+                if (System.IO.File.Exists(keyCheckPath))
                 {
-                    CryptographicOperations.ZeroMemory(derivedMaterial);
-                    return false; // Wrong password
+                    byte[] storedHash = System.IO.File.ReadAllBytes(keyCheckPath);
+                    if (!System.Linq.Enumerable.SequenceEqual(hash, storedHash))
+                    {
+                        return false; // Wrong password
+                    }
                 }
-            }
-            else
-            {
-                if (!System.IO.Directory.Exists(appDir)) System.IO.Directory.CreateDirectory(appDir);
-                System.IO.File.WriteAllBytes(keyCheckPath, hash);
-            }
-            
-            _myPrivateKeyX25519 = new SecureMemory(x25519Material);
-            _myPrivateKeyKyber = new SecureMemory(kyberMaterial);
-            
-            CryptographicOperations.ZeroMemory(machineSecret);
-            CryptographicOperations.ZeroMemory(derivedMaterial);
-            CryptographicOperations.ZeroMemory(x25519Material);
-            CryptographicOperations.ZeroMemory(kyberMaterial);
+                else
+                {
+                    if (!System.IO.Directory.Exists(appDir)) System.IO.Directory.CreateDirectory(appDir);
+                    System.IO.File.WriteAllBytes(keyCheckPath, hash);
+                }
+                
+                _myPrivateKeyX25519 = new SecureMemory(x25519Material);
+                _myPrivateKeyKyber = new SecureMemory(kyberMaterial);
 
-            return true;
+                return true;
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(machineSecret);
+                CryptographicOperations.ZeroMemory(derivedMaterial);
+                CryptographicOperations.ZeroMemory(x25519Material);
+                CryptographicOperations.ZeroMemory(kyberMaterial);
+            }
         }
 
         public VaultAssetPayload DecryptAsset(VaultAssetResponseDto assetDto)
@@ -100,22 +104,28 @@ namespace EZKPM.Client.Core.Cryptography
 
             byte[] plaintext = new byte[ciphertextLength];
 
-            using (var aesGcm = new AesGcm(assetKey.Span, 16))
+            try
             {
-                aesGcm.Decrypt(nonce, ciphertext, tag, plaintext);
+                using (var aesGcm = new AesGcm(assetKey.Span, 16))
+                {
+                    aesGcm.Decrypt(nonce, ciphertext, tag, plaintext);
+                }
+
+                string json = Encoding.UTF8.GetString(plaintext);
+
+                var payload = System.Text.Json.JsonSerializer.Deserialize<VaultAssetPayload>(json);
+                if (payload != null) 
+                {
+                    payload.TransientAssetId = assetDto.AssetId;
+                    payload.IsExpired = assetDto.IsExpired;
+                    payload.IsDeleted = assetDto.IsDeleted;
+                }
+                return payload;
             }
-
-            string json = Encoding.UTF8.GetString(plaintext);
-            CryptographicOperations.ZeroMemory(plaintext);
-
-            var payload = System.Text.Json.JsonSerializer.Deserialize<VaultAssetPayload>(json);
-            if (payload != null) 
+            finally
             {
-                payload.TransientAssetId = assetDto.AssetId;
-                payload.IsExpired = assetDto.IsExpired;
-                payload.IsDeleted = assetDto.IsDeleted;
+                CryptographicOperations.ZeroMemory(plaintext);
             }
-            return payload;
         }
 
         public CreateAssetRequestDto EncryptAsset(VaultAssetPayload payload)
@@ -123,49 +133,56 @@ namespace EZKPM.Client.Core.Cryptography
             string json = System.Text.Json.JsonSerializer.Serialize(payload);
             byte[] plaintext = Encoding.UTF8.GetBytes(json);
 
-            // 1. Generate new Asset Key (AES-256)
-            byte[] newAssetKeyBytes = new byte[32];
-            RandomNumberGenerator.Fill(newAssetKeyBytes);
-            using var assetKey = new SecureMemory(newAssetKeyBytes);
-
-            // 2. Encrypt Payload
-            byte[] nonce = new byte[12];
-            RandomNumberGenerator.Fill(nonce);
-
-            byte[] ciphertext = new byte[plaintext.Length];
-            byte[] tag = new byte[16];
-
-            using (var aesGcm = new AesGcm(assetKey.Span, 16))
+            try
             {
-                aesGcm.Encrypt(nonce, plaintext, ciphertext, tag);
+                // 1. Generate new Asset Key (AES-256)
+                byte[] newAssetKeyBytes = new byte[32];
+                RandomNumberGenerator.Fill(newAssetKeyBytes);
+                using var assetKey = new SecureMemory(newAssetKeyBytes);
+
+                // 2. Encrypt Payload
+                byte[] nonce = new byte[12];
+                RandomNumberGenerator.Fill(nonce);
+
+                byte[] ciphertext = new byte[plaintext.Length];
+                byte[] tag = new byte[16];
+
+                using (var aesGcm = new AesGcm(assetKey.Span, 16))
+                {
+                    aesGcm.Encrypt(nonce, plaintext, ciphertext, tag);
+                }
+
+                byte[] cipherBlob = new byte[ciphertext.Length + tag.Length];
+                Buffer.BlockCopy(ciphertext, 0, cipherBlob, 0, ciphertext.Length);
+                Buffer.BlockCopy(tag, 0, cipherBlob, ciphertext.Length, tag.Length);
+
+                // 3. Wrap Asset Key for the Owner (Self)
+                // In reality, this requires the Owner's Public Keys. For the test, we mock them.
+                byte[] dummyPubKeyX = new byte[32];
+                byte[] dummyPubKeyK = new byte[32];
+                byte[] wrappedKey = _keyWrapper.WrapAssetKey(assetKey, dummyPubKeyX, dummyPubKeyK);
+
+                // 4. Compute Metadata Hash (for Server uniqueness checks)
+                // Use HMAC-SHA256 with a static pepper to prevent dictionary attacks on blind indices
+                byte[] pepper = Encoding.UTF8.GetBytes("EZKPM_GLOBAL_PEPPER_9F8A7B6C5D4E3F2A1B0C");
+                using var hmac = new HMACSHA256(pepper);
+                string metadataString = $"{payload.Url}|{payload.Username}".ToLowerInvariant();
+                byte[] metadataHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(metadataString));
+
+                return new CreateAssetRequestDto
+                {
+                    MetadataHash = Convert.ToBase64String(metadataHash),
+                    CipherBlob = Convert.ToBase64String(cipherBlob),
+                    Nonce = Convert.ToBase64String(nonce),
+                    ExpiresAt = DateTime.UtcNow.AddDays(payload.PasswordValidityDays > 0 && payload.PasswordValidityDays <= 365 ? payload.PasswordValidityDays : 365), // FA 30
+                    EncryptedKeyShare = Convert.ToBase64String(wrappedKey),
+                    Acls = payload.Acls ?? new System.Collections.Generic.List<EZKPM.Shared.Contracts.AclEntryDto>()
+                };
             }
-
-            byte[] cipherBlob = new byte[ciphertext.Length + tag.Length];
-            Buffer.BlockCopy(ciphertext, 0, cipherBlob, 0, ciphertext.Length);
-            Buffer.BlockCopy(tag, 0, cipherBlob, ciphertext.Length, tag.Length);
-
-            // 3. Wrap Asset Key for the Owner (Self)
-            // In reality, this requires the Owner's Public Keys. For the test, we mock them.
-            byte[] dummyPubKeyX = new byte[32];
-            byte[] dummyPubKeyK = new byte[32];
-            byte[] wrappedKey = _keyWrapper.WrapAssetKey(assetKey, dummyPubKeyX, dummyPubKeyK);
-
-            // 4. Compute Metadata Hash (for Server uniqueness checks)
-            using var sha256 = SHA256.Create();
-            string metadataString = $"{payload.Url}|{payload.Username}".ToLowerInvariant();
-            byte[] metadataHash = sha256.ComputeHash(Encoding.UTF8.GetBytes(metadataString));
-
-            CryptographicOperations.ZeroMemory(plaintext);
-
-            return new CreateAssetRequestDto
+            finally
             {
-                MetadataHash = Convert.ToBase64String(metadataHash),
-                CipherBlob = Convert.ToBase64String(cipherBlob),
-                Nonce = Convert.ToBase64String(nonce),
-                ExpiresAt = DateTime.UtcNow.AddDays(payload.PasswordValidityDays > 0 && payload.PasswordValidityDays <= 365 ? payload.PasswordValidityDays : 365), // FA 30
-                EncryptedKeyShare = Convert.ToBase64String(wrappedKey),
-                Acls = payload.Acls ?? new System.Collections.Generic.List<EZKPM.Shared.Contracts.AclEntryDto>()
-            };
+                CryptographicOperations.ZeroMemory(plaintext);
+            }
         }
 
         public string GeneratePassword(PasswordGeneratorConfig config = null)

@@ -6,13 +6,38 @@ using System.Threading.Tasks;
 
 namespace EZKPM.NativeHost
 {
+    class LogTextWriter : TextWriter
+    {
+        public override Encoding Encoding => Encoding.UTF8;
+        public override void WriteLine(string value) => Program.Log("STDOUT: " + value);
+        public override void Write(string value) => Program.Log("STDOUT: " + value);
+    }
+
     class Program
     {
         private static string LogPath = @"C:\Users\adm-kh\ezkpm_nativehost.log";
 
+        public static void Log(string message)
+        {
+            try
+            {
+                File.AppendAllText(LogPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}");
+            }
+            catch { }
+        }
+
         static async Task Main(string[] args)
         {
             // Verbot von Console.WriteLine! Logs gehen in eine Datei.
+            var safeWriter = new LogTextWriter();
+            Console.SetOut(safeWriter);
+            Console.SetError(safeWriter);
+
+            AppDomain.CurrentDomain.UnhandledException += (s, e) => 
+            {
+                Log($"UNHANDLED EXCEPTION: {e.ExceptionObject}");
+            };
+
             Log("EZKPM Native Messaging Host started.");
 
             try
@@ -70,15 +95,6 @@ namespace EZKPM.NativeHost
                 Log($"Pipe Error: {ex.Message}");
                 return $"{{\"error\": \"Failed to connect to vault: {ex.Message}\"}}";
             }
-        }
-
-        private static void Log(string message)
-        {
-            try
-            {
-                File.AppendAllText(LogPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}");
-            }
-            catch { }
         }
     }
 }
