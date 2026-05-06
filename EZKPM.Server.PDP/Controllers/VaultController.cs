@@ -30,28 +30,33 @@ namespace EZKPM.Server.PDP.Controllers
 
         private string GetUserSid()
         {
+            string sid = null;
             // Try to get SID from token
-            var sid = User.FindFirstValue(ClaimTypes.PrimarySid) ?? User.FindFirstValue("sid");
-            if (!string.IsNullOrEmpty(sid)) return sid;
-
+            sid = User.FindFirstValue(ClaimTypes.PrimarySid) ?? User.FindFirstValue("sid");
+            
             // Fallback for local testing (Cross-Platform safe)
-            try 
+            if (string.IsNullOrEmpty(sid))
             {
-                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                try 
                 {
-                    return System.Security.Principal.WindowsIdentity.GetCurrent().User?.Value ?? "S-1-5-21-DUMMY-FALLBACK";
+                    if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                    {
+                        sid = System.Security.Principal.WindowsIdentity.GetCurrent().User?.Value ?? "S-1-5-21-DUMMY-FALLBACK";
+                    }
                 }
+                catch { /* Ignored */ }
             }
-            catch { /* Ignored */ }
 
-            return Environment.UserName; // Linux fallback
+            if (string.IsNullOrEmpty(sid)) sid = Environment.UserName; // Linux fallback
+            
+            return EZKPM.Server.PDP.Services.SidHasher.HashSid(sid);
         }
 
         [HttpGet("assets/all")]
         public async Task<IActionResult> GetAllAssets()
         {
             var userSid = GetUserSid();
-            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
+            var dummySid = EZKPM.Server.PDP.Services.SidHasher.HashSid("S-1-5-21-DUMMY-TEST-USER");
 
             var assets = await _db.VaultAssets
                 .Include(a => a.Acls.Where(acl => acl.AdSid == userSid || acl.AdSid == dummySid))
@@ -112,7 +117,7 @@ namespace EZKPM.Server.PDP.Controllers
                     _db.AssetAcls.Add(new AssetAcl
                     {
                         AssetId = newAsset.Id,
-                        AdSid = string.IsNullOrWhiteSpace(cleanSid) ? userSid : cleanSid,
+                        AdSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(string.IsNullOrWhiteSpace(cleanSid) ? userSid : cleanSid),
                         PermissionLevel = aclDto.PermissionLevel,
                         EncryptedKeyShare = string.IsNullOrWhiteSpace(aclDto.EncryptedKeyShare) 
                             ? Convert.FromBase64String(request.EncryptedKeyShare) 
@@ -141,7 +146,7 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> UpdateAsset(Guid id, [FromBody] CreateAssetRequestDto request)
         {
             var userSid = GetUserSid();
-            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
+            var dummySid = EZKPM.Server.PDP.Services.SidHasher.HashSid("S-1-5-21-DUMMY-TEST-USER");
             
             byte[] metaHash = Convert.FromBase64String(request.MetadataHash ?? "AA==");
             // Uniqueness check removed: Users can have multiple folders (empty URL/User) 
@@ -174,7 +179,7 @@ namespace EZKPM.Server.PDP.Controllers
                         var end = clean.LastIndexOf(")");
                         if (end > start) clean = clean.Substring(start, end - start);
                     }
-                    return string.IsNullOrWhiteSpace(clean) ? userSid : clean;
+                    return EZKPM.Server.PDP.Services.SidHasher.HashSid(string.IsNullOrWhiteSpace(clean) ? userSid : clean);
                 }).Select(g => g.First());
 
                 foreach (var aclDto in uniqueAcls)
@@ -190,7 +195,7 @@ namespace EZKPM.Server.PDP.Controllers
                     _db.AssetAcls.Add(new AssetAcl
                     {
                         AssetId = asset.Id,
-                        AdSid = string.IsNullOrWhiteSpace(cleanSid) ? userSid : cleanSid,
+                        AdSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(string.IsNullOrWhiteSpace(cleanSid) ? userSid : cleanSid),
                         PermissionLevel = aclDto.PermissionLevel,
                         EncryptedKeyShare = string.IsNullOrWhiteSpace(aclDto.EncryptedKeyShare) 
                             ? Convert.FromBase64String(request.EncryptedKeyShare) 
@@ -214,7 +219,7 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> DeleteAsset(Guid id, [FromQuery] bool forceAdmin = false)
         {
             var userSid = GetUserSid();
-            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
+            var dummySid = EZKPM.Server.PDP.Services.SidHasher.HashSid("S-1-5-21-DUMMY-TEST-USER");
             
             var asset = await _db.VaultAssets
                 .Include(a => a.Acls.Where(acl => acl.AdSid == userSid || acl.AdSid == dummySid))
@@ -246,7 +251,7 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> CleanOrphanedAssets()
         {
             var userSid = GetUserSid();
-            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
+            var dummySid = EZKPM.Server.PDP.Services.SidHasher.HashSid("S-1-5-21-DUMMY-TEST-USER");
 
             var allAssets = await _db.VaultAssets
                 .Include(a => a.Acls)
@@ -280,7 +285,7 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> RestoreAsset(Guid id)
         {
             var userSid = GetUserSid();
-            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
+            var dummySid = EZKPM.Server.PDP.Services.SidHasher.HashSid("S-1-5-21-DUMMY-TEST-USER");
 
             var asset = await _db.VaultAssets
                 .Include(a => a.Acls.Where(acl => acl.AdSid == userSid || acl.AdSid == dummySid))
@@ -301,7 +306,7 @@ namespace EZKPM.Server.PDP.Controllers
         {
             // 1. Identität: AD SID aus dem Token extrahieren (ClaimType abhängig vom OIDC Provider)
             var userSid = GetUserSid();
-            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
+            var dummySid = EZKPM.Server.PDP.Services.SidHasher.HashSid("S-1-5-21-DUMMY-TEST-USER");
 
 
             // 2. Asset & ACL laden (Wir laden gezielt nur den ACL-Eintrag für den aufrufenden User)
@@ -357,7 +362,7 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> AppendAuditLog(Guid id, [FromBody] AuditLogRequestDto request)
         {
             var userSid = GetUserSid();
-            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
+            var dummySid = EZKPM.Server.PDP.Services.SidHasher.HashSid("S-1-5-21-DUMMY-TEST-USER");
 
             var hasAccess = await _db.AssetAcls.AnyAsync(a => a.AssetId == id && (a.AdSid == userSid || a.AdSid == dummySid));
             if (!hasAccess) return Forbid();
@@ -418,7 +423,7 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> GetLatestAuditHash(Guid id)
         {
             var userSid = GetUserSid();
-            var dummySid = "S-1-5-21-DUMMY-TEST-USER";
+            var dummySid = EZKPM.Server.PDP.Services.SidHasher.HashSid("S-1-5-21-DUMMY-TEST-USER");
 
             var hasAccess = await _db.AssetAcls.AnyAsync(a => a.AssetId == id && (a.AdSid == userSid || a.AdSid == dummySid));
             if (!hasAccess) return Forbid();

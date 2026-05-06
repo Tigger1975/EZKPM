@@ -22,10 +22,11 @@ namespace EZKPM.Server.PDP.Controllers
         [HttpPost("setup")]
         public async Task<IActionResult> SetupRecovery([FromBody] SetupRecoveryDto request)
         {
-            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == request.AdSid);
+            var hashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.AdSid);
+            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedSid);
             if (profile == null)
             {
-                profile = new UserProfile { AdSid = request.AdSid };
+                profile = new UserProfile { AdSid = hashedSid };
                 _db.UserProfiles.Add(profile);
             }
             
@@ -38,11 +39,12 @@ namespace EZKPM.Server.PDP.Controllers
         [HttpPost("request")]
         public async Task<IActionResult> RequestRecovery([FromBody] InitiateRecoveryRequestDto request)
         {
-            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == request.AdSid);
+            var hashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.AdSid);
+            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedSid);
             if (profile == null) return NotFound("User profile not found.");
 
             var existingRequest = await _db.VaultRecoveryRequests
-                .FirstOrDefaultAsync(r => r.AdSid == request.AdSid && !r.IsCompleted);
+                .FirstOrDefaultAsync(r => r.AdSid == hashedSid && !r.IsCompleted);
 
             if (existingRequest != null)
             {
@@ -53,7 +55,7 @@ namespace EZKPM.Server.PDP.Controllers
             {
                 var newRequest = new VaultRecoveryRequest
                 {
-                    AdSid = request.AdSid,
+                    AdSid = hashedSid,
                     EphemeralUserPubKey = request.EphemeralUserPubKey,
                     RequiredShares = 2 // Hardcoded to 2-of-N for this prototype
                 };
@@ -75,13 +77,14 @@ namespace EZKPM.Server.PDP.Controllers
             if (recovery.IsCompleted) return BadRequest("Recovery already completed.");
 
             // Avoid duplicate shares from the same admin
-            if (recovery.ProvidedShares.Any(s => s.AdminSid == request.AdminSid))
+            var hashedAdminSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.AdminSid);
+            if (recovery.ProvidedShares.Any(s => s.AdminSid == hashedAdminSid))
                 return BadRequest("Admin has already provided a share.");
 
             var share = new VaultRecoveryShare
             {
                 RecoveryRequestId = recovery.Id,
-                AdminSid = request.AdminSid,
+                AdminSid = hashedAdminSid,
                 EncryptedShareBlob = request.EncryptedShareBlob
             };
             
@@ -94,12 +97,13 @@ namespace EZKPM.Server.PDP.Controllers
         [HttpGet("status/{adSid}")]
         public async Task<ActionResult<RecoveryStatusResponseDto>> GetRecoveryStatus(string adSid)
         {
-            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == adSid);
+            var hashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(adSid);
+            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedSid);
             if (profile == null) return NotFound("Profile not found.");
 
             var recovery = await _db.VaultRecoveryRequests
                 .Include(r => r.ProvidedShares)
-                .Where(r => r.AdSid == adSid && !r.IsCompleted)
+                .Where(r => r.AdSid == hashedSid && !r.IsCompleted)
                 .OrderByDescending(r => r.RequestedAt)
                 .FirstOrDefaultAsync();
 

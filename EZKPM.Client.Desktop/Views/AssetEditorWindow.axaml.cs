@@ -222,6 +222,12 @@ public partial class AssetEditorWindow : Window
                 DomNextTextBox.Text = payload.LoginFlow.NextButtonSelector ?? "";
                 DomSubmitTextBox.Text = payload.LoginFlow.SubmitButtonSelector ?? "";
             }
+
+            if (payload.AutoType != null)
+            {
+                AutoTypePatternTextBox.Text = payload.AutoType.Pattern ?? "{USERNAME}{TAB}{PASSWORD}{ENTER}";
+                AutoTypeModeComboBox.SelectedIndex = payload.AutoType.Mode == 2 ? 1 : (payload.AutoType.Mode == 3 ? 2 : 0);
+            }
         }
         
         // Ensure UI matches the selected type initially
@@ -316,6 +322,9 @@ public partial class AssetEditorWindow : Window
         DomPassTextBox.Text = "";
         DomNextTextBox.Text = "";
         DomSubmitTextBox.Text = "";
+
+        AutoTypePatternTextBox.Text = "{USERNAME}{TAB}{PASSWORD}{ENTER}";
+        AutoTypeModeComboBox.SelectedIndex = 0;
     }
 
     private async void CopyUsernameButton_Click(object sender, RoutedEventArgs e)
@@ -590,6 +599,12 @@ public partial class AssetEditorWindow : Window
                     SubmitButtonSelector = DomSubmitTextBox.Text ?? ""
                 },
 
+                AutoType = new AutoTypeConfig
+                {
+                    Pattern = AutoTypePatternTextBox.Text ?? "{USERNAME}{TAB}{PASSWORD}{ENTER}",
+                    Mode = AutoTypeModeComboBox.SelectedIndex + 1
+                },
+
                 Attachments = _attachments.ToList(),
                 CustomFields = _customFields.ToList(),
                 Acls = _acls.Where(a => !string.IsNullOrWhiteSpace(a.AdSid))
@@ -704,6 +719,40 @@ public partial class AssetEditorWindow : Window
         {
             AssetSaved?.Invoke(this, EventArgs.Empty);
             this.Close();
+        }
+    }
+
+    private async void PerformAutoTypeButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!Services.SessionManager.EnsureAuthenticated("Auto-Type ausführen")) return;
+
+        // Hide window temporarily so focus goes back to the underlying app
+        this.WindowState = WindowState.Minimized;
+        
+        string pattern = AutoTypePatternTextBox.Text ?? "{USERNAME}{TAB}{PASSWORD}{ENTER}";
+        int mode = AutoTypeModeComboBox.SelectedIndex + 1; // 1 = RandomChunks, 2 = FullBlock, 3 = Keystrokes
+        string username = UsernameTextBox.Text ?? "";
+        string password = PasswordTextBox.Text ?? "";
+        string title = TitleTextBox.Text ?? "";
+
+        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard == null) 
+        {
+            this.WindowState = WindowState.Normal;
+            return;
+        }
+
+        try
+        {
+            await EZKPM.Client.Desktop.Services.AutoTypeService.PerformAutoType(pattern, username, password, title, mode, clipboard);
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Auto-Type Fehler: {ex.Message}", isError: true);
+        }
+        finally
+        {
+            this.WindowState = WindowState.Normal;
         }
     }
 

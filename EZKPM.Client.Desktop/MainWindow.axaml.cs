@@ -991,4 +991,41 @@ public partial class MainWindow : Window
         catch { }
     }
 
+    private async void DataGridAutoType_Click(object sender, RoutedEventArgs e)
+    {
+        if (!Services.SessionManager.EnsureAuthenticated("Auto-Type ausführen")) return;
+
+        if (sender is Button btn && btn.Tag is VaultAssetPayload payload)
+        {
+            // Hide window temporarily so focus goes back to the underlying app
+            this.WindowState = WindowState.Minimized;
+            
+            string pattern = payload.AutoType?.Pattern ?? "{USERNAME}{TAB}{PASSWORD}{ENTER}";
+            int mode = payload.AutoType?.Mode ?? 1;
+            string username = payload.Username ?? "";
+            string password = payload.Password ?? "";
+            string title = payload.Title ?? "";
+
+            var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+            if (clipboard == null) 
+            {
+                this.WindowState = WindowState.Normal;
+                return;
+            }
+
+            try
+            {
+                await EZKPM.Client.Desktop.Services.AutoTypeService.PerformAutoType(pattern, username, password, title, mode, clipboard);
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Auto-Type Fehler: {ex.Message}", isError: true);
+            }
+            finally
+            {
+                this.WindowState = WindowState.Normal;
+            }
+        }
+    }
+
 }

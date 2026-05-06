@@ -76,6 +76,48 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<EzkpmDbContext>();
     db.Database.Migrate();
+
+    // Convert plain text SIDs to HMAC-SHA256 blinded indices for Zero-Knowledge
+    var aclsToConvert = db.AssetAcls.Where(a => a.AdSid != null && !a.AdSid.EndsWith("=")).ToList();
+    foreach (var acl in aclsToConvert)
+    {
+        db.AssetAcls.Remove(acl);
+        db.AssetAcls.Add(new AssetAcl 
+        {
+            AssetId = acl.AssetId,
+            AdSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(acl.AdSid),
+            PermissionLevel = acl.PermissionLevel,
+            EncryptedKeyShare = acl.EncryptedKeyShare
+        });
+    }
+
+    var logsToConvert = db.AuditLogs.Where(l => l.ActorSid != null && !l.ActorSid.EndsWith("=")).ToList();
+    foreach (var log in logsToConvert)
+        log.ActorSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(log.ActorSid);
+
+    var sharesToConvert = db.VaultRecoveryShares.Where(s => s.AdminSid != null && !s.AdminSid.EndsWith("=")).ToList();
+    foreach (var share in sharesToConvert)
+        share.AdminSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(share.AdminSid);
+
+    var requestsToConvert = db.VaultRecoveryRequests.Where(r => r.AdSid != null && !r.AdSid.EndsWith("=")).ToList();
+    foreach (var req in requestsToConvert)
+        req.AdSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(req.AdSid);
+
+    var profilesToConvert = db.UserProfiles.Where(p => p.AdSid != null && !p.AdSid.EndsWith("=")).ToList();
+    foreach (var profile in profilesToConvert)
+    {
+        db.UserProfiles.Remove(profile);
+        db.UserProfiles.Add(new UserProfile 
+        {
+            AdSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(profile.AdSid),
+            EncryptedMasterKeyBackup = profile.EncryptedMasterKeyBackup
+        });
+    }
+
+    if (aclsToConvert.Count > 0 || logsToConvert.Count > 0 || sharesToConvert.Count > 0 || requestsToConvert.Count > 0 || profilesToConvert.Count > 0)
+    {
+        db.SaveChanges();
+    }
 }
 
 app.UseHttpsRedirection();

@@ -338,6 +338,22 @@
                                 </Expander>
                             </StackPanel>
                         </TabItem>
+                        <TabItem Header="Auto-Type">
+                            <StackPanel Spacing="12" Margin="10">
+                                <TextBlock Text="Auto-Type Pattern" Classes="label"/>
+                                <TextBox x:Name="AutoTypePatternTextBox" Text="{}{USERNAME}{TAB}{PASSWORD}{ENTER}" />
+                                <TextBlock Text="Verfügbare Platzhalter: {USERNAME}, {PASSWORD}, {TITLE}, {TAB}, {ENTER}, {DELAY 1000}" FontSize="11" Foreground="#6B7280"/>
+                                
+                                <TextBlock Text="Übertragungs-Modus" Classes="label" Margin="0,10,0,0"/>
+                                <ComboBox x:Name="AutoTypeModeComboBox" SelectedIndex="0" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="1. Zufällige Sequenzen (Copy &amp; Paste in Blöcken)" />
+                                    <ComboBoxItem Content="2. Vollständiger String (Copy &amp; Paste blockweise)" />
+                                    <ComboBoxItem Content="3. Tastatureingaben (Schlechteste Wahl)" />
+                                </ComboBox>
+                                
+                                <Button Classes="primary" Content="⌨️ Auto-Type Ausführen" Click="PerformAutoTypeButton_Click" HorizontalAlignment="Left" Margin="0,15,0,0"/>
+                            </StackPanel>
+                        </TabItem>
                     </TabControl>
                 </StackPanel> <!-- EditorPanel -->
             </ScrollViewer>

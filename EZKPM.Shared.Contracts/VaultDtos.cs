@@ -88,6 +88,13 @@ namespace EZKPM.Shared.Contracts
         public byte[] FileData { get; set; }
     }
 
+    public class AutoTypeConfig
+    {
+        public string Pattern { get; set; } = "{USERNAME}{TAB}{PASSWORD}{ENTER}";
+        // Modes: 1 = RandomChunks, 2 = FullBlock, 3 = Keystrokes
+        public int Mode { get; set; } = 1; 
+    }
+
     /// <summary>
     /// Das Klartext-Objekt, das der Client (PEP) lokal ver- und entschlüsselt.
     /// Der Server (PDP) sieht diese Daten NIEMALS im Klartext, sondern nur als CipherBlob.
@@ -143,5 +150,6 @@ namespace EZKPM.Shared.Contracts
 
         public PasswordGeneratorConfig PasswordSettings { get; set; } = new PasswordGeneratorConfig();
         public LoginFlowConfig LoginFlow { get; set; } = new LoginFlowConfig();
+        public AutoTypeConfig AutoType { get; set; } = new AutoTypeConfig();
     }
 }
