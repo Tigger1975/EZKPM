@@ -259,6 +259,21 @@ public partial class AdminDashboardWindow : Window
         await LoadAlertsAsync();
     }
 
+    private async void ForceScanButton_Click(object sender, RoutedEventArgs e)
+    {
+        var scanner = new EZKPM.Client.Desktop.Services.VulnerabilityScannerService(_apiClient);
+        await scanner.CheckForVulnerabilitiesAsync(async (report) => 
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+            {
+                var dialog = new ConfirmationDialog(report);
+                await dialog.ShowDialogAsync(this);
+            });
+        }, force: true);
+        
+        await LoadAlertsAsync();
+    }
+
     private async Task LoadAlertsAsync()
     {
         try
