@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ironclad Vault (EZKPM) - Enterprise Password Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --bg-color: #0f172a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
+        }
+
+        /* Glassmorphism Header */
+        header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1.5rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 5%;
+            position: relative;
+        }
+
+        .hero-container {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-size: 3.5rem;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .hero-text h1 span {
+            color: var(--primary);
+        }
+
+        .hero-text p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+            max-width: 480px;
+        }
+
+        /* Download Card */
+        .download-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            transform: translateY(0);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-align: center;
+        }
+
+        .download-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6);
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            padding: 0.4rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .download-card h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            text-decoration: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 1.5rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
+            border: none;
+            cursor: pointer;
+        }
+
+        .download-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+        }
+
+        .download-btn svg {
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+        }
+
+        .system-reqs {
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Features */
+        .features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            text-align: left;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .feature-item svg {
+            color: #10b981;
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .hero-container {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+                text-align: center;
+            }
+            .hero-text p {
+                margin: 0 auto 2.5rem;
+            }
+            .features {
+                justify-content: center;
+            }
+        }
+
+        /* Subtle Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero-text { animation: fadeIn 0.8s ease-out forwards; }
+        .download-card { animation: fadeIn 0.8s ease-out 0.2s forwards; opacity: 0; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <img src="/logo.png" alt="Ironclad Vault Logo" style="width: 40px; height: 40px; border-radius: 8px;">
+            <div class="logo">Ironclad Vault</div>
+        </div>
+        <div style="font-size: 0.9rem; color: var(--text-muted);">Alpha Release</div>
+    </header>
+
+    <main>
+        <div class="hero-container">
+            <div class="hero-text">
+                <img src="/logo.png" alt="Ironclad Vault Logo" style="width: 200px; height: 200px; margin-bottom: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);">
+                <h1>Zero-Knowledge.<br><span>Enterprise Grade.</span></h1>
+                <p>Laden Sie den EZKPM Desktop-Client herunter. PQC-Verschlüsselung, Active Directory Integration und nahtlose Browser-Synchronisierung – entwickelt für maximale Sicherheit.</p>
+                
+                <div class="features">
+                    <div class="feature-item">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span>Hardware-Backed Security</span>
+                    </div>
+                    <div class="feature-item">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span>Browser Native Messaging</span>
+                    </div>
+                    <div class="feature-item">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span>PuTTY / Pageant Emulator</span>
+                    </div>
+                    <div class="feature-item">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span>Auto-Type System</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="download-card">
+                <div class="version-badge" id="versionBadge">Version wird geladen...</div>
+                <h2>Client Herunterladen</h2>
+                <p style="color: var(--text-muted); margin-bottom: 1rem;">Laden Sie den Client herunter, um Ihr lokales Profil einzurichten.</p>
+                
+                <a href="#" id="downloadLink" class="download-btn" style="display: none;">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Download (ZIP)
+                </a>
+                
+                <div id="loadingState" style="margin-top: 2rem; color: var(--primary);">
+                    Überprüfe Server...
+                </div>
+
+                <div class="system-reqs">
+                    Benötigt Windows 10/11 (64-bit)<br>
+                    Keine Admin-Rechte erforderlich (Per-User Install)
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Fetch latest version from Updater API
+        fetch('/api/updater/check?currentVersion=0.0.0.0')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loadingState').style.display = 'none';
+                
+                if (data.updateAvailable) {
+                    document.getElementById('versionBadge').textContent = 'Version ' + data.latestVersion;
+                    const btn = document.getElementById('downloadLink');
+                    btn.href = data.downloadUrl;
+                    btn.style.display = 'inline-flex';
+                } else {
+                    document.getElementById('versionBadge').textContent = 'Kein Release gefunden';
+                    document.getElementById('loadingState').style.display = 'block';
+                    document.getElementById('loadingState').textContent = 'Aktuell ist keine Client-Version auf dem Server verfügbar.';
+                    document.getElementById('loadingState').style.color = '#ef4444';
+                }
+            })
+            .catch(error => {
+                document.getElementById('loadingState').textContent = 'Fehler beim Verbinden mit dem Updater-Dienst.';
+                document.getElementById('loadingState').style.color = '#ef4444';
+                document.getElementById('versionBadge').textContent = 'Offline';
+            });
+    </script>
+</body>
+</html>

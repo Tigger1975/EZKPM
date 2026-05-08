@@ -1,0 +1,6 @@
+{
+  "LatestVersion": "1.0.0.0",
+  "DownloadUrl": "/api/updater/download",
+  "ReleaseNotes": "Initial Alpha Release of EZKPM Desktop Client",
+  "IsMandatory": true
+}

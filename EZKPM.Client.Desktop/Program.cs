@@ -224,7 +224,19 @@ namespace EZKPM.Client.Desktop
                 using var edgeKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey($@"Software\Microsoft\Edge\NativeMessagingHosts\{manifestName}");
                 edgeKey.SetValue("", manifestPath);
 
-                LogDebug("Native Messaging Host registered successfully.");
+                // Install Extension in Browser via Registry (External Extension)
+                string extensionId = "ofiilabemldhhdggobjdbdfelbmpmklf";
+                string extensionPath = Path.Combine(dirPath, "BrowserExtension");
+                
+                using var chromeExtKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey($@"Software\Google\Chrome\Extensions\{extensionId}");
+                chromeExtKey.SetValue("path", extensionPath);
+                chromeExtKey.SetValue("version", "1.0.0");
+
+                using var edgeExtKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey($@"Software\Microsoft\Edge\Extensions\{extensionId}");
+                edgeExtKey.SetValue("path", extensionPath);
+                edgeExtKey.SetValue("version", "1.0.0");
+
+                LogDebug("Native Messaging Host and Extension registered successfully.");
             }
             catch (Exception ex)
             {

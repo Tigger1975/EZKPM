@@ -56,6 +56,16 @@ namespace EZKPM.Client.Tests.Security
             var keyWrapper = new EZKPM.Client.Core.Cryptography.HybridPqcKeyWrapper();
             var cryptoService = new EZKPM.Client.Core.Cryptography.VaultCryptoService(keyWrapper);
             
+            string appDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "EZKPM_Test_" + Guid.NewGuid().ToString());
+            string keyCheckPath = System.IO.Path.Combine(appDir, "keycheck.dat");
+            
+            // Need to set Environment variable or pass the path somehow?
+            // Wait, VaultCryptoService uses Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)!
+            // We can't easily mock Environment.GetFolderPath without an interface. 
+            if (System.IO.File.Exists(keyCheckPath)) System.IO.File.Delete(keyCheckPath);
+            
+            Assert.True(cryptoService.Initialize("TestPassword123!"));
+            
             var payload = new EZKPM.Shared.Contracts.VaultAssetPayload 
             { 
                 Title = "Test Asset", 
@@ -88,6 +98,12 @@ namespace EZKPM.Client.Tests.Security
             // Arrange
             var keyWrapper = new EZKPM.Client.Core.Cryptography.HybridPqcKeyWrapper();
             var cryptoService = new EZKPM.Client.Core.Cryptography.VaultCryptoService(keyWrapper);
+            
+            string appDir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EZKPM");
+            string keyCheckPath = System.IO.Path.Combine(appDir, "keycheck.dat");
+            if (System.IO.File.Exists(keyCheckPath)) System.IO.File.Delete(keyCheckPath);
+            
+            Assert.True(cryptoService.Initialize("TestPassword123!"));
             
             var payload = new EZKPM.Shared.Contracts.VaultAssetPayload { Password = "SecretData" };
             var createRequest = cryptoService.EncryptAsset(payload);
@@ -150,6 +166,8 @@ namespace EZKPM.Client.Tests.Security
             // AES-GCM Key (32 bytes)
             byte[] originalAssetKeyRaw = new byte[32];
             RandomNumberGenerator.Fill(originalAssetKeyRaw);
+            byte[] expectedKey = new byte[32];
+            Buffer.BlockCopy(originalAssetKeyRaw, 0, expectedKey, 0, 32);
             using var originalAssetKey = new EZKPM.Client.Core.Security.SecureMemory(originalAssetKeyRaw);
 
             // Act
@@ -159,10 +177,10 @@ namespace EZKPM.Client.Tests.Security
 
             // Assert
             Assert.NotNull(wrappedBlob);
-            Assert.True(wrappedBlob.Length > originalAssetKeyRaw.Length); // Sollte Header, Ciphertext und PQC-Overhead enthalten
+            Assert.True(wrappedBlob.Length > expectedKey.Length); // Sollte Header, Ciphertext und PQC-Overhead enthalten
             
-            Assert.Equal(originalAssetKeyRaw.Length, unwrappedKey.Span.Length);
-            Assert.True(unwrappedKey.Span.SequenceEqual(originalAssetKeyRaw));
+            Assert.Equal(expectedKey.Length, unwrappedKey.Span.Length);
+            Assert.True(unwrappedKey.Span.SequenceEqual(expectedKey));
         }
 
         [Fact]

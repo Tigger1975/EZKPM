@@ -57,6 +57,12 @@
       <Generator>MSBuild:Compile</Generator>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\EZKPM.BrowserExtension\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>BrowserExtension\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
 	<Target Name="CreateLockFile" BeforeTargets="PreBuildEvent">
 		<Exec Command="echo lock &gt; &quot;$([System.IO.Path]::GetTempPath())ezkpm_build.lock&quot;" />
 	</Target>

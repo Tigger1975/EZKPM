@@ -31,6 +31,13 @@ namespace EZKPM.Client.Desktop
                     // Load CLI and File Config
                     Services.ConfigurationManager.LoadConfig(args);
                     
+                    // Pageant Emulator is now started in MainWindow.axaml.cs
+
+                    // Start Updater Service
+                    var updaterLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<Services.UpdaterService>.Instance;
+                    var updaterService = new Services.UpdaterService(updaterLogger);
+                    _ = updaterService.StartAsync(new System.Threading.CancellationToken());
+
                     // Fire-and-forget initialization
                     _ = InitializeAppAsync(desktop);
                 }

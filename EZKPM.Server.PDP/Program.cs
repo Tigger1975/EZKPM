@@ -138,6 +138,8 @@ app.UseHttpsRedirection();
 
 // Für den lokalen Test bypassen wir Auth Middleware, 
 // wir setzen stattdessen in den Controllern eine Dummy-SID, falls keine Auth da ist.
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseAuthorization();
 
 app.MapControllers();

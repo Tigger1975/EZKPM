@@ -66,14 +66,16 @@ namespace EZKPM.Server.PDP.Controllers
             var responseList = assets.Select(asset =>
             {
                 var userAcl = asset.Acls.First();
+                bool isExpired = DateTime.UtcNow > asset.ExpiresAt;
+                
                 return new VaultAssetResponseDto
                 {
                     AssetId = asset.Id,
-                    CipherBlob = Convert.ToBase64String(asset.CipherBlob),
-                    Nonce = Convert.ToBase64String(asset.Nonce),
+                    CipherBlob = isExpired ? "" : Convert.ToBase64String(asset.CipherBlob),
+                    Nonce = isExpired ? "" : Convert.ToBase64String(asset.Nonce),
                     PermissionLevel = userAcl.PermissionLevel,
-                    EncryptedKeyShare = Convert.ToBase64String(userAcl.EncryptedKeyShare),
-                    IsExpired = DateTime.UtcNow > asset.ExpiresAt,
+                    EncryptedKeyShare = isExpired ? "" : Convert.ToBase64String(userAcl.EncryptedKeyShare),
+                    IsExpired = isExpired,
                     IsDeleted = asset.IsDeleted
                 };
             }).ToList();

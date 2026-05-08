@@ -477,6 +477,43 @@ public partial class AssetEditorWindow : Window
         PasswordTextBox.Text = _cryptoService.GeneratePassword(config);
     }
 
+    private void GenerateSshKeyButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var keyPairGen = new Org.BouncyCastle.Crypto.Generators.Ed25519KeyPairGenerator();
+            keyPairGen.Init(new Org.BouncyCastle.Crypto.Parameters.Ed25519KeyGenerationParameters(new Org.BouncyCastle.Security.SecureRandom()));
+            var keyPair = keyPairGen.GenerateKeyPair();
+
+            using var stringWriter = new System.IO.StringWriter();
+            var pemWriter = new Org.BouncyCastle.OpenSsl.PemWriter(stringWriter);
+            pemWriter.WriteObject(keyPair.Private);
+            string privateKey = stringWriter.ToString();
+
+            using var pubStringWriter = new System.IO.StringWriter();
+            var pubPemWriter = new Org.BouncyCastle.OpenSsl.PemWriter(pubStringWriter);
+            pubPemWriter.WriteObject(keyPair.Public);
+            string publicKey = pubStringWriter.ToString();
+
+            if (PasswordTextBox != null)
+            {
+                PasswordTextBox.Text = privateKey;
+                if (ShowPasswordCheckBox != null)
+                    ShowPasswordCheckBox.IsChecked = true;
+            }
+            
+            if (NotesTextBox != null)
+            {
+                NotesTextBox.Text = publicKey;
+            }
+        }
+        catch (Exception ex)
+        {
+            var msgBox = new ConfirmationDialog("Der SSH Key konnte nicht generiert werden: " + ex.Message);
+            msgBox.ShowDialog((Avalonia.Controls.Window)this.VisualRoot);
+        }
+    }
+
     private void ShowPasswordCheckBox_CheckedChanged(object sender, RoutedEventArgs e)
     {
         if (ShowPasswordCheckBox.IsChecked == true)
@@ -1249,6 +1286,12 @@ public partial class AssetEditorWindow : Window
             
             var applyCb = this.FindControl<CheckBox>("ApplyToChildrenCheckBox");
             if (applyCb != null) applyCb.IsVisible = (type == "Folder");
+
+            var sshKeyBtn = this.FindControl<Button>("GenerateSshKeyButton");
+            if (sshKeyBtn != null) sshKeyBtn.IsVisible = (type == "SSH Key");
+
+            var sshGenExp = this.FindControl<Expander>("SshGeneratorExpander");
+            if (sshGenExp != null) sshGenExp.IsVisible = (type == "SSH Key");
 
             var tabCustomVars = this.FindControl<TabItem>("TabCustomVars");
             var tabSettings = this.FindControl<TabItem>("TabSettings");

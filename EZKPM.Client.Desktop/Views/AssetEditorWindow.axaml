@@ -116,10 +116,11 @@
                             </Grid>
 
                             <TextBlock x:Name="PasswordLabel" Classes="label" Text="{x:Static res:AppStrings.AssetEditor_LblPassword}"/>
-                            <Grid ColumnDefinitions="*, Auto, Auto">
+                            <Grid ColumnDefinitions="*, Auto, Auto, Auto">
                                 <TextBox x:Name="PasswordTextBox" Grid.Column="0" PasswordChar="•" PlaceholderText="••••••••" />
                                 <Button Grid.Column="1" Classes="outline" Content="📋" ToolTip.Tip="{x:Static res:AppStrings.AssetEditor_TipCopy}" Margin="10,0,0,0" Click="CopyPasswordButton_Click"/>
                                 <Button Grid.Column="2" Classes="outline" Content="🎲" ToolTip.Tip="{x:Static res:AppStrings.AssetEditor_TipGenerate}" Margin="10,0,0,0" Click="GeneratePasswordButton_Click"/>
+                                <Button x:Name="GenerateSshKeyButton" Grid.Column="3" Classes="outline" Content="🔑" ToolTip.Tip="Generate SSH Key (Ed25519)" Margin="10,0,0,0" Click="GenerateSshKeyButton_Click" IsVisible="False"/>
                             </Grid>
                             <CheckBox x:Name="ShowPasswordCheckBox" Content="{x:Static res:AppStrings.AssetEditor_ShowPassword}" IsCheckedChanged="ShowPasswordCheckBox_CheckedChanged" Foreground="#4B5563"/>
                             
@@ -181,6 +182,13 @@
                                 <CheckBox x:Name="GenNumberCheck" Content="{x:Static res:AppStrings.AssetEditor_ChkNumbers}" IsChecked="True" Margin="0,0,20,0" Foreground="#4B5563"/>
                                 <CheckBox x:Name="GenSymbolCheck" Content="{x:Static res:AppStrings.AssetEditor_ChkSymbols}" IsChecked="True" Foreground="#4B5563"/>
                             </WrapPanel>
+                        </StackPanel>
+                    </Expander>
+
+                    <Expander x:Name="SshGeneratorExpander" Header="SSH Key Generator" HorizontalAlignment="Stretch" CornerRadius="8" Background="White" BorderBrush="#E5E7EB" IsVisible="False">
+                        <StackPanel Spacing="10" Margin="10">
+                            <TextBlock Text="Generates a new Ed25519 SSH Key Pair. The private key will be stored securely in the vault, and the public key will be available in the Notes field." TextWrapping="Wrap" Foreground="#4B5563"/>
+                            <Button Classes="primary" Content="Generate Ed25519 Key Pair" HorizontalAlignment="Left" Click="GenerateSshKeyButton_Click"/>
                         </StackPanel>
                     </Expander>
 

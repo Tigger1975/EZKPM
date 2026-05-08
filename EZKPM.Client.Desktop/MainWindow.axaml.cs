@@ -61,6 +61,10 @@ public partial class MainWindow : Window
         _localBroker = new LocalCredentialsBroker(() => _decryptedAssets, RequestLocalAppApprovalAsync);
         _ssoSyncClient = new SsoSyncClient(ShowSsoApprovalDialogAsync);
         
+        var pageantService = new Services.PageantEmulatorService(new Microsoft.Extensions.Logging.Abstractions.NullLogger<Services.PageantEmulatorService>(), () => _decryptedAssets);
+        pageantService.StartAsync(System.Threading.CancellationToken.None);
+        this.Closed += (s, e) => pageantService.Dispose();
+        
         // FA 14: Session Timer (Initialized in LoginWindow)
         this.AddHandler(Avalonia.Input.InputElement.PointerMovedEvent, (s, e) => Services.SessionManager.RegisterActivity(), Avalonia.Interactivity.RoutingStrategies.Tunnel);
         this.AddHandler(Avalonia.Input.InputElement.KeyDownEvent, (s, e) => Services.SessionManager.RegisterActivity(), Avalonia.Interactivity.RoutingStrategies.Tunnel);
@@ -123,6 +127,7 @@ public partial class MainWindow : Window
         // so it can be restored from the system tray.
         e.Cancel = true;
         this.Hide();
+        Services.SessionManager.HandleWindowStateChanged(this.WindowState, isTray: true);
     }
 
     private void ShowNotification(string assetTitle)

@@ -8,7 +8,7 @@ namespace EZKPM.Client.Desktop.Services
     {
         private static DispatcherTimer _idleTimer;
         private static DispatcherTimer _minimizedTimer;
-        private static readonly TimeSpan IdleTimeout = TimeSpan.FromMinutes(10); // 10 minutes FA 14
+        private static readonly TimeSpan IdleTimeout = TimeSpan.FromMinutes(5); // 5 minutes FA 14
         private static readonly TimeSpan MinimizedTimeout = TimeSpan.FromMinutes(1); // 1 minute when minimized
 
         // FA 14: Sensitive Session is always locked by default until explicitly authenticated

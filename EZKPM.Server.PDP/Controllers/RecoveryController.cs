@@ -360,8 +360,17 @@ namespace EZKPM.Server.PDP.Controllers
             var sourceProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedSourceSid);
             var targetProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedTargetSid);
 
-            if (sourceProfile == null || targetProfile == null)
-                return NotFound("One or both user profiles not found. Ensure both users have logged in at least once or have been made admin.");
+            // Auto-create empty profiles if they don't exist yet, so they can be "hijacked" upon first login
+            if (sourceProfile == null)
+            {
+                sourceProfile = new UserProfile { AdSid = hashedSourceSid, EncryptedMasterKeyBackup = "" };
+                _db.UserProfiles.Add(sourceProfile);
+            }
+            if (targetProfile == null)
+            {
+                targetProfile = new UserProfile { AdSid = hashedTargetSid, EncryptedMasterKeyBackup = "" };
+                _db.UserProfiles.Add(targetProfile);
+            }
 
             // Assign the target's PersonId to the source, linking them physically
             sourceProfile.PersonId = targetProfile.PersonId;
