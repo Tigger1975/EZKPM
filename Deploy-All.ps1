@@ -67,6 +67,10 @@ Start-Sleep -Seconds 3
 Write-Host "      Kopiere aktualisierte Dateien (ueberschreibt nur was sich geaendert hat)..." -ForegroundColor Yellow
 try {
     robocopy $PublishServerPath $IISPath /MIR /XD Updates /XF app_offline.htm *.db *.db-shm *.db-wal /R:1 /W:1 | Out-Null
+    if (Test-Path $UpdatesDir) {
+        if (!(Test-Path "$IISPath\Updates")) { New-Item -ItemType Directory -Force -Path "$IISPath\Updates" | Out-Null }
+        Copy-Item -Path "$UpdatesDir\*" -Destination "$IISPath\Updates" -Force
+    }
 } catch {
     # Ignore powershell throwing on robocopy exit codes
 } finally {
