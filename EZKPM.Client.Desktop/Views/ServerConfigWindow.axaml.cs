@@ -113,10 +113,18 @@ namespace EZKPM.Client.Desktop.Views
 
             try
             {
+                var urlTextBox = this.FindControl<TextBox>("UrlTextBox");
+                var baseUrl = ConfigurationManager.CurrentConfig.ServerUrl;
+                if (urlTextBox != null && !string.IsNullOrWhiteSpace(urlTextBox.Text))
+                {
+                    baseUrl = ConfigurationManager.EnsureValidUrl(urlTextBox.Text);
+                }
+
                 var currentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
-                var url = $"{ConfigurationManager.CurrentConfig.ServerUrl}/api/updater/check?currentVersion={currentVersion}";
+                var url = $"{baseUrl}/api/updater/check?currentVersion={currentVersion}";
                 
-                using var client = new System.Net.Http.HttpClient();
+                var handler = new System.Net.Http.HttpClientHandler { UseDefaultCredentials = true };
+                using var client = new System.Net.Http.HttpClient(handler);
                 var response = await client.GetAsync(url);
                 if (response.IsSuccessStatusCode)
                 {
@@ -164,13 +172,21 @@ namespace EZKPM.Client.Desktop.Views
         {
             try
             {
+                var urlTextBox = this.FindControl<TextBox>("UrlTextBox");
+                var baseUrl = ConfigurationManager.CurrentConfig.ServerUrl;
+                if (urlTextBox != null && !string.IsNullOrWhiteSpace(urlTextBox.Text))
+                {
+                    baseUrl = ConfigurationManager.EnsureValidUrl(urlTextBox.Text);
+                }
+
                 if (downloadUrl.StartsWith("/"))
                 {
-                    downloadUrl = ConfigurationManager.CurrentConfig.ServerUrl + downloadUrl;
+                    downloadUrl = baseUrl + downloadUrl;
                 }
 
                 var tempZipPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "EZKPM_Update.zip");
-                using var client = new System.Net.Http.HttpClient();
+                var handler = new System.Net.Http.HttpClientHandler { UseDefaultCredentials = true };
+                using var client = new System.Net.Http.HttpClient(handler);
                 var response = await client.GetAsync(downloadUrl);
                 response.EnsureSuccessStatusCode();
 
