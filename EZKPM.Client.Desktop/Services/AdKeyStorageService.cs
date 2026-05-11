@@ -8,6 +8,16 @@ namespace EZKPM.Client.Desktop.Services
 {
     public static class AdKeyStorageService
     {
+        private static string GetObjectName()
+        {
+            string sid = "S-1-5-21-DUMMY";
+            if (OperatingSystem.IsWindows())
+            {
+                sid = System.Security.Principal.WindowsIdentity.GetCurrent().User?.Value ?? sid;
+            }
+            return $"CN=MasterKey-{Environment.MachineName}-{sid}";
+        }
+
         public static string RetrieveKeyFromAd()
         {
             if (!OperatingSystem.IsWindows()) return null;
@@ -22,7 +32,7 @@ namespace EZKPM.Client.Desktop.Services
                 string dcPath = "DC=" + string.Join(",DC=", dcParts);
                 
                 string containerPath = $"LDAP://OU=EZKPM-Keys,{dcPath}";
-                string objectName = $"CN=MasterKey-{Environment.MachineName}";
+                string objectName = GetObjectName();
 
                 using var entry = new DirectoryEntry(containerPath);
                 
@@ -61,10 +71,7 @@ namespace EZKPM.Client.Desktop.Services
                 string dcPath = "DC=" + string.Join(",DC=", dcParts);
                 
                 string containerPath = $"LDAP://OU=EZKPM-Keys,{dcPath}";
-                
-                // Wir verwenden die Maschinenspezifische Identifikation als Container-Namen
-                // z.B. CN=MasterKey-DESKTOP123
-                string objectName = $"CN=MasterKey-{Environment.MachineName}";
+                string objectName = GetObjectName();
 
                 using var entry = new DirectoryEntry(containerPath);
                 
