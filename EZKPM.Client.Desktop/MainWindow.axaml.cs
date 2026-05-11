@@ -194,7 +194,7 @@ public partial class MainWindow : Window
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Audit Request Error: {ex.Message}");
+                    Program.LogDebug($"Audit Request Error: {ex.Message}");
                     tcs.SetResult(false);
                 }
             });
@@ -210,7 +210,7 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Silent Audit Logging Error: {ex.Message}");
+                Program.LogDebug($"Silent Audit Logging Error: {ex.Message}");
                 tcs.SetResult(false);
             }
         }
@@ -349,7 +349,7 @@ public partial class MainWindow : Window
                 catch (Exception ex)
                 {
                     // If decryption fails (wrong key, expired), track it so we can clean it up
-                    Console.WriteLine($"Decryption failed for asset {dto.AssetId}: {ex.Message}");
+                    Program.LogDebug($"Decryption failed for asset {dto.AssetId}: {ex.Message}");
                     _failedDecryptionIds.Add(dto.AssetId);
                 }
             }
@@ -384,7 +384,7 @@ public partial class MainWindow : Window
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to create Private folder: {ex.Message}");
+                    Program.LogDebug($"Failed to create Private folder: {ex.Message}");
                 }
             }
 
@@ -839,7 +839,7 @@ public partial class MainWindow : Window
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Fehler beim Importieren eines Assets ({payload.Title}): {ex.Message}");
+                        Program.LogDebug($"Fehler beim Importieren eines Assets ({payload.Title}): {ex.Message}");
                     }
                 }
 

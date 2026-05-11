@@ -890,7 +890,7 @@ public partial class AssetEditorWindow : Window
 
     private void ShowStatus(string message, bool isError = false, bool isWarning = false)
     {
-        Console.WriteLine(message);
+        Program.LogDebug(message);
         var statusBlock = this.FindControl<TextBlock>("StatusTextBlock");
         if (statusBlock != null)
         {

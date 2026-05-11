@@ -64,7 +64,7 @@ namespace EZKPM.Client.Tests.Security
             // We can't easily mock Environment.GetFolderPath without an interface. 
             if (System.IO.File.Exists(keyCheckPath)) System.IO.File.Delete(keyCheckPath);
             
-            Assert.True(cryptoService.Initialize("TestPassword123!"));
+            cryptoService.GenerateAndStoreNewKeys("TestPassword123!", null, out _, out _, out _);
             
             var payload = new EZKPM.Shared.Contracts.VaultAssetPayload 
             { 
@@ -103,7 +103,7 @@ namespace EZKPM.Client.Tests.Security
             string keyCheckPath = System.IO.Path.Combine(appDir, "keycheck.dat");
             if (System.IO.File.Exists(keyCheckPath)) System.IO.File.Delete(keyCheckPath);
             
-            Assert.True(cryptoService.Initialize("TestPassword123!"));
+            cryptoService.GenerateAndStoreNewKeys("TestPassword123!", null, out _, out _, out _);
             
             var payload = new EZKPM.Shared.Contracts.VaultAssetPayload { Password = "SecretData" };
             var createRequest = cryptoService.EncryptAsset(payload);

@@ -72,7 +72,7 @@ namespace EZKPM.Client.Desktop.Views
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Rotation error: {ex.Message}");
+                    Program.LogDebug($"Rotation error: {ex.Message}");
                     btn.Content = "Fehler!";
                 }
             }

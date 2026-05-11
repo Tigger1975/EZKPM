@@ -125,12 +125,12 @@
                 <Grid Grid.Row="2" ColumnDefinitions="*, *, Auto" Margin="0,20,0,0">
                     <Button Grid.Column="0" Classes="success" Content="{x:Static res:AppStrings.Main_BtnNewAsset}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,5,0" Click="NewAssetButton_Click"/>
                     <Button Grid.Column="1" Classes="outline" Content="{x:Static res:AppStrings.Main_BtnNewFolder}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="5,0,5,0" Click="NewFolderButton_Click"/>
-                    <Button Grid.Column="2" Classes="outline" Content="⚙️" ToolTip.Tip="Einstellungen">
+                    <Button Grid.Column="2" Classes="outline" Content="⚙️" ToolTip.Tip="{x:Static res:AppStrings.Main_MenuSettings}">
                         <Button.Flyout>
                             <MenuFlyout>
-                                <MenuItem Header="Server wechseln / Einstellungen" Click="ChangeServerMenuItem_Click" />
-                                <MenuItem Header="Manuelles Update prüfen" Click="CheckForUpdates_Click" />
-                                <MenuItem Header="Über (Version)" Click="ShowVersion_Click" />
+                                <MenuItem Header="{x:Static res:AppStrings.Main_MenuSettings}" Click="ChangeServerMenuItem_Click" />
+                                <MenuItem Header="{x:Static res:AppStrings.Settings_CheckUpdate}" Click="CheckForUpdates_Click" />
+                                <MenuItem Header="{x:Static res:AppStrings.Settings_About}" Click="ShowVersion_Click" />
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>

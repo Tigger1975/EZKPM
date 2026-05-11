@@ -91,11 +91,11 @@ namespace EZKPM.Client.Desktop.Services
             try
             {
                 await _connection.StartAsync();
-                Console.WriteLine($"SSO Sync Client connected to {hubUrl}");
+                Program.LogDebug($"SSO Sync Client connected to {hubUrl}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to connect SSO Sync Client: {ex.Message}");
+                Program.LogDebug($"Failed to connect SSO Sync Client: {ex.Message}");
             }
         }
     }
