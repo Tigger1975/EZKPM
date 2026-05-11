@@ -73,7 +73,7 @@ try {
 }
 
 Write-Host "`n[7/7] Starte lokalen Desktop-Client..." -ForegroundColor Yellow
-Start-Process "$PublishClientPath\EZKPM.Client.Desktop.exe"
+Start-Process "$PublishClientPath\EZKPM.Client.Desktop.exe" -WorkingDirectory $PublishClientPath
 
 Write-Host "`n==========================================" -ForegroundColor Green
 Write-Host " Deployment erfolgreich abgeschlossen! " -ForegroundColor Green
