@@ -42,7 +42,7 @@ if (Test-Path $zipPath) {
 }
 
 if ($needsZip) {
-    Write-Host "`n[4/7] Erstelle OTA-Update Paket für Clients (Änderungen erkannt)..." -ForegroundColor Yellow
+    Write-Host "`n[4/7] Erstelle OTA-Update Paket fuer Clients (Aenderungen erkannt)..." -ForegroundColor Yellow
     if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
     Compress-Archive -Path "$PublishClientPath\*" -DestinationPath $zipPath -Force
 
@@ -53,16 +53,16 @@ if ($needsZip) {
     } | ConvertTo-Json
     Set-Content -Path "$UpdatesDir\version.json" -Value $versionJson
 } else {
-    Write-Host "`n[4/7] Überspringe OTA-Update Paket (Keine Änderungen im Client)..." -ForegroundColor Gray
+    Write-Host "`n[4/7] Ueberspringe OTA-Update Paket (Keine Aenderungen im Client)..." -ForegroundColor Gray
 }
 
 Write-Host "`n[5/7] Verteile Dateien an den IIS-Produktionsserver..." -ForegroundColor Yellow
-Write-Host "      Setze IIS via app_offline.htm in den Wartungsmodus, um Dateisperren zu lösen..." -ForegroundColor Yellow
+Write-Host "      Setze IIS via app_offline.htm in den Wartungsmodus, um Dateisperren zu loesen..." -ForegroundColor Yellow
 if (!(Test-Path $IISPath)) { New-Item -ItemType Directory -Force -Path $IISPath | Out-Null }
 Set-Content -Path "$IISPath\app_offline.htm" -Value "<html><head><title>Update läuft</title></head><body style='font-family:sans-serif; text-align:center; padding:50px;'><h1>EZKPM wird aktualisiert...</h1><p>Bitte haben Sie ein paar Sekunden Geduld.</p></body></html>"
 Start-Sleep -Seconds 3
 
-Write-Host "      Kopiere aktualisierte Dateien (überschreibt nur was sich geändert hat)..." -ForegroundColor Yellow
+Write-Host "      Kopiere aktualisierte Dateien (ueberschreibt nur was sich geaendert hat)..." -ForegroundColor Yellow
 Copy-Item -Path "$PublishServerPath\*" -Destination $IISPath -Recurse -Force
 
 Write-Host "`n[6/7] Starte IIS durch Entfernen von app_offline.htm..." -ForegroundColor Yellow
