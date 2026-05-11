@@ -119,11 +119,16 @@ namespace EZKPM.Client.Desktop.Views
                 {
                     baseUrl = ConfigurationManager.EnsureValidUrl(urlTextBox.Text);
                 }
+                baseUrl = baseUrl?.TrimEnd('/');
 
                 var currentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
                 var url = $"{baseUrl}/api/updater/check?currentVersion={currentVersion}";
                 
-                var handler = new System.Net.Http.HttpClientHandler { UseDefaultCredentials = true };
+                var handler = new System.Net.Http.HttpClientHandler 
+                { 
+                    UseDefaultCredentials = true,
+                    ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+                };
                 using var client = new System.Net.Http.HttpClient(handler);
                 var response = await client.GetAsync(url);
                 if (response.IsSuccessStatusCode)
@@ -178,6 +183,7 @@ namespace EZKPM.Client.Desktop.Views
                 {
                     baseUrl = ConfigurationManager.EnsureValidUrl(urlTextBox.Text);
                 }
+                baseUrl = baseUrl?.TrimEnd('/');
 
                 if (downloadUrl.StartsWith("/"))
                 {
@@ -185,7 +191,11 @@ namespace EZKPM.Client.Desktop.Views
                 }
 
                 var tempZipPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "EZKPM_Update.zip");
-                var handler = new System.Net.Http.HttpClientHandler { UseDefaultCredentials = true };
+                var handler = new System.Net.Http.HttpClientHandler 
+                { 
+                    UseDefaultCredentials = true,
+                    ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+                };
                 using var client = new System.Net.Http.HttpClient(handler);
                 var response = await client.GetAsync(downloadUrl);
                 response.EnsureSuccessStatusCode();

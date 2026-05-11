@@ -100,11 +100,12 @@ namespace EZKPM.Client.Desktop.Services
         public static string EnsureValidUrl(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return "";
+            input = input.Trim();
             if (!input.StartsWith("http://") && !input.StartsWith("https://"))
             {
                 input = "https://" + input;
             }
-            return input;
+            return input.TrimEnd('/');
         }
     }
 }

@@ -24,7 +24,11 @@ namespace EZKPM.Client.Desktop.Services
         public UpdaterService(ILogger<UpdaterService> logger)
         {
             _logger = logger;
-            var handler = new HttpClientHandler { UseDefaultCredentials = true };
+            var handler = new HttpClientHandler 
+            { 
+                UseDefaultCredentials = true,
+                ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+            };
             _httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };
         }
 
