@@ -41,6 +41,23 @@
                        TextWrapping="Wrap" 
                        HorizontalAlignment="Center" />
             
+            <Border Background="#1F2937" CornerRadius="8" Padding="15" Margin="0,10,0,0">
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock Text="App-Version" Foreground="#9CA3AF" FontSize="11" />
+                        <TextBlock x:Name="VersionText" Text="1.0.0.0" Foreground="White" FontWeight="SemiBold" FontSize="14" />
+                    </StackPanel>
+                    <Button Grid.Column="1" x:Name="CheckUpdateButton" 
+                            Content="Nach Updates suchen" 
+                            Background="#4B5563" 
+                            Foreground="White" 
+                            CornerRadius="4" 
+                            Padding="10,5" 
+                            VerticalAlignment="Center"
+                            Click="CheckUpdateButton_Click" />
+                </Grid>
+            </Border>
+            
             <ProgressBar x:Name="TestProgress" 
                          IsIndeterminate="True" 
                          IsVisible="False" 
