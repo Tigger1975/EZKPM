@@ -20,12 +20,10 @@ Dieses Regelwerk wurde explizit entwickelt, um zu verhindern, dass die KI-Agente
 * **Regel:** Bestehende XAML-Strukturen, Grid-Layouts, StackPanels und Borders dürfen bei Refactorings (wie z.B. dem Hinzufügen eines Buttons) nicht entfernt oder "vereinfacht" werden.
 * **Sicherheitsmaßnahme:** Wenn Hardcoded-Strings zu Lokalisierungs-Keys (`AppStrings`) umgebaut werden (oder umgekehrt), muss die *exakte* Textstruktur und Semantik erhalten bleiben. Die Fallback-Sprache darf nicht das UI der anderen Sprachen zerstören.
 
-## 4. Pflichtenheft-Erhaltung ("Pflichtenheft-Lock")
-* **Regel:** Die Kern-Features aus dem `Pflichtenheft_v1.2` dürfen niemals durch Refactoring ausgehebelt werden.
-* **Spezifisch:** 
-  * FA 14 (Session Manager & Seamless SSO Timer) darf nicht gelöscht werden, nur weil "Passwörter beim Start scheinbar nicht abgefragt werden".
-  * Native Messaging Strictness (`Console.WriteLine`-Verbot) muss immer respektiert werden.
-  * DPAPI / TPM / AD Key Storage Logic muss intakt bleiben.
+## 4. Pflichtenheft-Compliance & Konsens-Prinzip
+* **Regel:** Das `Pflichtenheft_v1.2` bildet die absolute Grundlage der Architektur. Kern-Features (z.B. FA 14 Seamless SSO, FA 22 Audit Logs, Native-Messaging-Vorgaben) dürfen nicht eigenmächtig durch Refactoring ausgehebelt werden.
+* **Ausnahme & Konsens:** Wenn technische Erfordernisse, Optimierungen oder neue Erkenntnisse dem Pflichtenheft widersprechen, ist das Pflichtenheft NICHT unfehlbar. 
+* **Aktion:** In einem solchen Fall stoppt der Agent, weist den Nutzer proaktiv auf den Widerspruch hin und schlägt eine Anpassung vor. **Keine Abweichung vom Pflichtenheft ohne explizite Zustimmung des Nutzers.** Erst wenn ein Konsens erzielt wurde, wird das Pflichtenheft offiziell aktualisiert und der Code entsprechend angepasst.
 
 ## 5. Langsame und sichere Iteration ("Do Not Rush")
 * **Regel:** Wenn das Problem nicht zu 100 % klar ist, rät der Agent nicht und löscht keine Dateien "auf Verdacht".
