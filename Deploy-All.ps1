@@ -19,10 +19,8 @@ $PublishClientPath = "$RepoPath\Publish\Client"
 $IISPath = "C:\inetpub\EZKPM"
 $UpdatesDir = "$PublishServerPath\Updates"
 
-Write-Host "`n[1/7] Stoppe laufende Prozesse und IIS AppPool..." -ForegroundColor Yellow
+Write-Host "`n[1/7] Stoppe laufenden lokalen Desktop-Client..." -ForegroundColor Yellow
 Stop-Process -Name "EZKPM.Client.Desktop" -Force -ErrorAction SilentlyContinue
-Stop-WebAppPool -Name "EZKPM_AppPool" -ErrorAction SilentlyContinue
-Start-Sleep -Seconds 2
 
 Write-Host "`n[2/7] Kompiliere Server (PDP)..." -ForegroundColor Yellow
 if (Test-Path $PublishServerPath) { Remove-Item -Path "$PublishServerPath\*" -Recurse -Force -Exclude "Updates" -ErrorAction SilentlyContinue }
@@ -51,6 +49,10 @@ $versionJson = @{
 Set-Content -Path "$UpdatesDir\version.json" -Value $versionJson
 
 Write-Host "`n[5/7] Verteile Dateien an den IIS-Produktionsserver..." -ForegroundColor Yellow
+Write-Host "      Stoppe IIS AppPool, um Dateisperren zu vermeiden..." -ForegroundColor Yellow
+Stop-WebAppPool -Name "EZKPM_AppPool" -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 2
+
 if (!(Test-Path $IISPath)) { New-Item -ItemType Directory -Force -Path $IISPath | Out-Null }
 Copy-Item -Path "$PublishServerPath\*" -Destination $IISPath -Recurse -Force
 
