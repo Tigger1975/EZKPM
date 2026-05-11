@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EZKPM.Server.PDP.Migrations
 {
     [DbContext(typeof(EzkpmDbContext))]
-    [Migration("20260511094316_DecentralizedAuth")]
-    partial class DecentralizedAuth
+    [Migration("20260511132337_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
