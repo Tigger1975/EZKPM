@@ -59,8 +59,8 @@ namespace EZKPM.Client.Desktop
                 if (args.Any(a => a.Equals("autostart", StringComparison.OrdinalIgnoreCase) || a.Equals("--autostart", StringComparison.OrdinalIgnoreCase)))
                 {
                     IsAutoStart = true;
-                    RegisterAutostart();
-                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Autostart registered.\n");
+                    RegisterSystemIntegration();
+                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] System integration (Autostart, URI Scheme) registered.\n");
                     LogDebug("Running in autostart mode.");
                 }
 
@@ -87,6 +87,9 @@ namespace EZKPM.Client.Desktop
                 RegisterNativeMessagingHost();
                 File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Native Messaging Host registered.\n");
                 
+                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Registering System Integrations (URI Scheme)...\n");
+                RegisterSystemIntegration();
+
                 File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Building Avalonia App...\n");
                 BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
                 File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Avalonia App Exited gracefully.\n");
@@ -130,24 +133,38 @@ namespace EZKPM.Client.Desktop
             };
         }
 
-        private static void RegisterAutostart()
+        private static void RegisterSystemIntegration()
         {
             try
             {
                 string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
                 if (!string.IsNullOrEmpty(exePath))
                 {
+                    // 1. Autostart
                     using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
                     if (key != null)
                     {
                         key.SetValue("EZKPM_Client", $"\"{exePath}\" --autostart");
                         LogDebug("Successfully registered autostart in registry.");
                     }
+
+                    // 2. Custom URI Scheme (ezkpm://)
+                    using var uriKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Classes\ezkpm");
+                    if (uriKey != null)
+                    {
+                        uriKey.SetValue("", "URL:EZKPM Protocol");
+                        uriKey.SetValue("URL Protocol", "");
+                        using var defaultIcon = uriKey.CreateSubKey("DefaultIcon");
+                        defaultIcon.SetValue("", $"\"{exePath}\",1");
+                        using var command = uriKey.CreateSubKey(@"shell\open\command");
+                        command.SetValue("", $"\"{exePath}\" \"%1\"");
+                        LogDebug("Successfully registered ezkpm:// URI scheme in registry.");
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LogDebug($"Failed to register autostart: {ex.Message}");
+                LogDebug($"Failed to register system integration: {ex.Message}");
             }
         }
 

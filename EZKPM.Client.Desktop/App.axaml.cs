@@ -49,6 +49,19 @@ namespace EZKPM.Client.Desktop
         private async Task InitializeAppAsync(IClassicDesktopStyleApplicationLifetime desktop)
         {
             await Task.Yield();
+            
+            var args = Environment.GetCommandLineArgs();
+            var pairingArg = args.FirstOrDefault(a => a.StartsWith("ezkpm://pair?code=", StringComparison.OrdinalIgnoreCase));
+            
+            if (pairingArg != null)
+            {
+                var code = pairingArg.Replace("ezkpm://pair?code=", "", StringComparison.OrdinalIgnoreCase).Trim();
+                var pairingWindow = new Views.PairingWindow(code);
+                desktop.MainWindow = pairingWindow;
+                pairingWindow.Show();
+                return;
+            }
+
             var startup = new Views.StartupWindow();
             startup.Closed += (s, e) =>
             {

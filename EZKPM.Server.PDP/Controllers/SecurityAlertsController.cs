@@ -29,7 +29,7 @@ namespace EZKPM.Server.PDP.Controllers
         private async Task<bool> IsAdminAsync()
         {
             var hashedSid = GetUserSid();
-            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedSid);
+            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == hashedSid);
             return profile != null && await _db.UserProfiles.AnyAsync(u => u.PersonId == profile.PersonId && u.IsAdmin);
         }
 
@@ -104,3 +104,4 @@ namespace EZKPM.Server.PDP.Controllers
         }
     }
 }
+

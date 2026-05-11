@@ -50,11 +50,11 @@ namespace EZKPM.Server.PDP.Controllers
         [HttpPost("setup")]
         public async Task<IActionResult> SetupRecovery([FromBody] SetupRecoveryDto request)
         {
-            var hashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.AdSid);
-            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedSid);
+            var hashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.HashedSid);
+            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == hashedSid);
             if (profile == null)
             {
-                profile = new UserProfile { AdSid = hashedSid };
+                profile = new UserProfile { HashedSid = hashedSid };
                 _db.UserProfiles.Add(profile);
             }
             
@@ -67,12 +67,12 @@ namespace EZKPM.Server.PDP.Controllers
         [HttpPost("request")]
         public async Task<IActionResult> RequestRecovery([FromBody] InitiateRecoveryRequestDto request)
         {
-            var hashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.AdSid);
-            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedSid);
+            var hashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.HashedSid);
+            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == hashedSid);
             if (profile == null) return NotFound("User profile not found.");
 
             var existingRequest = await _db.VaultRecoveryRequests
-                .FirstOrDefaultAsync(r => r.AdSid == hashedSid && !r.IsCompleted);
+                .FirstOrDefaultAsync(r => r.TargetHashedSid == hashedSid && !r.IsCompleted);
 
             Guid currentRequestId;
 
@@ -86,8 +86,8 @@ namespace EZKPM.Server.PDP.Controllers
             {
                 var newRequest = new VaultRecoveryRequest
                 {
-                    AdSid = hashedSid,
-                    RequesterSid = GetUserSid(), // The admin who initiates the request
+                    TargetHashedSid = hashedSid,
+                    RequesterHashedSid = GetUserSid(), // The admin who initiates the request
                     EphemeralUserPubKey = request.EphemeralUserPubKey,
                     RequiredShares = 2 // 2 OTHER admins required for 6-eyes principle
                 };
@@ -99,7 +99,7 @@ namespace EZKPM.Server.PDP.Controllers
             {
                 RecoveryRequestId = currentRequestId,
                 Action = "Requested",
-                ActorSid = hashedSid,
+                ActorHashedSid = hashedSid,
                 Details = "User initiated a Vault Recovery request."
             });
 
@@ -108,12 +108,12 @@ namespace EZKPM.Server.PDP.Controllers
             // Broadcast an die Administratoren über SignalR
             var adminSids = await _db.UserProfiles
                 .Where(u => u.IsAdmin)
-                .Select(u => u.AdSid)
+                .Select(u => u.HashedSid)
                 .ToListAsync();
 
-            foreach (var adminSid in adminSids)
+            foreach (var AdminHashedSid in adminSids)
             {
-                var connectionId = EZKPM.Server.PDP.Hubs.ClientSyncHub.GetConnectionIdForSid(adminSid);
+                var connectionId = EZKPM.Server.PDP.Hubs.ClientSyncHub.GetConnectionIdForSid(AdminHashedSid);
                 if (!string.IsNullOrEmpty(connectionId))
                 {
                     await _hubContext.Clients.Client(connectionId).SendAsync("RecoveryRequested", currentRequestId, hashedSid);
@@ -131,7 +131,7 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> ApproveRecovery([FromBody] ProvideRecoveryShareDto request)
         {
             var callerHashedSid = GetUserSid();
-            var adminProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == callerHashedSid);
+            var adminProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == callerHashedSid);
             if (adminProfile == null || !await _db.UserProfiles.AnyAsync(u => u.PersonId == adminProfile.PersonId && u.IsAdmin))
                 return Forbid("Only administrators can provide recovery shares.");
 
@@ -143,7 +143,7 @@ namespace EZKPM.Server.PDP.Controllers
             if (recovery.IsCompleted) return BadRequest("Recovery already completed.");
 
             // Get Requester's PersonId
-            var requesterProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == recovery.RequesterSid);
+            var requesterProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == recovery.RequesterHashedSid);
             if (requesterProfile != null && adminProfile.PersonId == requesterProfile.PersonId)
             {
                 return BadRequest("The physical person who initiated the recovery request cannot approve it, even using a different linked account (6-eyes principle requires 2 distinct persons).");
@@ -156,7 +156,7 @@ namespace EZKPM.Server.PDP.Controllers
                 {
                     RecoveryRequestId = recovery.Id,
                     Action = "Expired",
-                    ActorSid = "SYSTEM",
+                    ActorHashedSid = "SYSTEM",
                     Details = "Recovery request expired before enough approvals were received."
                 });
                 
@@ -168,7 +168,7 @@ namespace EZKPM.Server.PDP.Controllers
             // Check if this PersonId has already provided a share
             var existingSharePersonIds = await _db.VaultRecoveryShares
                 .Where(s => s.RecoveryRequestId == recovery.Id)
-                .Join(_db.UserProfiles, s => s.AdminSid, u => u.AdSid, (s, u) => u.PersonId)
+                .Join(_db.UserProfiles, s => s.AdminHashedSid, u => u.HashedSid, (s, u) => u.PersonId)
                 .ToListAsync();
 
             if (existingSharePersonIds.Contains(adminProfile.PersonId))
@@ -177,7 +177,7 @@ namespace EZKPM.Server.PDP.Controllers
             var share = new VaultRecoveryShare
             {
                 RecoveryRequestId = recovery.Id,
-                AdminSid = callerHashedSid,
+                AdminHashedSid = callerHashedSid,
                 EncryptedShareBlob = request.EncryptedShareBlob
             };
             
@@ -187,7 +187,7 @@ namespace EZKPM.Server.PDP.Controllers
             {
                 RecoveryRequestId = recovery.Id,
                 Action = "Approved",
-                ActorSid = callerHashedSid,
+                ActorHashedSid = callerHashedSid,
                 Details = "Admin approved the recovery request."
             });
 
@@ -199,7 +199,7 @@ namespace EZKPM.Server.PDP.Controllers
                 {
                     RecoveryRequestId = recovery.Id,
                     Action = "Completed",
-                    ActorSid = "SYSTEM",
+                    ActorHashedSid = "SYSTEM",
                     Details = "Recovery threshold met. Fragments released to the user."
                 });
             }
@@ -209,16 +209,16 @@ namespace EZKPM.Server.PDP.Controllers
             return Ok();
         }
 
-        [HttpGet("status/{adSid}")]
-        public async Task<ActionResult<RecoveryStatusResponseDto>> GetRecoveryStatus(string adSid)
+        [HttpGet("status/{HashedSid}")]
+        public async Task<ActionResult<RecoveryStatusResponseDto>> GetRecoveryStatus(string HashedSid)
         {
-            var hashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(adSid);
-            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedSid);
+            var hashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(HashedSid);
+            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == hashedSid);
             if (profile == null) return NotFound("Profile not found.");
 
             var recovery = await _db.VaultRecoveryRequests
                 .Include(r => r.ProvidedShares)
-                .Where(r => r.AdSid == hashedSid && !r.IsCompleted)
+                .Where(r => r.TargetHashedSid == hashedSid && !r.IsCompleted)
                 .OrderByDescending(r => r.RequestedAt)
                 .FirstOrDefaultAsync();
 
@@ -231,7 +231,7 @@ namespace EZKPM.Server.PDP.Controllers
                 {
                     RecoveryRequestId = recovery.Id,
                     Action = "Expired",
-                    ActorSid = "SYSTEM",
+                    ActorHashedSid = "SYSTEM",
                     Details = "Recovery request expired while polling status."
                 });
                 _db.VaultRecoveryRequests.Remove(recovery);
@@ -242,7 +242,7 @@ namespace EZKPM.Server.PDP.Controllers
             var response = new RecoveryStatusResponseDto
             {
                 RecoveryRequestId = recovery.Id,
-                AdSid = recovery.AdSid,
+                HashedSid = recovery.TargetHashedSid,
                 EncryptedMasterKeyBackup = profile.EncryptedMasterKeyBackup,
                 RequiredShares = recovery.RequiredShares,
                 IsCompleted = recovery.ProvidedShares.Count >= recovery.RequiredShares,
@@ -256,7 +256,7 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> GetAdminStatus()
         {
             var callerHashedSid = GetUserSid();
-            var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == callerHashedSid);
+            var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == callerHashedSid);
             bool isCallerAdmin = callerProfile != null && await _db.UserProfiles.AnyAsync(u => u.PersonId == callerProfile.PersonId && u.IsAdmin);
             bool anyAdminExists = await _db.UserProfiles.AnyAsync(u => u.IsAdmin);
 
@@ -272,7 +272,7 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> FilterAdmins([FromBody] System.Collections.Generic.List<string> candidateSids)
         {
             var callerHashedSid = GetUserSid();
-            var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == callerHashedSid);
+            var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == callerHashedSid);
             bool isCallerAdmin = callerProfile != null && await _db.UserProfiles.AnyAsync(u => u.PersonId == callerProfile.PersonId && u.IsAdmin);
             bool anyAdminExists = await _db.UserProfiles.AnyAsync(u => u.IsAdmin);
 
@@ -283,7 +283,7 @@ namespace EZKPM.Server.PDP.Controllers
 
             var adminSidsInDb = await _db.UserProfiles
                 .Where(u => u.IsAdmin)
-                .Select(u => u.AdSid)
+                .Select(u => u.HashedSid)
                 .ToListAsync();
 
             var matchedSids = new System.Collections.Generic.List<string>();
@@ -304,7 +304,7 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> SetAdmin([FromBody] SetAdminRequestDto request)
         {
             var callerHashedSid = GetUserSid();
-            var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == callerHashedSid);
+            var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == callerHashedSid);
             bool isCallerAdmin = callerProfile != null && await _db.UserProfiles.AnyAsync(u => u.PersonId == callerProfile.PersonId && u.IsAdmin);
 
             // Bootstrap Logic: Check if ANY admin exists in the entire database
@@ -321,18 +321,18 @@ namespace EZKPM.Server.PDP.Controllers
             if (!request.IsAdmin && anyAdminExists)
             {
                 int adminCount = await _db.UserProfiles.CountAsync(u => u.IsAdmin);
-                var targetProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedTargetSid);
+                var targetProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == hashedTargetSid);
                 if (targetProfile != null && targetProfile.IsAdmin && adminCount <= 1)
                 {
                     return BadRequest("Cannot remove the last administrator from the system.");
                 }
             }
 
-            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedTargetSid);
+            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == hashedTargetSid);
             
             if (profile == null)
             {
-                profile = new UserProfile { AdSid = hashedTargetSid, IsAdmin = request.IsAdmin };
+                profile = new UserProfile { HashedSid = hashedTargetSid, IsAdmin = request.IsAdmin };
                 _db.UserProfiles.Add(profile);
             }
             else
@@ -348,7 +348,7 @@ namespace EZKPM.Server.PDP.Controllers
         public async Task<IActionResult> LinkPerson([FromBody] LinkPersonDto request)
         {
             var callerHashedSid = GetUserSid();
-            var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == callerHashedSid);
+            var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == callerHashedSid);
             
             if (callerProfile == null || !await _db.UserProfiles.AnyAsync(u => u.PersonId == callerProfile.PersonId && u.IsAdmin))
                 return Forbid("Only administrators can link user accounts.");
@@ -356,18 +356,18 @@ namespace EZKPM.Server.PDP.Controllers
             var hashedSourceSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.SourceAdSid);
             var hashedTargetSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.TargetAdSid);
 
-            var sourceProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedSourceSid);
-            var targetProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedTargetSid);
+            var sourceProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == hashedSourceSid);
+            var targetProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == hashedTargetSid);
 
             // Auto-create empty profiles if they don't exist yet, so they can be "hijacked" upon first login
             if (sourceProfile == null)
             {
-                sourceProfile = new UserProfile { AdSid = hashedSourceSid, EncryptedMasterKeyBackup = "" };
+                sourceProfile = new UserProfile { HashedSid = hashedSourceSid, EncryptedMasterKeyBackup = "" };
                 _db.UserProfiles.Add(sourceProfile);
             }
             if (targetProfile == null)
             {
-                targetProfile = new UserProfile { AdSid = hashedTargetSid, EncryptedMasterKeyBackup = "" };
+                targetProfile = new UserProfile { HashedSid = hashedTargetSid, EncryptedMasterKeyBackup = "" };
                 _db.UserProfiles.Add(targetProfile);
             }
 
@@ -395,7 +395,7 @@ namespace EZKPM.Server.PDP.Controllers
                     {
                         RecoveryRequestId = ex.Id,
                         Action = "Expired",
-                        ActorSid = "SYSTEM",
+                        ActorHashedSid = "SYSTEM",
                         Details = "Recovery request expired (1 hour window)."
                     });
                 }
@@ -413,3 +413,5 @@ namespace EZKPM.Server.PDP.Controllers
         }
     }
 }
+
+

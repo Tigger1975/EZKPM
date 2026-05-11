@@ -28,7 +28,7 @@ namespace EZKPM.Shared.Contracts
 
     public class AclEntryDto
     {
-        public string AdSid { get; set; } = "";
+        public string HashedSid { get; set; } = "";
         public string DisplayName { get; set; } = "";
         public int PermissionLevel { get; set; } // -1=Deny, 0=None, 1=Execute, 2=Read, 3=Owner
         public string EncryptedKeyShare { get; set; } = "";
@@ -164,7 +164,7 @@ namespace EZKPM.Shared.Contracts
 
     public class SetAdminRequestDto
     {
-        public string TargetAdSid { get; set; }
+        public string TargetHashedSid { get; set; }
         public bool IsAdmin { get; set; }
     }
 
@@ -177,7 +177,8 @@ namespace EZKPM.Shared.Contracts
 
     public class LinkPersonDto
     {
-        public string SourceAdSid { get; set; }
-        public string TargetAdSid { get; set; }
+        public string SourceHashedSid { get; set; }
+        public string TargetHashedSid { get; set; }
     }
 }
+

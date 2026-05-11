@@ -45,6 +45,29 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
+            <TabItem Header="Benutzer Einladen">
+                <Grid RowDefinitions="Auto, Auto, *, Auto" Margin="10">
+                    <StackPanel Grid.Row="0" Spacing="10" Margin="0,0,0,20">
+                        <TextBlock Text="Neuen Benutzer aus AD einladen" FontWeight="Bold" FontSize="18"/>
+                        <TextBlock Text="Suchen Sie den Benutzer im Active Directory. Der Server generiert einen Pairing-Code und speichert nur die Hash-Werte (Zero-Knowledge). Ihr Client öffnet anschließend Outlook, um den Code sicher zu versenden." Foreground="Gray" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,0,0,20">
+                        <TextBlock Text="Benutzer suchen:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        <TextBox x:Name="SearchInviteTextBox" Width="250" Watermark="Name oder SID eingeben..."/>
+                        <Button Content="Suchen" Click="SearchInviteButton_Click" Classes="primary" Background="#3B82F6" Foreground="White"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" VerticalAlignment="Top" Spacing="10">
+                        <TextBlock Text="Ausgewählter Benutzer für Einladung:" FontSize="14" Foreground="Gray"/>
+                        <TextBlock x:Name="SelectedInviteText" Text="Keine Auswahl" FontSize="18" FontWeight="Bold" Foreground="#10B981"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button x:Name="SendInviteButton" Content="Einladung generieren &amp; E-Mail vorbereiten" Click="SendInviteButton_Click" Background="#8B5CF6" Foreground="White" FontWeight="Bold" Padding="15,10" IsEnabled="False"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
             
             <TabItem Header="Recovery-Verwaltung">
                 <Grid RowDefinitions="Auto, *, Auto" Margin="10">

@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,9 +35,23 @@ builder.Services.AddDbContext<EzkpmDbContext>(options =>
 builder.Services.AddSingleton<EZKPM.Server.PDP.Services.P2PSyncTrigger>();
 builder.Services.AddHostedService<EZKPM.Server.PDP.Services.GossipSyncEngine>();
 
-// TODO: In einer echten Umgebung OIDC Authentication hinzufügen
-// builder.Services.AddAuthentication(...)
-
+// JWT Konfiguration für Decentralized Auth
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        // Warnung: In Produktion sollte dieser Key aus dem Key Vault oder der Config kommen!
+        var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "EZKPM_Fallback_Secret_Key_32_Bytes_Long_Minimum");
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = "EZKPM_Server",
+            ValidAudience = "EZKPM_Client",
+            IssuerSigningKey = new SymmetricSecurityKey(key)
+        };
+    });
 builder.Services.AddOpenIddict()
     .AddCore(options =>
     {
@@ -92,38 +109,38 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 
     // Convert plain text SIDs to HMAC-SHA256 blinded indices for Zero-Knowledge
-    var aclsToConvert = db.AssetAcls.Where(a => a.AdSid != null && !a.AdSid.EndsWith("=")).ToList();
+    var aclsToConvert = db.AssetAcls.Where(a => a.HashedSid != null && !a.HashedSid.EndsWith("=")).ToList();
     foreach (var acl in aclsToConvert)
     {
         db.AssetAcls.Remove(acl);
         db.AssetAcls.Add(new AssetAcl 
         {
             AssetId = acl.AssetId,
-            AdSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(acl.AdSid),
+            HashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(acl.HashedSid),
             PermissionLevel = acl.PermissionLevel,
             EncryptedKeyShare = acl.EncryptedKeyShare
         });
     }
 
-    var logsToConvert = db.AuditLogs.Where(l => l.ActorSid != null && !l.ActorSid.EndsWith("=")).ToList();
+    var logsToConvert = db.AuditLogs.Where(l => l.ActorHashedSid != null && !l.ActorHashedSid.EndsWith("=")).ToList();
     foreach (var log in logsToConvert)
-        log.ActorSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(log.ActorSid);
+        log.ActorHashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(log.ActorHashedSid);
 
-    var sharesToConvert = db.VaultRecoveryShares.Where(s => s.AdminSid != null && !s.AdminSid.EndsWith("=")).ToList();
+    var sharesToConvert = db.VaultRecoveryShares.Where(s => s.AdminHashedSid != null && !s.AdminHashedSid.EndsWith("=")).ToList();
     foreach (var share in sharesToConvert)
-        share.AdminSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(share.AdminSid);
+        share.AdminHashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(share.AdminHashedSid);
 
-    var requestsToConvert = db.VaultRecoveryRequests.Where(r => r.AdSid != null && !r.AdSid.EndsWith("=")).ToList();
+    var requestsToConvert = db.VaultRecoveryRequests.Where(r => r.TargetHashedSid != null && !r.TargetHashedSid.EndsWith("=")).ToList();
     foreach (var req in requestsToConvert)
-        req.AdSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(req.AdSid);
+        req.TargetHashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(req.TargetHashedSid);
 
-    var profilesToConvert = db.UserProfiles.Where(p => p.AdSid != null && !p.AdSid.EndsWith("=")).ToList();
+    var profilesToConvert = db.UserProfiles.Where(p => p.HashedSid != null && !p.HashedSid.EndsWith("=")).ToList();
     foreach (var profile in profilesToConvert)
     {
         db.UserProfiles.Remove(profile);
         db.UserProfiles.Add(new UserProfile 
         {
-            AdSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(profile.AdSid),
+            HashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(profile.HashedSid),
             EncryptedMasterKeyBackup = profile.EncryptedMasterKeyBackup
         });
     }
@@ -140,9 +157,12 @@ app.UseHttpsRedirection();
 // wir setzen stattdessen in den Controllern eine Dummy-SID, falls keine Auth da ist.
 app.UseDefaultFiles();
 app.UseStaticFiles();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<EZKPM.Server.PDP.Hubs.ClientSyncHub>("/hubs/sync");
 
 app.Run();
+
+

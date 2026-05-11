@@ -301,9 +301,12 @@ namespace EZKPM.Client.Desktop.Views
                 var handler = new System.Net.Http.HttpClientHandler { UseDefaultCredentials = true };
                 var client = new EZKPM.Client.Core.Services.VaultApiClient(new System.Net.Http.HttpClient(handler) { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) });
                 
+                using var sha256 = System.Security.Cryptography.SHA256.Create();
+                var hashedSid = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(sid)));
+                
                 await client.RequestRecoveryAsync(new EZKPM.Shared.Contracts.InitiateRecoveryRequestDto
                 {
-                    AdSid = sid,
+                    HashedSid = hashedSid,
                     EphemeralUserPubKey = ephemeralPubKey
                 });
 
@@ -359,14 +362,14 @@ namespace EZKPM.Client.Desktop.Views
                 await client.ApproveRecoveryAsync(new EZKPM.Shared.Contracts.ProvideRecoveryShareDto
                 {
                     RecoveryRequestId = statusResp.RecoveryRequestId,
-                    AdminSid = "S-1-5-21-ADMIN-1",
+                    AdminHashedSid = "HASHED-ADMIN-1",
                     EncryptedShareBlob = "mock-share-1"
                 });
 
                 await client.ApproveRecoveryAsync(new EZKPM.Shared.Contracts.ProvideRecoveryShareDto
                 {
                     RecoveryRequestId = statusResp.RecoveryRequestId,
-                    AdminSid = "S-1-5-21-ADMIN-2",
+                    AdminHashedSid = "HASHED-ADMIN-2",
                     EncryptedShareBlob = "mock-share-2"
                 });
             }

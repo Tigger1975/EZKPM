@@ -36,7 +36,7 @@ public class AclGroupItemViewModel : System.ComponentModel.INotifyPropertyChange
             _displaySid = value;
             if (string.IsNullOrEmpty(SourceGroupSid) && UnderlyingAcls.Count > 0)
             {
-                UnderlyingAcls[0].AdSid = value;
+                UnderlyingAcls[0].HashedSid = value;
             }
             PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(DisplaySid)));
         }
@@ -65,6 +65,12 @@ public class AclGroupItemViewModel : System.ComponentModel.INotifyPropertyChange
 
 public partial class AssetEditorWindow : Window
 {
+    private string HashSid(string sid)
+    {
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
+        return Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(sid)));
+    }
+
     private readonly VaultApiClient _apiClient;
     private readonly VaultCryptoService _cryptoService;
     private readonly ObservableCollection<VaultAssetPayload> _decryptedAssets = new();
@@ -122,7 +128,7 @@ public partial class AssetEditorWindow : Window
                 var parentFolder = allAssets.FirstOrDefault(a => a.TransientAssetId == payload.ParentFolderId);
                 if (parentFolder != null && parentFolder.Acls != null && parentFolder.Acls.Count > 0)
                 {
-                    payload.Acls = parentFolder.Acls.Select(a => new AclEntryDto { AdSid = a.AdSid, DisplayName = a.DisplayName, PermissionLevel = a.PermissionLevel }).ToList();
+                    payload.Acls = parentFolder.Acls.Select(a => new AclEntryDto { HashedSid = a.HashedSid, DisplayName = a.DisplayName, PermissionLevel = a.PermissionLevel }).ToList();
                 }
             }
 
@@ -304,7 +310,7 @@ public partial class AssetEditorWindow : Window
         // Automatischer Owner = Ersteller (Echte AD SID)
         var currentUser = Services.AdSearchService.GetCurrentUser();
         _acls.Add(new AclEntryDto { 
-            AdSid = currentUser.Sid, 
+            HashedSid = HashSid(currentUser.Sid), 
             DisplayName = currentUser.DisplayName,
             PermissionLevel = 3 // Owner
         });
@@ -677,12 +683,12 @@ public partial class AssetEditorWindow : Window
                 CustomFields = _customFields.ToList()
             }; // End of payload initializer
 
-            var rawAcls = _acls.Where(a => !string.IsNullOrWhiteSpace(a.AdSid)).ToList();
+            var rawAcls = _acls.Where(a => !string.IsNullOrWhiteSpace(a.HashedSid)).ToList();
 
             // Apply priority resolution for overlapping group memberships
             // Deny (-1) -> None (0) -> Execute (1) -> Read (2) -> Owner (3)
             payload.Acls = rawAcls
-                .GroupBy(a => a.AdSid)
+                .GroupBy(a => a.HashedSid)
                 .Select(g => 
                 {
                     var entries = g.ToList();
@@ -711,7 +717,7 @@ public partial class AssetEditorWindow : Window
             }
 
             // Validation: Last-Man-Standing & Public Key Check
-            bool isCurrentUserOwner = payload.Acls.Any(a => a.AdSid == currentUserSid && a.PermissionLevel == 3);
+            bool isCurrentUserOwner = payload.Acls.Any(a => a.HashedSid == HashSid(currentUserSid) && a.PermissionLevel == 3);
             if (!isCurrentUserOwner)
             {
                 // In a full implementation, we would query the server if the other owners have valid Public Keys.
@@ -1078,13 +1084,13 @@ public partial class AssetEditorWindow : Window
     private void RefreshDisplayAcls()
     {
         _displayAcls.Clear();
-        var groups = _acls.GroupBy(a => string.IsNullOrEmpty(a.SourceGroupSid) ? a.AdSid : a.SourceGroupSid).ToList();
+        var groups = _acls.GroupBy(a => string.IsNullOrEmpty(a.SourceGroupSid) ? a.HashedSid : a.SourceGroupSid).ToList();
         foreach (var g in groups)
         {
             var first = g.First();
             var vm = new AclGroupItemViewModel
             {
-                DisplaySid = string.IsNullOrEmpty(first.SourceGroupSid) ? first.AdSid : first.SourceGroupSid,
+                DisplaySid = string.IsNullOrEmpty(first.SourceGroupSid) ? first.HashedSid : first.SourceGroupSid,
                 DisplayName = string.IsNullOrEmpty(first.SourceGroupSid) ? first.DisplayName : first.SourceGroupName,
                 IsInherited = first.IsInherited,
                 SourceGroupSid = first.SourceGroupSid,
@@ -1144,11 +1150,11 @@ public partial class AssetEditorWindow : Window
         var result = await picker.ShowDialog<EZKPM.Client.Desktop.Services.AdPrincipal>(this);
         if (result != null)
         {
-            if (!_acls.Any(a => a.AdSid == result.Sid))
+            if (!_acls.Any(a => a.HashedSid == HashSid(result.Sid)))
             {
                 var newAcl = new AclEntryDto
                 {
-                    AdSid = result.Sid,
+                    HashedSid = HashSid(result.Sid),
                     DisplayName = result.DisplayName,
                     PermissionLevel = 3 // Standard Besitzer
                 };
@@ -1216,11 +1222,11 @@ public partial class AssetEditorWindow : Window
                     {
                         foreach (var pacl in parentNode.OriginalPayload.Acls)
                         {
-                            if (!_acls.Any(a => a.AdSid == pacl.AdSid))
+                            if (!_acls.Any(a => a.HashedSid == pacl.HashedSid))
                             {
                                 _acls.Add(new AclEntryDto 
                                 { 
-                                    AdSid = pacl.AdSid, 
+                                    HashedSid = pacl.HashedSid, 
                                     DisplayName = pacl.DisplayName, 
                                     PermissionLevel = pacl.PermissionLevel, 
                                     IsInherited = true,
@@ -1236,7 +1242,7 @@ public partial class AssetEditorWindow : Window
         }
     }
 
-    private async void AdSidAutoCompleteBox_Populating(object sender, Avalonia.Controls.PopulatingEventArgs e)
+    private async void HashedSidAutoCompleteBox_Populating(object sender, Avalonia.Controls.PopulatingEventArgs e)
     {
         if (sender is AutoCompleteBox autoCompleteBox)
         {
@@ -1341,11 +1347,11 @@ public partial class AssetEditorWindow : Window
                     foreach (var pAcl in parentAcls)
                     {
                         // If child does not have an EXPLICIT rule for this SID, inherit it
-                        if (!child.Acls.Any(a => a.AdSid == pAcl.AdSid && !a.IsInherited))
+                        if (!child.Acls.Any(a => a.HashedSid == pAcl.HashedSid && !a.IsInherited))
                         {
                             child.Acls.Add(new AclEntryDto 
                             { 
-                                AdSid = pAcl.AdSid, 
+                                HashedSid = pAcl.HashedSid, 
                                 DisplayName = pAcl.DisplayName, 
                                 PermissionLevel = pAcl.PermissionLevel, 
                                 IsInherited = true,

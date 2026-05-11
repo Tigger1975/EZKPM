@@ -82,8 +82,8 @@ namespace EZKPM.Server.PDP.Controllers
             var allSids = userSidsInfo.AllSids;
 
             var assets = await _db.VaultAssets
-                .Include(a => a.Acls.Where(acl => allSids.Contains(acl.AdSid)))
-                .Where(a => a.Acls.Any(acl => allSids.Contains(acl.AdSid)))
+                .Include(a => a.Acls.Where(acl => allSids.Contains(acl.HashedSid)))
+                .Where(a => a.Acls.Any(acl => allSids.Contains(acl.HashedSid)))
                 .ToListAsync();
 
             var responseList = assets.Select(asset =>
@@ -132,7 +132,7 @@ namespace EZKPM.Server.PDP.Controllers
                 foreach (var aclDto in request.Acls)
                 {
                     // Clean up potential SID string if it contains DisplayName
-                    var cleanSid = aclDto.AdSid;
+                    var cleanSid = aclDto.HashedSid;
                     if (cleanSid.Contains("(") && cleanSid.Contains(")"))
                     {
                         var start = cleanSid.LastIndexOf("(") + 1;
@@ -143,7 +143,7 @@ namespace EZKPM.Server.PDP.Controllers
                     _db.AssetAcls.Add(new AssetAcl
                     {
                         AssetId = newAsset.Id,
-                        AdSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(string.IsNullOrWhiteSpace(cleanSid) ? userSid : cleanSid),
+                        HashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(string.IsNullOrWhiteSpace(cleanSid) ? userSid : cleanSid),
                         PermissionLevel = aclDto.PermissionLevel,
                         EncryptedKeyShare = string.IsNullOrWhiteSpace(aclDto.EncryptedKeyShare) 
                             ? Convert.FromBase64String(request.EncryptedKeyShare) 
@@ -156,7 +156,7 @@ namespace EZKPM.Server.PDP.Controllers
                 _db.AssetAcls.Add(new AssetAcl
                 {
                     AssetId = newAsset.Id,
-                    AdSid = userSid,
+                    HashedSid = userSid,
                     PermissionLevel = 3, // Owner
                     EncryptedKeyShare = Convert.FromBase64String(request.EncryptedKeyShare)
                 });
@@ -180,7 +180,7 @@ namespace EZKPM.Server.PDP.Controllers
             byte[] metaHash = Convert.FromBase64String(request.MetadataHash ?? "AA==");
 
             var asset = await _db.VaultAssets
-                .Include(a => a.Acls.Where(acl => allSids.Contains(acl.AdSid)))
+                .Include(a => a.Acls.Where(acl => allSids.Contains(acl.HashedSid)))
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (asset == null || !asset.Acls.Any()) return Forbid(); // Owner or at least write access required
@@ -199,7 +199,7 @@ namespace EZKPM.Server.PDP.Controllers
                 // Neue hinzufügen (deduplicated by SID)
                 var uniqueAcls = request.Acls.GroupBy(a => 
                 {
-                    var clean = a.AdSid;
+                    var clean = a.HashedSid;
                     if (clean.Contains("(") && clean.Contains(")"))
                     {
                         var start = clean.LastIndexOf("(") + 1;
@@ -211,7 +211,7 @@ namespace EZKPM.Server.PDP.Controllers
 
                 foreach (var aclDto in uniqueAcls)
                 {
-                    var cleanSid = aclDto.AdSid;
+                    var cleanSid = aclDto.HashedSid;
                     if (cleanSid.Contains("(") && cleanSid.Contains(")"))
                     {
                         var start = cleanSid.LastIndexOf("(") + 1;
@@ -222,7 +222,7 @@ namespace EZKPM.Server.PDP.Controllers
                     _db.AssetAcls.Add(new AssetAcl
                     {
                         AssetId = asset.Id,
-                        AdSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(string.IsNullOrWhiteSpace(cleanSid) ? userSid : cleanSid),
+                        HashedSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(string.IsNullOrWhiteSpace(cleanSid) ? userSid : cleanSid),
                         PermissionLevel = aclDto.PermissionLevel,
                         EncryptedKeyShare = string.IsNullOrWhiteSpace(aclDto.EncryptedKeyShare) 
                             ? Convert.FromBase64String(request.EncryptedKeyShare) 
@@ -250,7 +250,7 @@ namespace EZKPM.Server.PDP.Controllers
             var allSids = userSidsInfo.AllSids;
             
             var asset = await _db.VaultAssets
-                .Include(a => a.Acls.Where(acl => allSids.Contains(acl.AdSid)))
+                .Include(a => a.Acls.Where(acl => allSids.Contains(acl.HashedSid)))
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (asset == null) return NotFound();
@@ -289,7 +289,7 @@ namespace EZKPM.Server.PDP.Controllers
             {
                 if (!a.Acls.Any(acl => acl.PermissionLevel >= 3)) return true;
 
-                bool hasAnyAccess = a.Acls.Any(acl => allSids.Contains(acl.AdSid));
+                bool hasAnyAccess = a.Acls.Any(acl => allSids.Contains(acl.HashedSid));
                 if (!hasAnyAccess) return true;
 
                 return false;
@@ -311,7 +311,7 @@ namespace EZKPM.Server.PDP.Controllers
             var allSids = userSidsInfo.AllSids;
 
             var asset = await _db.VaultAssets
-                .Include(a => a.Acls.Where(acl => allSids.Contains(acl.AdSid)))
+                .Include(a => a.Acls.Where(acl => allSids.Contains(acl.HashedSid)))
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (asset == null || !asset.Acls.Any()) return Forbid();
@@ -333,7 +333,7 @@ namespace EZKPM.Server.PDP.Controllers
 
             // 2. Asset & ACL laden (Wir laden gezielt nur den ACL-Eintrag für den aufrufenden User)
             var asset = await _db.VaultAssets
-                .Include(a => a.Acls.Where(acl => allSids.Contains(acl.AdSid)))
+                .Include(a => a.Acls.Where(acl => allSids.Contains(acl.HashedSid)))
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (asset == null)
@@ -388,7 +388,7 @@ namespace EZKPM.Server.PDP.Controllers
             var userSid = userSidsInfo.PrimarySid;
             var dummySid = EZKPM.Server.PDP.Services.SidHasher.HashSid("S-1-5-21-DUMMY-TEST-USER");
 
-            var hasAccess = await _db.AssetAcls.AnyAsync(a => a.AssetId == id && allSids.Contains(a.AdSid));
+            var hasAccess = await _db.AssetAcls.AnyAsync(a => a.AssetId == id && allSids.Contains(a.HashedSid));
             if (!hasAccess) return Forbid();
 
             // 1. Letzten Log-Eintrag für dieses Asset holen, um die Kette zu prüfen
@@ -428,7 +428,7 @@ namespace EZKPM.Server.PDP.Controllers
             var logEntry = new AuditLog
             {
                 AssetId = id,
-                ActorSid = userSid,
+                ActorHashedSid = userSid,
                 EncryptedLogBlob = logBlob,
                 Nonce = Convert.FromBase64String(request.Nonce),
                 PreviousEntryHash = expectedPreviousHash,
@@ -449,7 +449,7 @@ namespace EZKPM.Server.PDP.Controllers
             var userSidsInfo = GetUserSids();
             var allSids = userSidsInfo.AllSids;
 
-            var hasAccess = await _db.AssetAcls.AnyAsync(a => a.AssetId == id && allSids.Contains(a.AdSid));
+            var hasAccess = await _db.AssetAcls.AnyAsync(a => a.AssetId == id && allSids.Contains(a.HashedSid));
             if (!hasAccess) return Forbid();
 
             var latestLog = await _db.AuditLogs

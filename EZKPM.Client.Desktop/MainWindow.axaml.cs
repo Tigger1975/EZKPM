@@ -21,6 +21,13 @@ namespace EZKPM.Client.Desktop;
 
 public partial class MainWindow : Window
 {
+    private string HashSid(string sid)
+    {
+        if (string.IsNullOrEmpty(sid)) return sid;
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
+        return Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(sid)));
+    }
+
     private readonly VaultApiClient _apiClient;
     private readonly VaultCryptoService _cryptoService;
     private readonly ObservableCollection<VaultAssetPayload> _decryptedAssets = new();
@@ -360,7 +367,7 @@ public partial class MainWindow : Window
                     IsInheriting = false,
                     Acls = new List<EZKPM.Shared.Contracts.AclEntryDto> { 
                         new EZKPM.Shared.Contracts.AclEntryDto { 
-                            AdSid = currentUser, 
+                            HashedSid = HashSid(currentUser), 
                             PermissionLevel = 3 
                         } 
                     },
@@ -794,7 +801,7 @@ public partial class MainWindow : Window
                     {
                         Title = targetFolderName,
                         AssetType = "Folder",
-                        Acls = new List<AclEntryDto> { new AclEntryDto { AdSid = currentUserSid, PermissionLevel = 3 } }
+                        Acls = new List<AclEntryDto> { new AclEntryDto { HashedSid = HashSid(currentUserSid), PermissionLevel = 3 } }
                     };
                     var rootRequestDto = _cryptoService.EncryptAsset(rootFolderPayload);
                     rootImportFolderId = await _apiClient.CreateAssetAsync(rootRequestDto);
@@ -817,7 +824,7 @@ public partial class MainWindow : Window
                         // Ensure we have owner ACLs, otherwise the server rejects it or it becomes invisible
                         if (payload.Acls.Count == 0)
                         {
-                            payload.Acls.Add(new AclEntryDto { AdSid = currentUserSid, PermissionLevel = 3 });
+                            payload.Acls.Add(new AclEntryDto { HashedSid = HashSid(currentUserSid), PermissionLevel = 3 });
                         }
 
                         var requestDto = _cryptoService.EncryptAsset(payload);
@@ -1088,11 +1095,11 @@ public partial class MainWindow : Window
                     // Add new inherited ACLs from target
                     foreach (var pacl in targetNode.Payload.Acls)
                     {
-                        if (!draggedNode.Payload.Acls.Any(a => a.AdSid == pacl.AdSid && !a.IsInherited))
+                        if (!draggedNode.Payload.Acls.Any(a => a.HashedSid == pacl.HashedSid && !a.IsInherited))
                         {
                             draggedNode.Payload.Acls.Add(new AclEntryDto 
                             { 
-                                AdSid = pacl.AdSid, 
+                                HashedSid = pacl.HashedSid, 
                                 DisplayName = pacl.DisplayName, 
                                 PermissionLevel = pacl.PermissionLevel, 
                                 IsInherited = true,

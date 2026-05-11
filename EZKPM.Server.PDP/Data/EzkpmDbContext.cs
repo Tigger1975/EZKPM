@@ -18,6 +18,7 @@ namespace EZKPM.Server.PDP.Data
         public DbSet<VaultRecoveryShare> VaultRecoveryShares { get; set; }
         public DbSet<RecoveryAuditLog> RecoveryAuditLogs { get; set; }
         public DbSet<SecurityAlert> SecurityAlerts { get; set; }
+        public DbSet<PairingInvitation> PairingInvitations { get; set; }
 
         public EzkpmDbContext(DbContextOptions<EzkpmDbContext> options) : base(options) { }
 
@@ -39,11 +40,11 @@ namespace EZKPM.Server.PDP.Data
                 entity.Property(e => e.Nonce).IsRequired().HasMaxLength(12); // GCM Nonce (96-bit)
             });
 
-            // --- AssetAcl Configuration (AD SID Mapping) ---
+            // --- AssetAcl Configuration (Hashed SID Mapping) ---
             modelBuilder.Entity<AssetAcl>(entity =>
             {
-                // Ein User/Gruppe (SID) hat genau eine Berechtigung pro Asset
-                entity.HasKey(e => new { e.AssetId, e.AdSid });
+                // Ein User/Gruppe (HashedSid) hat genau eine Berechtigung pro Asset
+                entity.HasKey(e => new { e.AssetId, e.HashedSid });
 
                 entity.HasOne(e => e.Asset)
                       .WithMany(a => a.Acls)
@@ -67,7 +68,7 @@ namespace EZKPM.Server.PDP.Data
             // --- Recovery Configuration ---
             modelBuilder.Entity<UserProfile>(entity =>
             {
-                entity.HasKey(e => e.AdSid);
+                entity.HasKey(e => e.HashedSid);
             });
 
             modelBuilder.Entity<VaultRecoveryRequest>(entity =>
@@ -175,9 +176,9 @@ namespace EZKPM.Server.PDP.Data
         public VaultAsset Asset { get; set; }
 
         /// <summary>
-        /// Security Identifier (SID) aus dem Active Directory (User oder Gruppe).
+        /// Security Identifier Hash (SHA-256) aus dem Active Directory (User oder Gruppe).
         /// </summary>
-        public string AdSid { get; set; }
+        public string HashedSid { get; set; }
 
         /// <summary>
         /// Berechtigungsstufe: Execute (1), Read (2), Owner (3).
@@ -200,9 +201,9 @@ namespace EZKPM.Server.PDP.Data
         public VaultAsset Asset { get; set; }
 
         /// <summary>
-        /// AD SID des Akteurs, der die Aktion ausgeführt hat.
+        /// AD SID Hash des Akteurs, der die Aktion ausgeführt hat.
         /// </summary>
-        public string ActorSid { get; set; }
+        public string ActorHashedSid { get; set; }
 
         /// <summary>
         /// Verschlüsselte Log-Details (z.B. Betrag, Bestellnummer bei Payments).
@@ -225,8 +226,9 @@ namespace EZKPM.Server.PDP.Data
 
     public class UserProfile
     {
-        public string AdSid { get; set; }
+        public string HashedSid { get; set; }
         public Guid PersonId { get; set; } = Guid.NewGuid(); // Maps multiple AD accounts (e.g. admin & standard) to one physical human
+        public string IdentityPublicKey { get; set; } // Base64 ECDSA/Ed25519 Public Key
         public string EncryptedMasterKeyBackup { get; set; }
         public bool IsAdmin { get; set; }
     }
@@ -234,8 +236,8 @@ namespace EZKPM.Server.PDP.Data
     public class VaultRecoveryRequest
     {
         public Guid Id { get; set; } = Guid.NewGuid();
-        public string AdSid { get; set; } 
-        public string RequesterSid { get; set; } // Enforces 6-eyes principle
+        public string TargetHashedSid { get; set; } 
+        public string RequesterHashedSid { get; set; } // Enforces 6-eyes principle
         public string EphemeralUserPubKey { get; set; } 
         public int RequiredShares { get; set; } = 2; // e.g. 2-of-5 threshold
         public bool IsCompleted { get; set; }
@@ -248,7 +250,7 @@ namespace EZKPM.Server.PDP.Data
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public Guid RecoveryRequestId { get; set; }
-        public string AdminSid { get; set; }
+        public string AdminHashedSid { get; set; }
         public string EncryptedShareBlob { get; set; }
     }
 
@@ -257,8 +259,18 @@ namespace EZKPM.Server.PDP.Data
         public Guid Id { get; set; } = Guid.NewGuid();
         public Guid RecoveryRequestId { get; set; }
         public string Action { get; set; } // e.g. "Requested", "Approved", "Completed", "Expired"
-        public string ActorSid { get; set; } // Who did it
+        public string ActorHashedSid { get; set; } // Who did it
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
         public string Details { get; set; } 
+    }
+
+    public class PairingInvitation
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string HashedSid { get; set; }
+        public string HashedUsername { get; set; }
+        public string PairingCodeHash { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime ExpiresAt { get; set; }
     }
 }

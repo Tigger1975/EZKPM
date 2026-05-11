@@ -50,6 +50,80 @@ public partial class AdminDashboardWindow : Window
         }
     }
 
+    private EZKPM.Client.Desktop.Services.AdPrincipal _selectedUserForInvite;
+
+    private async void SearchInviteButton_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new AdPickerWindow(EZKPM.Client.Desktop.Services.AdPickerFilterMode.ActiveOnly);
+        await picker.ShowDialog(this);
+
+        if (picker.SelectedPrincipal != null)
+        {
+            _selectedUserForInvite = picker.SelectedPrincipal;
+            var textBlock = this.FindControl<TextBlock>("SelectedInviteText");
+            if (textBlock != null) textBlock.Text = $"{_selectedUserForInvite.DisplayName} ({_selectedUserForInvite.SamAccountName})";
+            
+            var btn = this.FindControl<Button>("SendInviteButton");
+            if (btn != null) btn.IsEnabled = true;
+        }
+    }
+
+    private async void SendInviteButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedUserForInvite == null) return;
+
+        try
+        {
+            // 1. Hash SID and Username locally (Zero-Knowledge)
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var sidHash = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(_selectedUserForInvite.Sid)));
+            var nameHash = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(_selectedUserForInvite.SamAccountName)));
+
+            // 2. Request Pairing Code from Server
+            var payload = new { HashedSid = sidHash, HashedUsername = nameHash };
+            var response = await _apiClient.HttpClient.PostAsJsonAsync("/api/v1/auth/invite", payload);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                var pairingCode = result.GetProperty("pairingCode").GetString();
+
+                // 3. Open local E-Mail client (mailto)
+                string email = $"{_selectedUserForInvite.SamAccountName}@{System.DirectoryServices.ActiveDirectory.Domain.GetCurrentDomain().Name}";
+                string subject = Uri.EscapeDataString("Ihre Einladung für EZKPM (Ironclad Vault)");
+                string body = Uri.EscapeDataString($"Hallo {_selectedUserForInvite.DisplayName},\n\nSie wurden eingeladen.\nBitte installieren Sie den Client und klicken Sie auf folgenden Link:\n\nezkpm://pair?code={pairingCode}\n\nAlternativ können Sie den Code manuell eingeben:\nCode: {pairingCode}");
+                
+                string mailtoUri = $"mailto:{email}?subject={subject}&body={body}";
+
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = mailtoUri,
+                    UseShellExecute = true
+                });
+
+                var dialog = new ConfirmationDialog("Einladung wurde generiert und E-Mail-Programm geöffnet.");
+                await dialog.ShowDialogAsync(this);
+
+                _selectedUserForInvite = null;
+                var textBlock = this.FindControl<TextBlock>("SelectedInviteText");
+                if (textBlock != null) textBlock.Text = "Keine Auswahl";
+                var btn = this.FindControl<Button>("SendInviteButton");
+                if (btn != null) btn.IsEnabled = false;
+            }
+            else
+            {
+                string err = await response.Content.ReadAsStringAsync();
+                var dialog = new ConfirmationDialog($"Fehler: {err}");
+                await dialog.ShowDialogAsync(this);
+            }
+        }
+        catch (Exception ex)
+        {
+            var dialog = new ConfirmationDialog($"Fehler beim Senden: {ex.Message}");
+            await dialog.ShowDialogAsync(this);
+        }
+    }
+
     private async void SearchDisabledUserButton_Click(object sender, RoutedEventArgs e)
     {
         var picker = new AdPickerWindow(EZKPM.Client.Desktop.Services.AdPickerFilterMode.DisabledOnly);
@@ -92,7 +166,9 @@ public partial class AdminDashboardWindow : Window
 
         try
         {
-            var req = new SetAdminRequestDto { TargetAdSid = _selectedUserForAdmin.Sid, IsAdmin = true };
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var targetHash = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(_selectedUserForAdmin.Sid)));
+            var req = new SetAdminRequestDto { TargetHashedSid = targetHash, IsAdmin = true };
             var response = await _apiClient.HttpClient.PostAsJsonAsync("/api/v1/recovery/set-admin", req);
             if (response.IsSuccessStatusCode)
             {
@@ -123,7 +199,9 @@ public partial class AdminDashboardWindow : Window
 
         try
         {
-            var req = new SetAdminRequestDto { TargetAdSid = _selectedUserForAdmin.Sid, IsAdmin = false };
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var targetHash = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(_selectedUserForAdmin.Sid)));
+            var req = new SetAdminRequestDto { TargetHashedSid = targetHash, IsAdmin = false };
             var response = await _apiClient.HttpClient.PostAsJsonAsync("/api/v1/recovery/set-admin", req);
             if (response.IsSuccessStatusCode)
             {
@@ -226,10 +304,14 @@ public partial class AdminDashboardWindow : Window
         try
         {
             // Placeholder: Admin generates a share blob using their master key
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var currentUser = EZKPM.Client.Desktop.Services.AdSearchService.GetCurrentUser();
+            var adminHashedSid = currentUser != null ? Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(currentUser.Sid))) : "";
+
             var req = new ProvideRecoveryShareDto 
             { 
                 RecoveryRequestId = Guid.Parse(selected.GetProperty("id").GetString()), 
-                AdminSid = EZKPM.Client.Desktop.Services.AdSearchService.GetCurrentUser()?.Sid,
+                AdminHashedSid = adminHashedSid,
                 EncryptedShareBlob = "SIMULATED_SHARE_BLOB"
             };
             await _apiClient.ApproveRecoveryAsync(req);
@@ -252,9 +334,11 @@ public partial class AdminDashboardWindow : Window
 
         try
         {
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var hashedTarget = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(targetSid)));
             var req = new InitiateRecoveryRequestDto 
             { 
-                AdSid = targetSid, 
+                HashedSid = hashedTarget, 
                 EphemeralUserPubKey = "ADMIN_EPHEMERAL_PUBKEY"
             };
             await _apiClient.RequestRecoveryAsync(req);
@@ -284,10 +368,11 @@ public partial class AdminDashboardWindow : Window
 
         try
         {
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
             var req = new LinkPersonDto 
             { 
-                SourceAdSid = _sourcePerson.Sid,
-                TargetAdSid = _targetPerson.Sid
+                SourceHashedSid = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(_sourcePerson.Sid))),
+                TargetHashedSid = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(_targetPerson.Sid)))
             };
             
             var response = await _apiClient.HttpClient.PostAsJsonAsync("/api/v1/recovery/link-person", req);
