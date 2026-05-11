@@ -29,8 +29,10 @@ $zipPath = "$UpdatesDir\ClientUpdate.zip"
 
 # Lese Version aus csproj aus (für Logs und JSON)
 $csproj = [xml](Get-Content "$RepoPath\EZKPM.Client.Desktop\EZKPM.Client.Desktop.csproj")
-$clientVersion = $csproj.Project.PropertyGroup.Version
+$clientVersion = $csproj.Project.PropertyGroup.FileVersion
+if ([string]::IsNullOrWhiteSpace($clientVersion)) { $clientVersion = $csproj.Project.PropertyGroup.AssemblyVersion }
 if ([string]::IsNullOrWhiteSpace($clientVersion)) { $clientVersion = "1.0.0.0" }
+
 
 $needsZip = $true
 if (Test-Path $zipPath) {

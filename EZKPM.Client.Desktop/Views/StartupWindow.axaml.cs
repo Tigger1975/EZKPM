@@ -187,6 +187,7 @@ namespace EZKPM.Client.Desktop.Views
                     }
                     
                     // TODO: The user should click a pairing button, or maybe we open the PairingWindow directly?
+                    IsAuthenticated = true; // Prevent App.axaml.cs from shutting down the app
                     var pairingWin = new PairingWindow();
                     pairingWin.Show();
                     this.Close();
