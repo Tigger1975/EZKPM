@@ -109,28 +109,47 @@ namespace EZKPM.Server.PDP.Controllers
             if (string.IsNullOrWhiteSpace(request.PairingCode) || string.IsNullOrWhiteSpace(request.HashedSid) || string.IsNullOrWhiteSpace(request.IdentityPublicKey))
                 return BadRequest("Missing required fields.");
 
-            // Hash the pairing code provided by the client
-            using var sha256 = SHA256.Create();
-            var codeHashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.PairingCode));
-            var codeHash = Convert.ToBase64String(codeHashBytes);
-
-            // Find the invitation
-            var invitation = await _db.PairingInvitations.FirstOrDefaultAsync(i => i.PairingCodeHash == codeHash);
-            
-            if (invitation == null)
-                return NotFound("Invalid pairing code.");
-
-            if (DateTime.UtcNow > invitation.ExpiresAt)
+            bool isGenesis = false;
+            if (request.PairingCode == "GENESIS")
             {
-                _db.PairingInvitations.Remove(invitation);
-                await _db.SaveChangesAsync();
-                return BadRequest("This pairing code has expired.");
+                if (!await _db.UserProfiles.AnyAsync())
+                {
+                    isGenesis = true;
+                }
+                else
+                {
+                    return BadRequest("Genesis mode is only available for the very first user (database is not empty).");
+                }
             }
 
-            // Verify that the client's HashedSid matches the one the Admin intended to invite
-            if (request.HashedSid != invitation.HashedSid)
+            if (!isGenesis)
             {
-                return BadRequest("This pairing code was not issued for your user account.");
+                // Hash the pairing code provided by the client
+                using var sha256 = SHA256.Create();
+                var codeHashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.PairingCode));
+                var codeHash = Convert.ToBase64String(codeHashBytes);
+
+                // Find the invitation
+                var invitation = await _db.PairingInvitations.FirstOrDefaultAsync(i => i.PairingCodeHash == codeHash);
+                
+                if (invitation == null)
+                    return NotFound("Invalid pairing code.");
+
+                if (DateTime.UtcNow > invitation.ExpiresAt)
+                {
+                    _db.PairingInvitations.Remove(invitation);
+                    await _db.SaveChangesAsync();
+                    return BadRequest("This pairing code has expired.");
+                }
+
+                // Verify that the client's HashedSid matches the one the Admin intended to invite
+                if (request.HashedSid != invitation.HashedSid)
+                {
+                    return BadRequest("This pairing code was not issued for your user account.");
+                }
+
+                // Delete the one-time pairing code
+                _db.PairingInvitations.Remove(invitation);
             }
 
             // Success! Register the public key
@@ -138,13 +157,11 @@ namespace EZKPM.Server.PDP.Controllers
             if (profile == null)
             {
                 profile = new UserProfile { HashedSid = request.HashedSid };
+                if (isGenesis) profile.IsAdmin = true;
                 _db.UserProfiles.Add(profile);
             }
 
             profile.IdentityPublicKey = request.IdentityPublicKey;
-
-            // Delete the one-time pairing code
-            _db.PairingInvitations.Remove(invitation);
             
             await _db.SaveChangesAsync();
 

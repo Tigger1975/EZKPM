@@ -85,9 +85,12 @@ namespace EZKPM.Client.Desktop.Views
                     EZKPM.Client.Desktop.Services.TpmKeyStorageService.StoreTpmBlob(newTpmBlob);
 
                 // 4. Send to Server
+                var codeBox = this.FindControl<TextBox>("CodeTextBox");
+                string actualCode = codeBox?.Text ?? _pairingCode;
+
                 var payload = new
                 {
-                    PairingCode = _pairingCode,
+                    PairingCode = actualCode,
                     HashedSid = hashedSid,
                     IdentityPublicKey = pubKeyBase64
                 };

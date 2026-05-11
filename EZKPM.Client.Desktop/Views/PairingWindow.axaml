@@ -16,8 +16,8 @@
 
         <!-- Content -->
         <StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="15">
-            <TextBlock Text="Gefundener Pairing-Code:" Foreground="White" FontWeight="SemiBold"/>
-            <TextBox x:Name="CodeTextBox" IsReadOnly="True" FontSize="18" TextAlignment="Center" Background="#2D2D2D" Foreground="#4A90E2" FontWeight="Bold"/>
+            <TextBlock Text="Pairing-Code (oder 'GENESIS' für ersten Admin):" Foreground="White" FontWeight="SemiBold"/>
+            <TextBox x:Name="CodeTextBox" IsReadOnly="False" FontSize="18" TextAlignment="Center" Background="#2D2D2D" Foreground="#4A90E2" FontWeight="Bold"/>
 
             <TextBlock Text="Master-Passwort festlegen (leer lassen für Seamless SSO):" Foreground="White" FontWeight="SemiBold" Margin="0,10,0,0"/>
             <TextBox x:Name="PasswordTextBox" PasswordChar="•" FontSize="18" Watermark="Optionales Passwort" Background="#2D2D2D" Foreground="White"/>
