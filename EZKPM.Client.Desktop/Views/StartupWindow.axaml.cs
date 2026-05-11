@@ -133,7 +133,15 @@ namespace EZKPM.Client.Desktop.Views
             try
             {
                 string legacyPwd = EZKPM.Client.Core.Security.LegacyPasswordStore.GetLegacyPassword();
-                bool isCorrect = CryptoService.Initialize(legacyPwd);
+                
+                string adBlob = EZKPM.Client.Desktop.Services.AdKeyStorageService.RetrieveKeyFromAd();
+                bool isCorrect = CryptoService.InitializeFromBlob(adBlob, legacyPwd, out string newBlob, out string newPubKey);
+                
+                if (isCorrect && !string.IsNullOrEmpty(newBlob))
+                {
+                    EZKPM.Client.Desktop.Services.AdKeyStorageService.StoreKeyInAd(newBlob);
+                    // TODO: Upload newPubKey to Server if required
+                }
                 
                 if (isCorrect)
                 {
@@ -195,18 +203,6 @@ namespace EZKPM.Client.Desktop.Views
             if (splashPanel != null) splashPanel.IsVisible = true;
 
             IsAuthenticated = true;
-
-            // Trigger Worst-Case Machine Backup to AD Blind Drop Container
-            try
-            {
-                string legacyPwd = EZKPM.Client.Core.Security.LegacyPasswordStore.GetLegacyPassword();
-                string encryptedBlob = CryptoService.GenerateEncryptedMachineBackup(legacyPwd);
-                EZKPM.Client.Desktop.Services.AdBackupService.BackupKeyToAd(encryptedBlob);
-            }
-            catch (Exception ex)
-            {
-                Program.LogDebug($"[Startup] AD Backup skipped/failed: {ex.Message}");
-            }
             
             // Allow the window to stay open for MainWindow to take over
             if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
@@ -273,7 +269,14 @@ namespace EZKPM.Client.Desktop.Views
             var status = this.FindControl<TextBlock>("StatusText");
             string pwd = txtBox?.Text ?? "";
             
-            bool isCorrect = CryptoService.Initialize(pwd);
+            string adBlob = EZKPM.Client.Desktop.Services.AdKeyStorageService.RetrieveKeyFromAd();
+            bool isCorrect = CryptoService.InitializeFromBlob(adBlob, pwd, out string newBlob, out string newPubKey);
+            
+            if (isCorrect && !string.IsNullOrEmpty(newBlob))
+            {
+                EZKPM.Client.Desktop.Services.AdKeyStorageService.StoreKeyInAd(newBlob);
+            }
+            
             if (isCorrect)
             {
                 EZKPM.Client.Core.Security.LegacyPasswordStore.SaveLegacyPassword(pwd);

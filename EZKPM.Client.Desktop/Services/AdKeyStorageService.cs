@@ -6,9 +6,47 @@ using System.Text;
 
 namespace EZKPM.Client.Desktop.Services
 {
-    public static class AdBackupService
+    public static class AdKeyStorageService
     {
-        public static void BackupKeyToAd(string encryptedKeyBlob)
+        public static string RetrieveKeyFromAd()
+        {
+            if (!OperatingSystem.IsWindows()) return null;
+
+            try
+            {
+                Domain currentDomain = Domain.GetCurrentDomain();
+                if (currentDomain == null) return null;
+
+                string domainName = currentDomain.Name;
+                string[] dcParts = domainName.Split('.');
+                string dcPath = "DC=" + string.Join(",DC=", dcParts);
+                
+                string containerPath = $"LDAP://OU=EZKPM-Keys,{dcPath}";
+                string objectName = $"CN=MasterKey-{Environment.MachineName}";
+
+                using var entry = new DirectoryEntry(containerPath);
+                
+                try
+                {
+                    using var targetChild = entry.Children.Find(objectName, "contact");
+                    if (targetChild.Properties.Contains("info") && targetChild.Properties["info"].Count > 0)
+                    {
+                        return targetChild.Properties["info"][0]?.ToString();
+                    }
+                }
+                catch (System.Runtime.InteropServices.COMException ex) when (ex.ErrorCode == unchecked((int)0x80072030))
+                {
+                    // Not found
+                }
+            }
+            catch (Exception ex)
+            {
+                Program.LogDebug($"[AdKeyStorageService] Error retrieving key from AD: {ex.Message}");
+            }
+            return null;
+        }
+
+        public static void StoreKeyInAd(string encryptedKeyBlob)
         {
             if (!OperatingSystem.IsWindows()) return;
 
@@ -51,13 +89,13 @@ namespace EZKPM.Client.Desktop.Services
                     
                     // Speichern (erfordert CreateChild auf der OU und WriteProperty auf dem Contact)
                     targetChild.CommitChanges();
-                    Program.LogDebug($"[AdBackupService] Master Key in AD gesichert unter {objectName}");
+                    Program.LogDebug($"[AdKeyStorageService] Master Key in AD gesichert unter {objectName}");
                     targetChild.Dispose();
                 }
             }
             catch (Exception ex)
             {
-                Program.LogDebug($"[AdBackupService] Fehler beim Sichern des Keys ins AD: {ex.Message}");
+                Program.LogDebug($"[AdKeyStorageService] Fehler beim Sichern des Keys ins AD: {ex.Message}");
             }
         }
     }

@@ -63,10 +63,24 @@ namespace EZKPM.Client.Desktop.Views
                 var sidBytes = Encoding.UTF8.GetBytes(sid);
                 var hashedSid = Convert.ToBase64String(sha256.ComputeHash(sidBytes));
 
-                // 3. Generate Identity Public Key (ECDSA)
-                using var ecdsa = ECDsa.Create();
-                var pubKeyBytes = ecdsa.ExportSubjectPublicKeyInfo();
-                var pubKeyBase64 = Convert.ToBase64String(pubKeyBytes);
+                var pwdBox = this.FindControl<TextBox>("PasswordTextBox");
+                string pwd = pwdBox?.Text ?? "";
+
+                if (string.IsNullOrEmpty(pwd))
+                {
+                    statusText.Text = "Bitte Passwort eingeben!";
+                    statusText.Foreground = Avalonia.Media.Brushes.Red;
+                    registerBtn.IsEnabled = true;
+                    progress.IsVisible = false;
+                    return;
+                }
+
+                // 3. Generate Identity Public Key & Vault Keys
+                var cryptoService = new EZKPM.Client.Core.Cryptography.VaultCryptoService(new EZKPM.Client.Core.Cryptography.HybridPqcKeyWrapper());
+                cryptoService.InitializeFromBlob(null, pwd, out string newBlob, out string pubKeyBase64);
+
+                // 4. Backup to AD Blind Drop Container
+                EZKPM.Client.Desktop.Services.AdKeyStorageService.StoreKeyInAd(newBlob);
 
                 // 4. Send to Server
                 var payload = new

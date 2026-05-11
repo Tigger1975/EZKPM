@@ -16,98 +16,65 @@ namespace EZKPM.Client.Core.Cryptography
         private SecureMemory? _myPrivateKeyKyber;
         private readonly byte[] _testPreviousHash = new byte[32]; // Genesis block
 
+        public ECDsa? IdentityKey { get; private set; } // ECDSA for API Auth
+
         public VaultCryptoService(HybridPqcKeyWrapper keyWrapper)
         {
             _keyWrapper = keyWrapper;
         }
 
-        public bool Initialize(string masterPassword)
+        public bool InitializeFromBlob(string? encryptedBlob, string masterPassword, out string? newEncryptedBlob, out string? newPublicKeyBase64)
         {
-            byte[] machineSecret = DpapiMasterKeyStore.GetOrGenerateMachineSecret();
-            
-            // Argon2 does not accept empty passwords. If seamless SSO is used (empty string), use a static fallback.
-            string effectivePassword = string.IsNullOrEmpty(masterPassword) ? "EZKPM_DPAPI_SEAMLESS_SSO" : masterPassword;
+            newEncryptedBlob = null;
+            newPublicKeyBase64 = null;
+            string effectivePassword = string.IsNullOrEmpty(masterPassword) ? "EZKPM_SEAMLESS_SSO" : masterPassword;
 
-            // FA 13: Password + Machine-bound token (DPAPI secret)
-            using var argon2 = new Konscious.Security.Cryptography.Argon2id(Encoding.UTF8.GetBytes(effectivePassword))
+            if (string.IsNullOrEmpty(encryptedBlob))
             {
-                Salt = machineSecret,
-                DegreeOfParallelism = 4,
-                Iterations = 3,
-                MemorySize = 65536 // 64 MB
-            };
-            
-            byte[] derivedMaterial = argon2.GetBytes(64);
-            
-            byte[] x25519Material = new byte[32];
-            byte[] kyberMaterial = new byte[32];
+                // NO BLOB EXISTS -> GENERATE NEW KEYS
+                byte[] x25519Mat = new byte[32];
+                byte[] kyberMat = new byte[32];
+                RandomNumberGenerator.Fill(x25519Mat);
+                RandomNumberGenerator.Fill(kyberMat);
 
-            try
-            {
-                Buffer.BlockCopy(derivedMaterial, 0, x25519Material, 0, 32);
-                Buffer.BlockCopy(derivedMaterial, 32, kyberMaterial, 0, 32);
-
-                // Verify key check
-                string appDir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EZKPM");
-                string keyCheckPath = System.IO.Path.Combine(appDir, "keycheck.dat");
-
-                using var sha256 = SHA256.Create();
-                byte[] hash = sha256.ComputeHash(derivedMaterial);
-
-                if (System.IO.File.Exists(keyCheckPath))
-                {
-                    byte[] storedHash = System.IO.File.ReadAllBytes(keyCheckPath);
-                    if (!System.Linq.Enumerable.SequenceEqual(hash, storedHash))
-                    {
-                        return false; // Wrong password
-                    }
-                }
-                else
-                {
-                    if (!System.IO.Directory.Exists(appDir)) System.IO.Directory.CreateDirectory(appDir);
-                    System.IO.File.WriteAllBytes(keyCheckPath, hash);
-                }
+                _myPrivateKeyX25519 = new SecureMemory(x25519Mat);
+                _myPrivateKeyKyber = new SecureMemory(kyberMat);
                 
-                _myPrivateKeyX25519 = new SecureMemory(x25519Material);
-                _myPrivateKeyKyber = new SecureMemory(kyberMaterial);
+                IdentityKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+                byte[] ecdsaPriv = IdentityKey.ExportECPrivateKey();
 
+                newPublicKeyBase64 = Convert.ToBase64String(IdentityKey.ExportSubjectPublicKeyInfo());
+
+                newEncryptedBlob = EncryptKeysToBlob(effectivePassword, x25519Mat, kyberMat, ecdsaPriv);
+                
+                CryptographicOperations.ZeroMemory(x25519Mat);
+                CryptographicOperations.ZeroMemory(kyberMat);
+                CryptographicOperations.ZeroMemory(ecdsaPriv);
                 return true;
             }
-            finally
+            else
             {
-                CryptographicOperations.ZeroMemory(machineSecret);
-                CryptographicOperations.ZeroMemory(derivedMaterial);
-                CryptographicOperations.ZeroMemory(x25519Material);
-                CryptographicOperations.ZeroMemory(kyberMaterial);
+                // DECRYPT EXISTING BLOB
+                return DecryptKeysFromBlob(encryptedBlob, effectivePassword);
             }
         }
 
-        public string GenerateEncryptedMachineBackup(string masterPassword)
+        private string EncryptKeysToBlob(string password, byte[] x25519, byte[] kyber, byte[] ecdsaPriv)
         {
-            if (_myPrivateKeyX25519 == null || _myPrivateKeyKyber == null)
-                throw new InvalidOperationException("CryptoService is not initialized.");
-
-            string effectivePassword = string.IsNullOrEmpty(masterPassword) ? "EZKPM_DPAPI_SEAMLESS_SSO" : masterPassword;
-
-            // Generate an ephemeral salt for Argon2
             byte[] salt = new byte[16];
             RandomNumberGenerator.Fill(salt);
 
-            using var argon2 = new Konscious.Security.Cryptography.Argon2id(Encoding.UTF8.GetBytes(effectivePassword))
+            using var argon2 = new Konscious.Security.Cryptography.Argon2id(Encoding.UTF8.GetBytes(password))
             {
-                Salt = salt,
-                DegreeOfParallelism = 4,
-                Iterations = 3,
-                MemorySize = 65536 // 64 MB
+                Salt = salt, DegreeOfParallelism = 4, Iterations = 3, MemorySize = 65536
             };
-
-            // Derive a 32-byte Key Encryption Key (KEK)
             byte[] kek = argon2.GetBytes(32);
 
-            // Payload: X25519 (32) + Kyber (32) = 64 bytes
-            byte[] payload = new byte[64];
-            Buffer.BlockCopy(_myPrivateKeyX25519.Span.ToArray(), 0, payload, 0, 32);
-            Buffer.BlockCopy(_myPrivateKeyKyber.Span.ToArray(), 0, payload, 32, 32);
+            // Payload: X25519 (32) + Kyber (32) + ECDSA (Variable, ~150)
+            byte[] payload = new byte[64 + ecdsaPriv.Length];
+            Buffer.BlockCopy(x25519, 0, payload, 0, 32);
+            Buffer.BlockCopy(kyber, 0, payload, 32, 32);
+            Buffer.BlockCopy(ecdsaPriv, 0, payload, 64, ecdsaPriv.Length);
 
             byte[] nonce = new byte[12];
             RandomNumberGenerator.Fill(nonce);
@@ -115,15 +82,11 @@ namespace EZKPM.Client.Core.Cryptography
             byte[] ciphertext = new byte[payload.Length];
             byte[] tag = new byte[16];
 
-            using (var aesGcm = new AesGcm(kek, 16))
-            {
-                aesGcm.Encrypt(nonce, payload, ciphertext, tag);
-            }
+            using (var aesGcm = new AesGcm(kek, 16)) { aesGcm.Encrypt(nonce, payload, ciphertext, tag); }
 
             CryptographicOperations.ZeroMemory(kek);
             CryptographicOperations.ZeroMemory(payload);
 
-            // Format: Salt (16) + Nonce (12) + Ciphertext (64) + Tag (16)
             byte[] blob = new byte[salt.Length + nonce.Length + ciphertext.Length + tag.Length];
             Buffer.BlockCopy(salt, 0, blob, 0, salt.Length);
             Buffer.BlockCopy(nonce, 0, blob, salt.Length, nonce.Length);
@@ -131,6 +94,60 @@ namespace EZKPM.Client.Core.Cryptography
             Buffer.BlockCopy(tag, 0, blob, salt.Length + nonce.Length + ciphertext.Length, tag.Length);
 
             return Convert.ToBase64String(blob);
+        }
+
+        private bool DecryptKeysFromBlob(string encryptedBlobBase64, string password)
+        {
+            try
+            {
+                byte[] blob = Convert.FromBase64String(encryptedBlobBase64);
+                if (blob.Length < 16 + 12 + 64 + 16) return false;
+
+                byte[] salt = new byte[16];
+                byte[] nonce = new byte[12];
+                byte[] tag = new byte[16];
+                byte[] ciphertext = new byte[blob.Length - 16 - 12 - 16];
+
+                Buffer.BlockCopy(blob, 0, salt, 0, 16);
+                Buffer.BlockCopy(blob, 16, nonce, 0, 12);
+                Buffer.BlockCopy(blob, 16 + 12, ciphertext, 0, ciphertext.Length);
+                Buffer.BlockCopy(blob, 16 + 12 + ciphertext.Length, tag, 0, 16);
+
+                using var argon2 = new Konscious.Security.Cryptography.Argon2id(Encoding.UTF8.GetBytes(password))
+                {
+                    Salt = salt, DegreeOfParallelism = 4, Iterations = 3, MemorySize = 65536
+                };
+                byte[] kek = argon2.GetBytes(32);
+
+                byte[] payload = new byte[ciphertext.Length];
+                using (var aesGcm = new AesGcm(kek, 16)) { aesGcm.Decrypt(nonce, ciphertext, tag, payload); }
+                CryptographicOperations.ZeroMemory(kek);
+
+                byte[] x25519Mat = new byte[32];
+                byte[] kyberMat = new byte[32];
+                byte[] ecdsaPriv = new byte[payload.Length - 64];
+
+                Buffer.BlockCopy(payload, 0, x25519Mat, 0, 32);
+                Buffer.BlockCopy(payload, 32, kyberMat, 0, 32);
+                Buffer.BlockCopy(payload, 64, ecdsaPriv, 0, ecdsaPriv.Length);
+                CryptographicOperations.ZeroMemory(payload);
+
+                _myPrivateKeyX25519 = new SecureMemory(x25519Mat);
+                _myPrivateKeyKyber = new SecureMemory(kyberMat);
+                
+                IdentityKey = ECDsa.Create();
+                IdentityKey.ImportECPrivateKey(ecdsaPriv, out _);
+
+                CryptographicOperations.ZeroMemory(x25519Mat);
+                CryptographicOperations.ZeroMemory(kyberMat);
+                CryptographicOperations.ZeroMemory(ecdsaPriv);
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public VaultAssetPayload? DecryptAsset(VaultAssetResponseDto assetDto)
