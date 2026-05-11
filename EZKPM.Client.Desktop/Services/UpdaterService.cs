@@ -19,7 +19,7 @@ namespace EZKPM.Client.Desktop.Services
     {
         private readonly ILogger<UpdaterService> _logger;
         private readonly HttpClient _httpClient;
-        private readonly string _serverUrl = "http://localhost:8080"; // In production, read from settings
+        private string _serverUrl => ConfigurationManager.CurrentConfig.ServerUrl;
 
         public UpdaterService(ILogger<UpdaterService> logger)
         {
