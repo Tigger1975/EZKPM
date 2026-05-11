@@ -82,6 +82,57 @@ namespace EZKPM.Client.Core.Cryptography
             }
         }
 
+        public string GenerateEncryptedMachineBackup(string masterPassword)
+        {
+            if (_myPrivateKeyX25519 == null || _myPrivateKeyKyber == null)
+                throw new InvalidOperationException("CryptoService is not initialized.");
+
+            string effectivePassword = string.IsNullOrEmpty(masterPassword) ? "EZKPM_DPAPI_SEAMLESS_SSO" : masterPassword;
+
+            // Generate an ephemeral salt for Argon2
+            byte[] salt = new byte[16];
+            RandomNumberGenerator.Fill(salt);
+
+            using var argon2 = new Konscious.Security.Cryptography.Argon2id(Encoding.UTF8.GetBytes(effectivePassword))
+            {
+                Salt = salt,
+                DegreeOfParallelism = 4,
+                Iterations = 3,
+                MemorySize = 65536 // 64 MB
+            };
+
+            // Derive a 32-byte Key Encryption Key (KEK)
+            byte[] kek = argon2.GetBytes(32);
+
+            // Payload: X25519 (32) + Kyber (32) = 64 bytes
+            byte[] payload = new byte[64];
+            Buffer.BlockCopy(_myPrivateKeyX25519.Span.ToArray(), 0, payload, 0, 32);
+            Buffer.BlockCopy(_myPrivateKeyKyber.Span.ToArray(), 0, payload, 32, 32);
+
+            byte[] nonce = new byte[12];
+            RandomNumberGenerator.Fill(nonce);
+            
+            byte[] ciphertext = new byte[payload.Length];
+            byte[] tag = new byte[16];
+
+            using (var aesGcm = new AesGcm(kek, 16))
+            {
+                aesGcm.Encrypt(nonce, payload, ciphertext, tag);
+            }
+
+            CryptographicOperations.ZeroMemory(kek);
+            CryptographicOperations.ZeroMemory(payload);
+
+            // Format: Salt (16) + Nonce (12) + Ciphertext (64) + Tag (16)
+            byte[] blob = new byte[salt.Length + nonce.Length + ciphertext.Length + tag.Length];
+            Buffer.BlockCopy(salt, 0, blob, 0, salt.Length);
+            Buffer.BlockCopy(nonce, 0, blob, salt.Length, nonce.Length);
+            Buffer.BlockCopy(ciphertext, 0, blob, salt.Length + nonce.Length, ciphertext.Length);
+            Buffer.BlockCopy(tag, 0, blob, salt.Length + nonce.Length + ciphertext.Length, tag.Length);
+
+            return Convert.ToBase64String(blob);
+        }
+
         public VaultAssetPayload? DecryptAsset(VaultAssetResponseDto assetDto)
         {
             byte[] encryptedKeyShare = Convert.FromBase64String(assetDto.EncryptedKeyShare);
