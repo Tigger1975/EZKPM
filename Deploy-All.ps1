@@ -50,14 +50,26 @@ Set-Content -Path "$UpdatesDir\version.json" -Value $versionJson
 
 Write-Host "`n[5/7] Verteile Dateien an den IIS-Produktionsserver..." -ForegroundColor Yellow
 Write-Host "      Stoppe IIS AppPool, um Dateisperren zu vermeiden..." -ForegroundColor Yellow
-Stop-WebAppPool -Name "EZKPM_AppPool" -ErrorAction SilentlyContinue
+try {
+    if ((Get-WebAppPoolState -Name "EZKPM_AppPool").Value -eq "Started") {
+        Stop-WebAppPool -Name "EZKPM_AppPool"
+    }
+} catch {
+    Write-Host "      (IIS AppPool war bereits gestoppt oder nicht vorhanden)" -ForegroundColor Gray
+}
 Start-Sleep -Seconds 2
 
 if (!(Test-Path $IISPath)) { New-Item -ItemType Directory -Force -Path $IISPath | Out-Null }
 Copy-Item -Path "$PublishServerPath\*" -Destination $IISPath -Recurse -Force
 
 Write-Host "`n[6/7] Starte IIS AppPool..." -ForegroundColor Yellow
-Start-WebAppPool -Name "EZKPM_AppPool" -ErrorAction SilentlyContinue
+try {
+    if ((Get-WebAppPoolState -Name "EZKPM_AppPool").Value -ne "Started") {
+        Start-WebAppPool -Name "EZKPM_AppPool"
+    }
+} catch {
+    Write-Host "      (IIS AppPool lief bereits oder konnte nicht gestartet werden)" -ForegroundColor Gray
+}
 
 Write-Host "`n[7/7] Starte lokalen Desktop-Client..." -ForegroundColor Yellow
 Start-Process "$PublishClientPath\EZKPM.Client.Desktop.exe"
