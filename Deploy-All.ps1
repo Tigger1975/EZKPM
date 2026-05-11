@@ -64,7 +64,7 @@ Start-Sleep -Seconds 3
 
 Write-Host "      Kopiere aktualisierte Dateien (ueberschreibt nur was sich geaendert hat)..." -ForegroundColor Yellow
 try {
-    robocopy $PublishServerPath $IISPath /MIR /XD Updates /XF app_offline.htm /R:1 /W:1 | Out-Null
+    robocopy $PublishServerPath $IISPath /MIR /XD Updates /XF app_offline.htm *.db *.db-shm *.db-wal /R:1 /W:1 | Out-Null
 } catch {
     # Ignore powershell throwing on robocopy exit codes
 } finally {
