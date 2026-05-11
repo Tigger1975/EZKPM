@@ -11,7 +11,7 @@ using EZKPM.Shared.Contracts;
 
 namespace EZKPM.Client.Desktop.Services
 {
-    public class BrowserBridgeServer
+    public class BrowserBridgeServer(Func<IEnumerable<VaultAssetPayload>> getDecryptedAssetsFunc, Func<Guid, bool, string, Task<bool>> requestAuditFunc)
     {
         private static void Log(string msg)
         {
@@ -23,18 +23,12 @@ namespace EZKPM.Client.Desktop.Services
             } 
             catch { }
         }
-        private readonly Func<IEnumerable<VaultAssetPayload>> _getDecryptedAssetsFunc;
-        private readonly Func<Guid, bool, string, Task<bool>> _requestAuditFunc;
+        private readonly Func<IEnumerable<VaultAssetPayload>> _getDecryptedAssetsFunc = getDecryptedAssetsFunc;
+        private readonly Func<Guid, bool, string, Task<bool>> _requestAuditFunc = requestAuditFunc;
         private CancellationTokenSource _cts;
 
         public Action<string> OnCredentialProvided { get; set; }
         public Action<VaultAssetPayload> OnSaveNewCredentialRequested { get; set; }
-
-        public BrowserBridgeServer(Func<IEnumerable<VaultAssetPayload>> getDecryptedAssetsFunc, Func<Guid, bool, string, Task<bool>> requestAuditFunc)
-        {
-            _getDecryptedAssetsFunc = getDecryptedAssetsFunc;
-            _requestAuditFunc = requestAuditFunc;
-        }
 
         public void Start()
         {
@@ -135,12 +129,12 @@ namespace EZKPM.Client.Desktop.Services
                         return reqUri.Scheme == assetUri.Scheme && reqUri.Host == assetUri.Host;
                     }).ToList();
 
-                    if (matches.Any())
+                    if (matches.Count != 0)
                     {
                         var list = matches.Select(m => new {
                             AssetId = m.TransientAssetId, // Nur ID, kein Passwort! (FA 22)
-                            Title = m.Title,
-                            Username = m.Username
+                            m.Title,
+                            m.Username
                         }).ToList();
                         
                         return JsonSerializer.Serialize(new { 
@@ -152,24 +146,24 @@ namespace EZKPM.Client.Desktop.Services
                 }
                 else if (action == "REQUEST_SEARCH")
                 {
-                    string query = root.TryGetProperty("Query", out var qProp) ? qProp.GetString()?.ToLowerInvariant() : "";
+                    string query = root.TryGetProperty("Query", out var qProp) ? qProp.GetString() : "";
                     var assets = _getDecryptedAssetsFunc();
                     var matches = assets.Where(a => 
                     {
                         if (a.IsDeleted) return false;
                         if (a.AssetType == "Folder") return false;
                         if (string.IsNullOrEmpty(query)) return true;
-                        return (a.Title?.ToLowerInvariant().Contains(query) == true) || 
-                               (a.Url?.ToLowerInvariant().Contains(query) == true) || 
-                               (a.Username?.ToLowerInvariant().Contains(query) == true);
+                        return (a.Title?.Contains(query, StringComparison.OrdinalIgnoreCase) == true) || 
+                               (a.Url?.Contains(query, StringComparison.OrdinalIgnoreCase) == true) || 
+                               (a.Username?.Contains(query, StringComparison.OrdinalIgnoreCase) == true);
                     }).Take(20).ToList();
 
                     var list = matches.Select(m => new {
                         AssetId = m.TransientAssetId,
-                        Title = m.Title,
-                        Username = m.Username,
-                        AssetType = m.AssetType,
-                        Url = m.Url
+                        m.Title,
+                        m.Username,
+                        m.AssetType,
+                        m.Url
                     }).ToList();
                     
                     return JsonSerializer.Serialize(new { 
@@ -204,11 +198,11 @@ namespace EZKPM.Client.Desktop.Services
                                     Type = "CREDENTIAL_DATA_RESPONSE",
                                     Password = asset.Password,
                                     TotpCode = !string.IsNullOrEmpty(asset.TotpSecret) ? EZKPM.Client.Desktop.Views.AssetEditorWindow.GetTotpCode(asset.TotpSecret) : null,
-                                    LoginFlow = asset.LoginFlow,
-                                    CustomFields = asset.CustomFields != null ? asset.CustomFields.Select(cf => new {
-                                        Name = cf.Name,
-                                        Value = cf.Value
-                                    }).ToList() : null
+                                    asset.LoginFlow,
+                                    CustomFields = asset.CustomFields?.Select(cf => new {
+                                        cf.Name,
+                                        cf.Value
+                                    }).ToList()
                                 });
                             }
                         }

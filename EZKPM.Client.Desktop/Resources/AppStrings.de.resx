@@ -668,4 +668,10 @@ Bitte schreiben Sie es auf! Einloggen in 8 Sekunden...</value>
   <data name="AssetEditor_TipAuditLog" xml:space="preserve">
     <value>Wenn diese Option aktiviert ist, wird beim Abrufen oder Kopieren dieses Kennworts ein stiller Audit-Protokolleintrag generiert.</value>
   </data>
+  <data name="Settings_CheckUpdate" xml:space="preserve">
+    <value>Manuelles Update prüfen</value>
+  </data>
+  <data name="Settings_About" xml:space="preserve">
+    <value>Über (Version)</value>
+  </data>
 </root>

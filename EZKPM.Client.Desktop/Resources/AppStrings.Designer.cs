@@ -1366,6 +1366,24 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Über (Version) ähnelt.
+        /// </summary>
+        public static string Settings_About {
+            get {
+                return ResourceManager.GetString("Settings_About", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Manuelles Update prüfen ähnelt.
+        /// </summary>
+        public static string Settings_CheckUpdate {
+            get {
+                return ResourceManager.GetString("Settings_CheckUpdate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Application: {0} ähnelt.
         /// </summary>
         public static string SsoDialog_AppId {
