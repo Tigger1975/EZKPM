@@ -30,7 +30,7 @@ namespace EZKPM.Server.PDP.Controllers
         {
             var hashedSid = GetUserSid();
             var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedSid);
-            return profile != null && profile.IsAdmin;
+            return profile != null && await _db.UserProfiles.AnyAsync(u => u.PersonId == profile.PersonId && u.IsAdmin);
         }
 
         [HttpGet]

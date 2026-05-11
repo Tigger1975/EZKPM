@@ -130,11 +130,10 @@ namespace EZKPM.Server.PDP.Controllers
         [HttpPost("approve")]
         public async Task<IActionResult> ApproveRecovery([FromBody] ProvideRecoveryShareDto request)
         {
-            var hashedAdminSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.AdminSid);
-            var adminProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == hashedAdminSid);
-
-            if (adminProfile == null || !adminProfile.IsAdmin)
-                return Forbid("Only administrators can approve a recovery request.");
+            var callerHashedSid = GetUserSid();
+            var adminProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == callerHashedSid);
+            if (adminProfile == null || !await _db.UserProfiles.AnyAsync(u => u.PersonId == adminProfile.PersonId && u.IsAdmin))
+                return Forbid("Only administrators can provide recovery shares.");
 
             var recovery = await _db.VaultRecoveryRequests
                 .Include(r => r.ProvidedShares)
@@ -178,7 +177,7 @@ namespace EZKPM.Server.PDP.Controllers
             var share = new VaultRecoveryShare
             {
                 RecoveryRequestId = recovery.Id,
-                AdminSid = hashedAdminSid,
+                AdminSid = callerHashedSid,
                 EncryptedShareBlob = request.EncryptedShareBlob
             };
             
@@ -188,7 +187,7 @@ namespace EZKPM.Server.PDP.Controllers
             {
                 RecoveryRequestId = recovery.Id,
                 Action = "Approved",
-                ActorSid = hashedAdminSid,
+                ActorSid = callerHashedSid,
                 Details = "Admin approved the recovery request."
             });
 
@@ -258,7 +257,7 @@ namespace EZKPM.Server.PDP.Controllers
         {
             var callerHashedSid = GetUserSid();
             var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == callerHashedSid);
-            bool isCallerAdmin = callerProfile?.IsAdmin == true;
+            bool isCallerAdmin = callerProfile != null && await _db.UserProfiles.AnyAsync(u => u.PersonId == callerProfile.PersonId && u.IsAdmin);
             bool anyAdminExists = await _db.UserProfiles.AnyAsync(u => u.IsAdmin);
 
             return Ok(new 
@@ -274,7 +273,7 @@ namespace EZKPM.Server.PDP.Controllers
         {
             var callerHashedSid = GetUserSid();
             var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == callerHashedSid);
-            bool isCallerAdmin = callerProfile?.IsAdmin == true;
+            bool isCallerAdmin = callerProfile != null && await _db.UserProfiles.AnyAsync(u => u.PersonId == callerProfile.PersonId && u.IsAdmin);
             bool anyAdminExists = await _db.UserProfiles.AnyAsync(u => u.IsAdmin);
 
             if (!isCallerAdmin && anyAdminExists)
@@ -306,7 +305,7 @@ namespace EZKPM.Server.PDP.Controllers
         {
             var callerHashedSid = GetUserSid();
             var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == callerHashedSid);
-            bool isCallerAdmin = callerProfile?.IsAdmin == true;
+            bool isCallerAdmin = callerProfile != null && await _db.UserProfiles.AnyAsync(u => u.PersonId == callerProfile.PersonId && u.IsAdmin);
 
             // Bootstrap Logic: Check if ANY admin exists in the entire database
             bool anyAdminExists = await _db.UserProfiles.AnyAsync(u => u.IsAdmin);
@@ -351,7 +350,7 @@ namespace EZKPM.Server.PDP.Controllers
             var callerHashedSid = GetUserSid();
             var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.AdSid == callerHashedSid);
             
-            if (callerProfile == null || !callerProfile.IsAdmin)
+            if (callerProfile == null || !await _db.UserProfiles.AnyAsync(u => u.PersonId == callerProfile.PersonId && u.IsAdmin))
                 return Forbid("Only administrators can link user accounts.");
 
             var hashedSourceSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.SourceAdSid);
