@@ -5,13 +5,7 @@ Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "  EZK-PM Enterprise Deployment Pipeline  " -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 
-# 1. Prüfen ob Admin-Rechte vorliegen
-$wid = [System.Security.Principal.WindowsIdentity]::GetCurrent()
-$prp = new-object System.Security.Principal.WindowsPrincipal($wid)
-if (-not $prp.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Error "FEHLER: Dieses Skript muss zwingend als Administrator ausgeführt werden!"
-    exit
-}
+# Administrator-Rechte sind nicht mehr zwingend erforderlich, da wir app_offline.htm nutzen.
 
 $RepoPath = "C:\Users\adm-kh\source\repos\EZKPM"
 $PublishServerPath = "$RepoPath\Publish\Server"
@@ -23,11 +17,11 @@ Write-Host "`n[1/7] Stoppe laufenden lokalen Desktop-Client..." -ForegroundColor
 Stop-Process -Name "EZKPM.Client.Desktop" -Force -ErrorAction SilentlyContinue
 
 Write-Host "`n[2/7] Kompiliere Server (PDP)..." -ForegroundColor Yellow
-if (Test-Path $PublishServerPath) { Remove-Item -Path "$PublishServerPath\*" -Recurse -Force -Exclude "Updates" -ErrorAction SilentlyContinue }
+# Kein Remove-Item, damit dotnet publish inkrementell schneller arbeiten kann
 dotnet publish "$RepoPath\EZKPM.Server.PDP\EZKPM.Server.PDP.csproj" -c Release -o $PublishServerPath
 
 Write-Host "`n[3/7] Kompiliere Client (Desktop & Extension Bridge)..." -ForegroundColor Yellow
-if (Test-Path $PublishClientPath) { Remove-Item -Path "$PublishClientPath\*" -Recurse -Force -ErrorAction SilentlyContinue }
+# Kein Remove-Item, um nur geänderte Dateien zu aktualisieren
 dotnet publish "$RepoPath\EZKPM.Client.Desktop\EZKPM.Client.Desktop.csproj" -c Release -o $PublishClientPath
 
 Write-Host "`n[4/7] Erstelle OTA-Update Paket für Clients..." -ForegroundColor Yellow
@@ -49,27 +43,16 @@ $versionJson = @{
 Set-Content -Path "$UpdatesDir\version.json" -Value $versionJson
 
 Write-Host "`n[5/7] Verteile Dateien an den IIS-Produktionsserver..." -ForegroundColor Yellow
-Write-Host "      Stoppe IIS AppPool, um Dateisperren zu vermeiden..." -ForegroundColor Yellow
-try {
-    if ((Get-WebAppPoolState -Name "EZKPM_AppPool").Value -eq "Started") {
-        Stop-WebAppPool -Name "EZKPM_AppPool"
-    }
-} catch {
-    Write-Host "      (IIS AppPool war bereits gestoppt oder nicht vorhanden)" -ForegroundColor Gray
-}
-Start-Sleep -Seconds 2
-
+Write-Host "      Setze IIS via app_offline.htm in den Wartungsmodus, um Dateisperren zu lösen..." -ForegroundColor Yellow
 if (!(Test-Path $IISPath)) { New-Item -ItemType Directory -Force -Path $IISPath | Out-Null }
+Set-Content -Path "$IISPath\app_offline.htm" -Value "<html><head><title>Update läuft</title></head><body style='font-family:sans-serif; text-align:center; padding:50px;'><h1>EZKPM wird aktualisiert...</h1><p>Bitte haben Sie ein paar Sekunden Geduld.</p></body></html>"
+Start-Sleep -Seconds 3
+
+Write-Host "      Kopiere aktualisierte Dateien (überschreibt nur was sich geändert hat)..." -ForegroundColor Yellow
 Copy-Item -Path "$PublishServerPath\*" -Destination $IISPath -Recurse -Force
 
-Write-Host "`n[6/7] Starte IIS AppPool..." -ForegroundColor Yellow
-try {
-    if ((Get-WebAppPoolState -Name "EZKPM_AppPool").Value -ne "Started") {
-        Start-WebAppPool -Name "EZKPM_AppPool"
-    }
-} catch {
-    Write-Host "      (IIS AppPool lief bereits oder konnte nicht gestartet werden)" -ForegroundColor Gray
-}
+Write-Host "`n[6/7] Starte IIS durch Entfernen von app_offline.htm..." -ForegroundColor Yellow
+Remove-Item -Path "$IISPath\app_offline.htm" -Force -ErrorAction SilentlyContinue
 
 Write-Host "`n[7/7] Starte lokalen Desktop-Client..." -ForegroundColor Yellow
 Start-Process "$PublishClientPath\EZKPM.Client.Desktop.exe"
