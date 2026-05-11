@@ -111,6 +111,12 @@ Documentation-as-Code (Neu): Pflichtenheft und AI-Context-Prompts werden zwingen
 Shamir’s Secret Sharing: Wiederherstellung des Master-Zugangs nur durch Zusammenführung mehrerer Admin-Key-Fragmente (Break-Glass).
 
 Duress-Logic: Spezielles Passwort öffnet "Fake-Vault" und setzt stillen Alarm ab.
+ 
+5.5 Lokalisierung & Sprache (i18n)
+ 
+Code & Fallback: Die gesamte Code-Basis, Variablen, Kommentare sowie die Fallback-Sprache sind zwingend in Englischer Sprache zu verfassen.
+Benutzeroberfläche (GUI): Sämtliche Texte, Meldungen und UI-Elemente, mit denen normale Nutzer in Berührung kommen, müssen dynamisch in die Sprache des Clients übersetzt werden.
+Übersetzungslogik: Als Grundlage für die Lokalisierung und Übersetzungslogik wird das ResX-System (verwaltet z. B. über ResXManager) verwendet. Hardcodierte Strings in der GUI sind nicht zulässig.
 
 6. Projektstatus & Meilensteine
 
