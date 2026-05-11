@@ -298,7 +298,8 @@ namespace EZKPM.Client.Desktop.Views
                 var sid = System.Security.Principal.WindowsIdentity.GetCurrent().User.Value;
                 string ephemeralPubKey = "mock-ephemeral-pub-key-base64";
 
-                var client = new EZKPM.Client.Core.Services.VaultApiClient(new System.Net.Http.HttpClient { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) });
+                var handler = new System.Net.Http.HttpClientHandler { UseDefaultCredentials = true };
+                var client = new EZKPM.Client.Core.Services.VaultApiClient(new System.Net.Http.HttpClient(handler) { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) });
                 
                 await client.RequestRecoveryAsync(new EZKPM.Shared.Contracts.InitiateRecoveryRequestDto
                 {
@@ -348,7 +349,8 @@ namespace EZKPM.Client.Desktop.Views
             var btn = this.FindControl<Button>("SimulateAdminButton");
             if (btn != null) btn.IsEnabled = false;
 
-            var client = new EZKPM.Client.Core.Services.VaultApiClient(new System.Net.Http.HttpClient { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) });
+            var handler = new System.Net.Http.HttpClientHandler { UseDefaultCredentials = true };
+            var client = new EZKPM.Client.Core.Services.VaultApiClient(new System.Net.Http.HttpClient(handler) { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) });
             var sid = System.Security.Principal.WindowsIdentity.GetCurrent().User.Value;
             var statusResp = await client.GetRecoveryStatusAsync(sid);
 

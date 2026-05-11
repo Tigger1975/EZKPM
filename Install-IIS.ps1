@@ -50,6 +50,11 @@ if (Test-Path "IIS:\Sites\$SiteName") {
 Write-Host "Erstelle Website $SiteName auf Port $Port..."
 New-WebSite -Name $SiteName -Port $Port -PhysicalPath $DestPath -ApplicationPool $AppPoolName
 
+# Windows-Authentifizierung erzwingen (Zwingend für EZKPM Seamless SSO)
+Write-Host "Konfiguriere Windows-Authentifizierung für $SiteName..."
+Set-WebConfigurationProperty -Filter "/system.webServer/security/authentication/anonymousAuthentication" -Name "enabled" -Value $false -PSPath "IIS:\Sites\$SiteName"
+Set-WebConfigurationProperty -Filter "/system.webServer/security/authentication/windowsAuthentication" -Name "enabled" -Value $true -PSPath "IIS:\Sites\$SiteName"
+
 # 6. Berechtigungen setzen (WICHTIG für SQLite!)
 Write-Host "Setze Schreibrechte für SQLite-Datenbank..."
 $Acl = Get-Acl $DestPath

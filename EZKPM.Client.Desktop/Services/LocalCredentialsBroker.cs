@@ -34,7 +34,16 @@ namespace EZKPM.Client.Desktop.Services
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern IntPtr LocalFree(IntPtr hMem);
 
-        private static void Log(string msg) => File.AppendAllText(@"C:\Users\adm-kh\ezkpm_localbroker.log", $"[{DateTime.Now:HH:mm:ss}] {msg}\n");
+        private static void Log(string msg)
+        {
+            try 
+            { 
+                var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EZKPM");
+                Directory.CreateDirectory(logDir);
+                File.AppendAllText(Path.Combine(logDir, "ezkpm_localbroker.log"), $"[{DateTime.Now:HH:mm:ss}] {msg}\n"); 
+            } 
+            catch { }
+        }
         private readonly Func<IEnumerable<VaultAssetPayload>> _getDecryptedAssetsFunc;
         private readonly Func<string, string, string, Task<LocalAppApprovalResult>> _requestApprovalFunc;
         private CancellationTokenSource _cts;

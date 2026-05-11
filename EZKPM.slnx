@@ -11,5 +11,4 @@
   <Project Path="EZKPM.Client.Tests/EZKPM.Client.Tests.csproj" />
   <Project Path="EZKPM.Server.PDP/EZKPM.Server.PDP.csproj" />
   <Project Path="EZKPM.Shared.Contracts/EZKPM.Shared.Contracts.csproj" />
-  <Project Path="EZKPM.NativeHost/EZKPM.NativeHost.csproj" />
 </Solution>

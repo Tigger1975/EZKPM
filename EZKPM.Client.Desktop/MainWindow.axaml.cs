@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<VaultAssetPayload> _decryptedAssets = new();
     private readonly ObservableCollection<VaultTreeNode> _treeNodes = new();
     private readonly HashSet<Guid> _expandedFolderIds = new();
+    private readonly HashSet<Guid> _failedDecryptionIds = new();
     private readonly BrowserBridgeServer _bridgeServer;
     private readonly LocalCredentialsBroker _localBroker;
     private readonly SsoSyncClient _ssoSyncClient;
@@ -59,7 +60,9 @@ public partial class MainWindow : Window
         };
 
         _localBroker = new LocalCredentialsBroker(() => _decryptedAssets, RequestLocalAppApprovalAsync);
-        _ssoSyncClient = new SsoSyncClient(ShowSsoApprovalDialogAsync);
+        _ssoSyncClient = new SsoSyncClient(ShowSsoApprovalDialogAsync, async () => {
+            await LoadAssetsAsync();
+        });
         
         var pageantService = new Services.PageantEmulatorService(new Microsoft.Extensions.Logging.Abstractions.NullLogger<Services.PageantEmulatorService>(), () => _decryptedAssets);
         pageantService.StartAsync(System.Threading.CancellationToken.None);
@@ -318,6 +321,7 @@ public partial class MainWindow : Window
         {
             var serverAssets = await _apiClient.GetAllAssetsAsync();
             _decryptedAssets.Clear();
+            _failedDecryptionIds.Clear();
 
             int total = serverAssets.Count;
             int current = 0;
@@ -337,8 +341,9 @@ public partial class MainWindow : Window
                 }
                 catch (Exception ex)
                 {
-                    // If decryption fails (wrong key, expired), skip or show error placeholder
+                    // If decryption fails (wrong key, expired), track it so we can clean it up
                     Console.WriteLine($"Decryption failed for asset {dto.AssetId}: {ex.Message}");
+                    _failedDecryptionIds.Add(dto.AssetId);
                 }
             }
             // Ensure Private Folder exists
@@ -618,14 +623,25 @@ public partial class MainWindow : Window
 
     private async void CleanOrphans_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        var dialog = new Views.ConfirmationDialog("Möchten Sie wirklich alle herrenlosen Assets (ohne Owner) endgültig aus der Datenbank löschen?");
+        var dialog = new Views.ConfirmationDialog($"Möchten Sie wirklich alle herrenlosen Assets und {_failedDecryptionIds.Count} nicht mehr entschlüsselbare Assets (wegen verlorenem Schlüssel) endgültig löschen?");
         var result = await dialog.ShowDialogAsync(this);
         if (!result) return;
 
         try
         {
             int deleted = await _apiClient.CleanOrphanedAssetsAsync();
-            ShowStatus($"Datenbankbereinigung abgeschlossen. {deleted} herrenlose(s) Asset(s) entfernt.");
+            int failedCount = 0;
+            foreach (var id in _failedDecryptionIds)
+            {
+                try 
+                {
+                    await _apiClient.DeleteAssetAsync(id, true);
+                    failedCount++;
+                }
+                catch { /* ignore individual failures */ }
+            }
+            
+            ShowStatus($"Datenbankbereinigung abgeschlossen. {deleted} herrenlose(s) und {failedCount} defekte(s) Asset(s) entfernt.");
             await LoadAssetsAsync();
         }
         catch (Exception ex)

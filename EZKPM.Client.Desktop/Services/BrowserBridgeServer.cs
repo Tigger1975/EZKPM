@@ -13,7 +13,16 @@ namespace EZKPM.Client.Desktop.Services
 {
     public class BrowserBridgeServer
     {
-        private static void Log(string msg) => File.AppendAllText(@"C:\Users\adm-kh\ezkpm_bridge_server.log", $"[{DateTime.Now:HH:mm:ss}] {msg}\n");
+        private static void Log(string msg)
+        {
+            try 
+            { 
+                var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EZKPM");
+                Directory.CreateDirectory(logDir);
+                File.AppendAllText(Path.Combine(logDir, "ezkpm_bridge_server.log"), $"[{DateTime.Now:HH:mm:ss}] {msg}\n"); 
+            } 
+            catch { }
+        }
         private readonly Func<IEnumerable<VaultAssetPayload>> _getDecryptedAssetsFunc;
         private readonly Func<Guid, bool, string, Task<bool>> _requestAuditFunc;
         private CancellationTokenSource _cts;
@@ -85,7 +94,11 @@ namespace EZKPM.Client.Desktop.Services
                 }
                 catch (Exception ex)
                 {
-                    File.AppendAllText(@"C:\Users\adm-kh\ezkpm_bridge_error.log", $"[{DateTime.Now:HH:mm:ss}] BrowserBridgeServer Error: {ex.Message}\n{ex.StackTrace}\n");
+                    try 
+                    {
+                        var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EZKPM");
+                        File.AppendAllText(Path.Combine(logDir, "ezkpm_bridge_error.log"), $"[{DateTime.Now:HH:mm:ss}] BrowserBridgeServer Error: {ex.Message}\n{ex.StackTrace}\n");
+                    } catch { }
                 }
             }
         }

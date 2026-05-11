@@ -97,7 +97,8 @@ public partial class AssetEditorWindow : Window
         _totpTimer.Tick += TotpTimer_Tick;
         _totpTimer.Start();
 
-        var httpClient = new HttpClient { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) };
+        var handler = new HttpClientHandler { UseDefaultCredentials = true };
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) };
         _apiClient = new VaultApiClient(httpClient);
         _cryptoService = cryptoService ?? new VaultCryptoService(new HybridPqcKeyWrapper());
 

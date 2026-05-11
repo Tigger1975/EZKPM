@@ -10,10 +10,12 @@ namespace EZKPM.Client.Desktop.Services
     {
         private HubConnection _connection;
         private readonly Func<string, string, string, Task<bool>> _showApprovalDialogFunc;
+        private readonly Action _onVaultUpdated;
 
-        public SsoSyncClient(Func<string, string, string, Task<bool>> showApprovalDialogFunc)
+        public SsoSyncClient(Func<string, string, string, Task<bool>> showApprovalDialogFunc, Action onVaultUpdated)
         {
             _showApprovalDialogFunc = showApprovalDialogFunc;
+            _onVaultUpdated = onVaultUpdated;
         }
 
         public async Task ConnectAsync(string serverUrl, string userSid)
@@ -43,6 +45,14 @@ namespace EZKPM.Client.Desktop.Services
                 {
                     await _connection.InvokeAsync("SubmitAuthResult", requestId, isApproved);
                 }
+            });
+
+            _connection.On("VaultUpdated", () =>
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    _onVaultUpdated?.Invoke();
+                });
             });
 
             _connection.On<string, string>("RecoveryRequested", (requestId, requesterSid) =>

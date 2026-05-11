@@ -24,7 +24,8 @@ namespace EZKPM.Client.Desktop.Services
         public UpdaterService(ILogger<UpdaterService> logger)
         {
             _logger = logger;
-            _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+            var handler = new HttpClientHandler { UseDefaultCredentials = true };
+            _httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -43,8 +44,8 @@ namespace EZKPM.Client.Desktop.Services
                     _logger.LogError(ex, "Failed to check for updates in background loop.");
                 }
 
-                // Check every hour
-                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+                // Check every minute (Alpha Phase)
+                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
             }
         }
 

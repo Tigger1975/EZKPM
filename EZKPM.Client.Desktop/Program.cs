@@ -15,19 +15,30 @@ namespace EZKPM.Client.Desktop
 {
     internal class Program
     {
-        private static string LogFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "ezkpm_debug.txt");
+        private static string LogFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EZKPM", "ezkpm_debug.txt");
         private static readonly string LockFileName = "ezkpm_build.lock";
         private static readonly string LockFileDir = Path.GetTempPath();
         private static FileSystemWatcher _killSwitchWatcher;
 
         public static void LogDebug(string message)
         {
-            try { File.AppendAllText(LogFilePath, $"[{DateTime.UtcNow:O}] {message}\n"); } catch { }
+            try 
+            { 
+                Directory.CreateDirectory(Path.GetDirectoryName(LogFilePath));
+                File.AppendAllText(LogFilePath, $"[{DateTime.UtcNow:O}] {message}\n"); 
+            } 
+            catch { }
         }
 
         public static void LogNativeHost(string message)
         {
-            try { File.AppendAllText(@"C:\Users\adm-kh\ezkpm_nativehost.log", $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}\n"); } catch { }
+            try 
+            { 
+                var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EZKPM");
+                Directory.CreateDirectory(logDir);
+                File.AppendAllText(Path.Combine(logDir, "ezkpm_nativehost.log"), $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}\n"); 
+            } 
+            catch { }
         }
 
         public static bool IsAutoStart = false;
@@ -35,34 +46,60 @@ namespace EZKPM.Client.Desktop
         [STAThread]
         public static void Main(string[] args)
         {
-            InitializeKillSwitch();
-
-            LogDebug($"App started. Arguments: {string.Join(" ", args)}");
-
-            if (args.Any(a => a.Equals("autostart", StringComparison.OrdinalIgnoreCase) || a.Equals("--autostart", StringComparison.OrdinalIgnoreCase)))
+            string bootstrapLogPath = Path.Combine(Path.GetTempPath(), "ezkpm_bootstrap.log");
+            try 
             {
-                IsAutoStart = true;
-                RegisterAutostart();
-                LogDebug("Running in autostart mode.");
-            }
+                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] --- APP STARTING ---\n");
+                
+                InitializeKillSwitch();
+                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] KillSwitch initialized.\n");
 
-            if (args.Any(a => a.StartsWith("chrome-extension://") || a.StartsWith("ms-browser-extension://")))
+                LogDebug($"App started. Arguments: {string.Join(" ", args)}");
+
+                if (args.Any(a => a.Equals("autostart", StringComparison.OrdinalIgnoreCase) || a.Equals("--autostart", StringComparison.OrdinalIgnoreCase)))
+                {
+                    IsAutoStart = true;
+                    RegisterAutostart();
+                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Autostart registered.\n");
+                    LogDebug("Running in autostart mode.");
+                }
+
+                if (args.Any(a => a.StartsWith("chrome-extension://") || a.StartsWith("ms-browser-extension://")))
+                {
+                    LogNativeHost("EZKPM Native Messaging Host proxy started.");
+                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Native Messaging Proxy started.\n");
+                    try
+                    {
+                        Task.Run(() => RunNativeHostProxyAsync()).Wait();
+                    }
+                    catch (Exception ex)
+                    {
+                        File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] FATAL NATIVE HOST ERROR: {ex}\n");
+                        LogDebug($"FATAL STARTUP ERROR: {ex}");
+                    }
+                    return;
+                }
+
+                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Normal desktop startup sequence starting.\n");
+                LogDebug("Normal desktop startup...");
+                
+                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Registering Native Messaging Host...\n");
+                RegisterNativeMessagingHost();
+                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Native Messaging Host registered.\n");
+                
+                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Building Avalonia App...\n");
+                BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Avalonia App Exited gracefully.\n");
+            }
+            catch (Exception ex)
             {
-                LogNativeHost("EZKPM Native Messaging Host proxy started.");
-                try
+                try 
                 {
-                    Task.Run(() => RunNativeHostProxyAsync()).Wait();
-                }
-                catch (Exception ex)
-                {
-                    LogDebug($"FATAL STARTUP ERROR: {ex}");
-                }
-                return;
+                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] FATAL BOOTSTRAP ERROR: {ex}\n");
+                } 
+                catch { }
+                throw;
             }
-
-            LogDebug("Normal desktop startup...");
-            RegisterNativeMessagingHost();
-            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
 
         /// <summary>
@@ -213,7 +250,7 @@ namespace EZKPM.Client.Desktop
   ""path"": ""{exePath.Replace("\\", "\\\\")}"",
   ""type"": ""stdio"",
   ""allowed_origins"": [
-    ""chrome-extension://ofiilabemldhhdggobjdbdfelbmpmklf/""
+    ""chrome-extension://codaoiocjpdmphogabicpkaiheklopgm/""
   ]
 }}";
                 File.WriteAllText(manifestPath, manifest, System.Text.Encoding.UTF8);
@@ -225,7 +262,7 @@ namespace EZKPM.Client.Desktop
                 edgeKey.SetValue("", manifestPath);
 
                 // Install Extension in Browser via Registry (External Extension)
-                string extensionId = "ofiilabemldhhdggobjdbdfelbmpmklf";
+                string extensionId = "codaoiocjpdmphogabicpkaiheklopgm";
                 string extensionPath = Path.Combine(dirPath, "BrowserExtension");
                 
                 using var chromeExtKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey($@"Software\Google\Chrome\Extensions\{extensionId}");
