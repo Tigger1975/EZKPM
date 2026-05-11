@@ -2,6 +2,7 @@
   "manifest_version": 3,
   "name": "EZK-PM Enterprise Autofill",
   "version": "1.0.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1o2Ncx8WhfowBf7unlxFloRrkvt/orHGcjHInCri4+La0hvhn9Z/coT++WA2Ob/GAkdowgSelRV1KVvWOOOubXsHiz7PLGzSMaYrIUdLYHBdDh0vopzsJxmp9j0pB16jO+hZoE66PL7bYe6cE17NzRafdPWUyCyrk+FThzhxT/taRM9PVwAK+y3yKR8dJD6l3oYXJxc+YhgBnnn/SE+ZQuWdrOkCaBEff0wiDolAzyweh+CFb3nmSmmqyGWkXvdG/HCYzGxO1oC4TtbDPNeSVTDo0UmEvqPpOJxTsAdWLaxJ90mgteLO6MC1IaWJ9ONLAPAk7JGOBxl4yOQikfuNkwIDAQAB",
   "description": "Zero-Knowledge Autofill Bridge (FA 21 & FA 22)",
   "permissions": [
     "nativeMessaging",

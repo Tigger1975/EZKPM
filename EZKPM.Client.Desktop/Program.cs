@@ -250,7 +250,8 @@ namespace EZKPM.Client.Desktop
   ""path"": ""{exePath.Replace("\\", "\\\\")}"",
   ""type"": ""stdio"",
   ""allowed_origins"": [
-    ""chrome-extension://codaoiocjpdmphogabicpkaiheklopgm/""
+    ""chrome-extension://codaoiocjpdmphogabicpkaiheklopgm/"",
+    ""chrome-extension://hbjhgelkafhcagmnijmlhehanemmcpcg/""
   ]
 }}";
                 File.WriteAllText(manifestPath, manifest, System.Text.Encoding.UTF8);
@@ -272,6 +273,16 @@ namespace EZKPM.Client.Desktop
                 using var edgeExtKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey($@"Software\Microsoft\Edge\Extensions\{extensionId}");
                 edgeExtKey.SetValue("path", extensionPath);
                 edgeExtKey.SetValue("version", "1.0.0");
+
+                // Dev-Extension für lokale Tests ebenfalls registrieren (überschreibt ggf. falls es lokal ist, aber sichert die Bridge)
+                string devExtensionId = "hbjhgelkafhcagmnijmlhehanemmcpcg";
+                using var chromeDevKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey($@"Software\Google\Chrome\Extensions\{devExtensionId}");
+                chromeDevKey.SetValue("path", extensionPath);
+                chromeDevKey.SetValue("version", "1.0.0");
+
+                using var edgeDevKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey($@"Software\Microsoft\Edge\Extensions\{devExtensionId}");
+                edgeDevKey.SetValue("path", extensionPath);
+                edgeDevKey.SetValue("version", "1.0.0");
 
                 LogDebug("Native Messaging Host and Extension registered successfully.");
             }
