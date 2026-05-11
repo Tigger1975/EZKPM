@@ -63,20 +63,59 @@ namespace EZKPM.Client.Desktop.Services
                     ref save,
                     CREDUIWIN_ENUMERATE_CURRENT_USER);
 
+                if (result == ERROR_SUCCESS && outAuthBuffer != IntPtr.Zero)
+                {
+                    try
+                    {
+                        var user = new System.Text.StringBuilder(100);
+                        int userLen = 100;
+                        var domain = new System.Text.StringBuilder(100);
+                        int domainLen = 100;
+                        var pwd = new System.Text.StringBuilder(100);
+                        int pwdLen = 100;
+
+                        bool unpacked = CredUnPackAuthenticationBuffer(0, outAuthBuffer, outAuthBufferSize, user, ref userLen, domain, ref domainLen, pwd, ref pwdLen);
+                        
+                        if (unpacked)
+                        {
+                            // Validate the unpacked credentials against the OS
+                            using var context = new System.DirectoryServices.AccountManagement.PrincipalContext(
+                                string.IsNullOrEmpty(domain.ToString()) ? 
+                                System.DirectoryServices.AccountManagement.ContextType.Machine : 
+                                System.DirectoryServices.AccountManagement.ContextType.Domain, 
+                                string.IsNullOrEmpty(domain.ToString()) ? Environment.MachineName : domain.ToString());
+
+                            bool isValid = context.ValidateCredentials(user.ToString(), pwd.ToString());
+                            
+                            // Securely wipe the string builder
+                            pwd.Clear();
+
+                            if (!isValid)
+                            {
+                                Program.LogDebug("Credential validation failed! Incorrect password.");
+                                return false;
+                            }
+                            
+                            return true;
+                        }
+                    }
+                    finally
+                    {
+                        Marshal.FreeCoTaskMem(outAuthBuffer);
+                    }
+                }
+                
                 if (outAuthBuffer != IntPtr.Zero)
                 {
                     Marshal.FreeCoTaskMem(outAuthBuffer);
                 }
 
-                if (result == ERROR_SUCCESS) return true;
-                
                 if (result == ERROR_CANCELLED) 
                 {
                     Program.LogDebug("Windows Auth cancelled by user.");
                     return false;
                 }
 
-                // If we get here, CredUI failed technically (e.g., RDP session on Windows Server 2016 doesn't support it)
                 Program.LogDebug($"CredUI failed technically with error code: {result}. Bypassing FA 14 for VM/RDP compatibility.");
                 return true;
             }
@@ -86,5 +125,17 @@ namespace EZKPM.Client.Desktop.Services
                 return true;
             }
         }
+
+        [DllImport("credui.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern bool CredUnPackAuthenticationBuffer(
+            int dwFlags,
+            IntPtr pAuthBuffer,
+            uint cbAuthBuffer,
+            System.Text.StringBuilder pszUserName,
+            ref int pcchMaxUserName,
+            System.Text.StringBuilder pszDomainName,
+            ref int pcchMaxDomainName,
+            System.Text.StringBuilder pszPassword,
+            ref int pcchMaxPassword);
     }
 }
