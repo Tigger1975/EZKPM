@@ -315,7 +315,7 @@ namespace EZKPM.Server.PDP.Controllers
                 return Forbid("Only existing administrators can modify admin rights.");
             }
 
-            var hashedTargetSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.TargetAdSid);
+            var hashedTargetSid = request.TargetHashedSid;
 
             // Prevent removing the last admin
             if (!request.IsAdmin && anyAdminExists)
@@ -353,8 +353,8 @@ namespace EZKPM.Server.PDP.Controllers
             if (callerProfile == null || !await _db.UserProfiles.AnyAsync(u => u.PersonId == callerProfile.PersonId && u.IsAdmin))
                 return Forbid("Only administrators can link user accounts.");
 
-            var hashedSourceSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.SourceAdSid);
-            var hashedTargetSid = EZKPM.Server.PDP.Services.SidHasher.HashSid(request.TargetAdSid);
+            var hashedSourceSid = request.SourceHashedSid;
+            var hashedTargetSid = request.TargetHashedSid;
 
             var sourceProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == hashedSourceSid);
             var targetProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == hashedTargetSid);
