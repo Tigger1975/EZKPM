@@ -24,23 +24,37 @@ Write-Host "`n[3/7] Kompiliere Client (Desktop & Extension Bridge)..." -Foregrou
 # Kein Remove-Item, um nur geänderte Dateien zu aktualisieren
 dotnet publish "$RepoPath\EZKPM.Client.Desktop\EZKPM.Client.Desktop.csproj" -c Release -o $PublishClientPath
 
-Write-Host "`n[4/7] Erstelle OTA-Update Paket für Clients..." -ForegroundColor Yellow
 if (!(Test-Path $UpdatesDir)) { New-Item -ItemType Directory -Force -Path $UpdatesDir | Out-Null }
 $zipPath = "$UpdatesDir\ClientUpdate.zip"
-if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
-Compress-Archive -Path "$PublishClientPath\*" -DestinationPath $zipPath -Force
 
-# Lese Version aus csproj aus
+# Lese Version aus csproj aus (für Logs und JSON)
 $csproj = [xml](Get-Content "$RepoPath\EZKPM.Client.Desktop\EZKPM.Client.Desktop.csproj")
 $clientVersion = $csproj.Project.PropertyGroup.Version
 if ([string]::IsNullOrWhiteSpace($clientVersion)) { $clientVersion = "1.0.0.0" }
 
-$versionJson = @{
-    LatestVersion = $clientVersion
-    ReleaseNotes = "Automatisiertes Deployment (Version $clientVersion)"
-    DownloadUrl = "/api/updater/download"
-} | ConvertTo-Json
-Set-Content -Path "$UpdatesDir\version.json" -Value $versionJson
+$needsZip = $true
+if (Test-Path $zipPath) {
+    $zipDate = (Get-Item $zipPath).LastWriteTime
+    $newerFiles = Get-ChildItem -Path $PublishClientPath -Recurse | Where-Object { $_.LastWriteTime -gt $zipDate }
+    if (-not $newerFiles) {
+        $needsZip = $false
+    }
+}
+
+if ($needsZip) {
+    Write-Host "`n[4/7] Erstelle OTA-Update Paket für Clients (Änderungen erkannt)..." -ForegroundColor Yellow
+    if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
+    Compress-Archive -Path "$PublishClientPath\*" -DestinationPath $zipPath -Force
+
+    $versionJson = @{
+        LatestVersion = $clientVersion
+        ReleaseNotes = "Automatisiertes Deployment (Version $clientVersion)"
+        DownloadUrl = "/api/updater/download"
+    } | ConvertTo-Json
+    Set-Content -Path "$UpdatesDir\version.json" -Value $versionJson
+} else {
+    Write-Host "`n[4/7] Überspringe OTA-Update Paket (Keine Änderungen im Client)..." -ForegroundColor Gray
+}
 
 Write-Host "`n[5/7] Verteile Dateien an den IIS-Produktionsserver..." -ForegroundColor Yellow
 Write-Host "      Setze IIS via app_offline.htm in den Wartungsmodus, um Dateisperren zu lösen..." -ForegroundColor Yellow
