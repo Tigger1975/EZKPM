@@ -254,7 +254,7 @@ namespace EZKPM.Client.Desktop
     ""chrome-extension://hbjhgelkafhcagmnijmlhehanemmcpcg/""
   ]
 }}";
-                File.WriteAllText(manifestPath, manifest, System.Text.Encoding.UTF8);
+                File.WriteAllText(manifestPath, manifest, new System.Text.UTF8Encoding(false));
 
                 using var chromeKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey($@"Software\Google\Chrome\NativeMessagingHosts\{manifestName}");
                 chromeKey.SetValue("", manifestPath);
