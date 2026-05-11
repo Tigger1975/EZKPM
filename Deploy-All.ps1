@@ -63,7 +63,15 @@ Set-Content -Path "$IISPath\app_offline.htm" -Value "<html><head><title>Update l
 Start-Sleep -Seconds 3
 
 Write-Host "      Kopiere aktualisierte Dateien (ueberschreibt nur was sich geaendert hat)..." -ForegroundColor Yellow
-Copy-Item -Path "$PublishServerPath\*" -Destination $IISPath -Recurse -Force
+$exitCode = 0
+try {
+    robocopy $PublishServerPath $IISPath /MIR /XD Updates /XF app_offline.htm | Out-Null
+} catch {
+    # Ignore powershell throwing on robocopy exit codes
+}
+if ($LASTEXITCODE -ge 8) {
+    throw "Robocopy fehlgeschlagen mit Fehlercode: $LASTEXITCODE"
+}
 
 Write-Host "`n[6/7] Starte IIS durch Entfernen von app_offline.htm..." -ForegroundColor Yellow
 Remove-Item -Path "$IISPath\app_offline.htm" -Force -ErrorAction SilentlyContinue
