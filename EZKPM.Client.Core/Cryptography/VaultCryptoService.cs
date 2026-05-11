@@ -23,7 +23,14 @@ namespace EZKPM.Client.Core.Cryptography
             _keyWrapper = keyWrapper;
         }
 
-        public bool InitializeFromStorage(
+        public enum CryptoInitResult
+        {
+            Success,
+            WrongPassword,
+            NotPaired
+        }
+
+        public CryptoInitResult InitializeFromStorage(
             string? adBlob, 
             string? tpmBlob, 
             string masterPassword, 
@@ -42,7 +49,7 @@ namespace EZKPM.Client.Core.Cryptography
             if (!string.IsNullOrEmpty(tpmBlob) && tpmUnprotect != null)
             {
                 if (DecryptKeysFromBlob(tpmBlob, effectivePassword, true, tpmUnprotect))
-                    return true;
+                    return CryptoInitResult.Success;
             }
 
             // 2. Try AD Blob Fallback (Tier 3)
@@ -61,18 +68,17 @@ namespace EZKPM.Client.Core.Cryptography
                         CryptographicOperations.ZeroMemory(kyberMat);
                         CryptographicOperations.ZeroMemory(ecdsaPriv);
                     }
-                    return true;
+                    return CryptoInitResult.Success;
                 }
             }
 
             // 3. Both failed or no blobs exist
             if (string.IsNullOrEmpty(adBlob) && string.IsNullOrEmpty(tpmBlob))
             {
-                // We should NOT auto-generate keys here. That's for the Pairing phase!
-                return false;
+                return CryptoInitResult.NotPaired;
             }
 
-            return false;
+            return CryptoInitResult.WrongPassword;
         }
 
         public void GenerateAndStoreNewKeys(

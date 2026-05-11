@@ -137,7 +137,7 @@ namespace EZKPM.Client.Desktop.Views
                 string adBlob = EZKPM.Client.Desktop.Services.AdKeyStorageService.RetrieveKeyFromAd();
                 string tpmBlob = EZKPM.Client.Desktop.Services.TpmKeyStorageService.RetrieveTpmBlob();
                 
-                bool isCorrect = CryptoService.InitializeFromStorage(
+                var result = CryptoService.InitializeFromStorage(
                     adBlob, 
                     tpmBlob, 
                     legacyPwd, 
@@ -147,17 +147,14 @@ namespace EZKPM.Client.Desktop.Views
                     out string newTpmBlob, 
                     out string newPubKey);
                 
-                if (isCorrect)
+                if (result == EZKPM.Client.Core.Cryptography.VaultCryptoService.CryptoInitResult.Success)
                 {
                     if (!string.IsNullOrEmpty(newAdBlob))
                         EZKPM.Client.Desktop.Services.AdKeyStorageService.StoreKeyInAd(newAdBlob);
                     
                     if (!string.IsNullOrEmpty(newTpmBlob))
                         EZKPM.Client.Desktop.Services.TpmKeyStorageService.StoreTpmBlob(newTpmBlob);
-                }
-                
-                if (isCorrect)
-                {
+
                     if (Services.SessionManager.RequiresStartupAuth && Services.SessionManager.IsLocked)
                     {
                         bool success = Services.SessionManager.EnsureAuthenticated(EZKPM.Client.Desktop.Resources.AppStrings.Startup_SecurityLock);
@@ -177,7 +174,24 @@ namespace EZKPM.Client.Desktop.Views
 
                     ProceedToSplashPhase();
                 }
-                else
+                else if (result == EZKPM.Client.Core.Cryptography.VaultCryptoService.CryptoInitResult.NotPaired)
+                {
+                    // Device has no keys. Prompt the user to pair!
+                    if (unlockBtn != null) unlockBtn.IsVisible = false;
+                    if (prog != null) prog.IsVisible = false;
+                    if (status != null)
+                    {
+                        status.Text = "Gerät nicht gekoppelt. Bitte auf 'Gerät Registrieren' klicken.";
+                        status.Foreground = Avalonia.Media.Brushes.Yellow;
+                        status.IsVisible = true;
+                    }
+                    
+                    // TODO: The user should click a pairing button, or maybe we open the PairingWindow directly?
+                    var pairingWin = new PairingWindow();
+                    pairingWin.Show();
+                    this.Close();
+                }
+                else // WrongPassword
                 {
                     if (unlockBtn != null) unlockBtn.IsVisible = false;
                     if (prog != null) prog.IsVisible = false;
@@ -285,7 +299,7 @@ namespace EZKPM.Client.Desktop.Views
             string adBlob = EZKPM.Client.Desktop.Services.AdKeyStorageService.RetrieveKeyFromAd();
             string tpmBlob = EZKPM.Client.Desktop.Services.TpmKeyStorageService.RetrieveTpmBlob();
             
-            bool isCorrect = CryptoService.InitializeFromStorage(
+            var result = CryptoService.InitializeFromStorage(
                 adBlob, 
                 tpmBlob, 
                 pwd, 
@@ -295,21 +309,27 @@ namespace EZKPM.Client.Desktop.Views
                 out string newTpmBlob, 
                 out string newPubKey);
             
-            if (isCorrect)
+            if (result == EZKPM.Client.Core.Cryptography.VaultCryptoService.CryptoInitResult.Success)
             {
                 if (!string.IsNullOrEmpty(newAdBlob))
                     EZKPM.Client.Desktop.Services.AdKeyStorageService.StoreKeyInAd(newAdBlob);
                 
                 if (!string.IsNullOrEmpty(newTpmBlob))
                     EZKPM.Client.Desktop.Services.TpmKeyStorageService.StoreTpmBlob(newTpmBlob);
-            }
-            
-            if (isCorrect)
-            {
+
                 EZKPM.Client.Core.Security.LegacyPasswordStore.SaveLegacyPassword(pwd);
                 ProceedToSplashPhase();
             }
-            else
+            else if (result == EZKPM.Client.Core.Cryptography.VaultCryptoService.CryptoInitResult.NotPaired)
+            {
+                if (status != null)
+                {
+                    status.Text = "Das Gerät ist noch nicht gekoppelt. Bitte auf Registrieren klicken.";
+                    status.Foreground = Avalonia.Media.Brushes.Yellow;
+                    status.IsVisible = true;
+                }
+            }
+            else // WrongPassword
             {
                 if (status != null)
                 {

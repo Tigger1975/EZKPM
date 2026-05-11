@@ -66,15 +66,6 @@ namespace EZKPM.Client.Desktop.Views
                 var pwdBox = this.FindControl<TextBox>("PasswordTextBox");
                 string pwd = pwdBox?.Text ?? "";
 
-                if (string.IsNullOrEmpty(pwd))
-                {
-                    statusText.Text = "Bitte Passwort eingeben!";
-                    statusText.Foreground = Avalonia.Media.Brushes.Red;
-                    registerBtn.IsEnabled = true;
-                    progress.IsVisible = false;
-                    return;
-                }
-
                 // 3. Generate Identity Public Key & Vault Keys
                 // 3. Generate Identity Public Key & Vault Keys
                 var cryptoService = new EZKPM.Client.Core.Cryptography.VaultCryptoService(new EZKPM.Client.Core.Cryptography.HybridPqcKeyWrapper());
