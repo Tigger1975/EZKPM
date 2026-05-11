@@ -23,43 +23,94 @@ namespace EZKPM.Client.Core.Cryptography
             _keyWrapper = keyWrapper;
         }
 
-        public bool InitializeFromBlob(string? encryptedBlob, string masterPassword, out string? newEncryptedBlob, out string? newPublicKeyBase64)
+        public bool InitializeFromStorage(
+            string? adBlob, 
+            string? tpmBlob, 
+            string masterPassword, 
+            Func<byte[], byte[]>? tpmProtect,
+            Func<byte[], byte[]>? tpmUnprotect,
+            out string? newAdBlob, 
+            out string? newTpmBlob, 
+            out string? newPublicKeyBase64)
         {
-            newEncryptedBlob = null;
+            newAdBlob = null;
+            newTpmBlob = null;
             newPublicKeyBase64 = null;
             string effectivePassword = string.IsNullOrEmpty(masterPassword) ? "EZKPM_SEAMLESS_SSO" : masterPassword;
 
-            if (string.IsNullOrEmpty(encryptedBlob))
+            // 1. Try TPM Blob First (Tier 2)
+            if (!string.IsNullOrEmpty(tpmBlob) && tpmUnprotect != null)
             {
-                // NO BLOB EXISTS -> GENERATE NEW KEYS
-                byte[] x25519Mat = new byte[32];
-                byte[] kyberMat = new byte[32];
-                RandomNumberGenerator.Fill(x25519Mat);
-                RandomNumberGenerator.Fill(kyberMat);
-
-                _myPrivateKeyX25519 = new SecureMemory(x25519Mat);
-                _myPrivateKeyKyber = new SecureMemory(kyberMat);
-                
-                IdentityKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-                byte[] ecdsaPriv = IdentityKey.ExportECPrivateKey();
-
-                newPublicKeyBase64 = Convert.ToBase64String(IdentityKey.ExportSubjectPublicKeyInfo());
-
-                newEncryptedBlob = EncryptKeysToBlob(effectivePassword, x25519Mat, kyberMat, ecdsaPriv);
-                
-                CryptographicOperations.ZeroMemory(x25519Mat);
-                CryptographicOperations.ZeroMemory(kyberMat);
-                CryptographicOperations.ZeroMemory(ecdsaPriv);
-                return true;
+                if (DecryptKeysFromBlob(tpmBlob, effectivePassword, true, tpmUnprotect))
+                    return true;
             }
-            else
+
+            // 2. Try AD Blob Fallback (Tier 3)
+            if (!string.IsNullOrEmpty(adBlob))
             {
-                // DECRYPT EXISTING BLOB
-                return DecryptKeysFromBlob(encryptedBlob, effectivePassword);
+                if (DecryptKeysFromBlob(adBlob, effectivePassword, false, null))
+                {
+                    // Success with AD! Let's optionally re-generate TPM if it was missing or corrupted
+                    if (tpmProtect != null)
+                    {
+                        byte[] x25519Mat = _myPrivateKeyX25519!.Span.ToArray();
+                        byte[] kyberMat = _myPrivateKeyKyber!.Span.ToArray();
+                        byte[] ecdsaPriv = IdentityKey!.ExportECPrivateKey();
+                        newTpmBlob = EncryptKeysToBlob(effectivePassword, x25519Mat, kyberMat, ecdsaPriv, true, tpmProtect);
+                        CryptographicOperations.ZeroMemory(x25519Mat);
+                        CryptographicOperations.ZeroMemory(kyberMat);
+                        CryptographicOperations.ZeroMemory(ecdsaPriv);
+                    }
+                    return true;
+                }
             }
+
+            // 3. Both failed or no blobs exist
+            if (string.IsNullOrEmpty(adBlob) && string.IsNullOrEmpty(tpmBlob))
+            {
+                // We should NOT auto-generate keys here. That's for the Pairing phase!
+                return false;
+            }
+
+            return false;
         }
 
-        private string EncryptKeysToBlob(string password, byte[] x25519, byte[] kyber, byte[] ecdsaPriv)
+        public void GenerateAndStoreNewKeys(
+            string masterPassword,
+            Func<byte[], byte[]>? tpmProtect,
+            out string newAdBlob, 
+            out string? newTpmBlob, 
+            out string newPublicKeyBase64)
+        {
+            newTpmBlob = null;
+            string effectivePassword = string.IsNullOrEmpty(masterPassword) ? "EZKPM_SEAMLESS_SSO" : masterPassword;
+
+            byte[] x25519Mat = new byte[32];
+            byte[] kyberMat = new byte[32];
+            RandomNumberGenerator.Fill(x25519Mat);
+            RandomNumberGenerator.Fill(kyberMat);
+
+            _myPrivateKeyX25519 = new SecureMemory(x25519Mat);
+            _myPrivateKeyKyber = new SecureMemory(kyberMat);
+            
+            IdentityKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+            byte[] ecdsaPriv = IdentityKey.ExportECPrivateKey();
+
+            newPublicKeyBase64 = Convert.ToBase64String(IdentityKey.ExportSubjectPublicKeyInfo());
+
+            newAdBlob = EncryptKeysToBlob(effectivePassword, x25519Mat, kyberMat, ecdsaPriv, false, null);
+            
+            if (tpmProtect != null)
+            {
+                newTpmBlob = EncryptKeysToBlob(effectivePassword, x25519Mat, kyberMat, ecdsaPriv, true, tpmProtect);
+            }
+            
+            CryptographicOperations.ZeroMemory(x25519Mat);
+            CryptographicOperations.ZeroMemory(kyberMat);
+            CryptographicOperations.ZeroMemory(ecdsaPriv);
+        }
+
+        private string EncryptKeysToBlob(string password, byte[] x25519, byte[] kyber, byte[] ecdsaPriv, bool useTpm, Func<byte[], byte[]>? tpmProtect)
         {
             byte[] salt = new byte[16];
             RandomNumberGenerator.Fill(salt);
@@ -70,7 +121,22 @@ namespace EZKPM.Client.Core.Cryptography
             };
             byte[] kek = argon2.GetBytes(32);
 
-            // Payload: X25519 (32) + Kyber (32) + ECDSA (Variable, ~150)
+            byte[] hardwarePepperEncrypted = new byte[0];
+            if (useTpm && tpmProtect != null)
+            {
+                byte[] hardwarePepper = new byte[32];
+                RandomNumberGenerator.Fill(hardwarePepper);
+                hardwarePepperEncrypted = tpmProtect(hardwarePepper);
+
+                // XOR KEK with hardware Pepper
+                for (int i = 0; i < 32; i++)
+                {
+                    kek[i] ^= hardwarePepper[i];
+                }
+                CryptographicOperations.ZeroMemory(hardwarePepper);
+            }
+
+            // Payload: X25519 (32) + Kyber (32) + ECDSA
             byte[] payload = new byte[64 + ecdsaPriv.Length];
             Buffer.BlockCopy(x25519, 0, payload, 0, 32);
             Buffer.BlockCopy(kyber, 0, payload, 32, 32);
@@ -87,37 +153,57 @@ namespace EZKPM.Client.Core.Cryptography
             CryptographicOperations.ZeroMemory(kek);
             CryptographicOperations.ZeroMemory(payload);
 
-            byte[] blob = new byte[salt.Length + nonce.Length + ciphertext.Length + tag.Length];
-            Buffer.BlockCopy(salt, 0, blob, 0, salt.Length);
-            Buffer.BlockCopy(nonce, 0, blob, salt.Length, nonce.Length);
-            Buffer.BlockCopy(ciphertext, 0, blob, salt.Length + nonce.Length, ciphertext.Length);
-            Buffer.BlockCopy(tag, 0, blob, salt.Length + nonce.Length + ciphertext.Length, tag.Length);
+            // Format: UseTpmByte(1) + Salt(16) + Nonce(12) + Tag(16) + PepperLen(4) + PepperEncrypted + Ciphertext
+            using var ms = new System.IO.MemoryStream();
+            using var bw = new System.IO.BinaryWriter(ms);
+            bw.Write(useTpm ? (byte)1 : (byte)0);
+            bw.Write(salt);
+            bw.Write(nonce);
+            bw.Write(tag);
+            bw.Write(hardwarePepperEncrypted.Length);
+            if (hardwarePepperEncrypted.Length > 0) bw.Write(hardwarePepperEncrypted);
+            bw.Write(ciphertext);
 
-            return Convert.ToBase64String(blob);
+            return Convert.ToBase64String(ms.ToArray());
         }
 
-        private bool DecryptKeysFromBlob(string encryptedBlobBase64, string password)
+        private bool DecryptKeysFromBlob(string encryptedBlobBase64, string password, bool expectTpm, Func<byte[], byte[]>? tpmUnprotect)
         {
             try
             {
                 byte[] blob = Convert.FromBase64String(encryptedBlobBase64);
-                if (blob.Length < 16 + 12 + 64 + 16) return false;
+                using var ms = new System.IO.MemoryStream(blob);
+                using var br = new System.IO.BinaryReader(ms);
 
-                byte[] salt = new byte[16];
-                byte[] nonce = new byte[12];
-                byte[] tag = new byte[16];
-                byte[] ciphertext = new byte[blob.Length - 16 - 12 - 16];
+                bool usesTpm = br.ReadByte() == 1;
+                if (usesTpm != expectTpm) return false;
 
-                Buffer.BlockCopy(blob, 0, salt, 0, 16);
-                Buffer.BlockCopy(blob, 16, nonce, 0, 12);
-                Buffer.BlockCopy(blob, 16 + 12, ciphertext, 0, ciphertext.Length);
-                Buffer.BlockCopy(blob, 16 + 12 + ciphertext.Length, tag, 0, 16);
+                byte[] salt = br.ReadBytes(16);
+                byte[] nonce = br.ReadBytes(12);
+                byte[] tag = br.ReadBytes(16);
+                
+                int pepperLen = br.ReadInt32();
+                byte[] hardwarePepperEncrypted = br.ReadBytes(pepperLen);
+                
+                byte[] ciphertext = br.ReadBytes((int)(ms.Length - ms.Position));
 
                 using var argon2 = new Konscious.Security.Cryptography.Argon2id(Encoding.UTF8.GetBytes(password))
                 {
                     Salt = salt, DegreeOfParallelism = 4, Iterations = 3, MemorySize = 65536
                 };
                 byte[] kek = argon2.GetBytes(32);
+
+                if (usesTpm && tpmUnprotect != null)
+                {
+                    byte[] hardwarePepper = tpmUnprotect(hardwarePepperEncrypted);
+                    if (hardwarePepper == null || hardwarePepper.Length != 32) return false;
+
+                    for (int i = 0; i < 32; i++)
+                    {
+                        kek[i] ^= hardwarePepper[i];
+                    }
+                    CryptographicOperations.ZeroMemory(hardwarePepper);
+                }
 
                 byte[] payload = new byte[ciphertext.Length];
                 using (var aesGcm = new AesGcm(kek, 16)) { aesGcm.Decrypt(nonce, ciphertext, tag, payload); }

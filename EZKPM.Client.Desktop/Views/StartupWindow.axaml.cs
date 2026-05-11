@@ -135,12 +135,25 @@ namespace EZKPM.Client.Desktop.Views
                 string legacyPwd = EZKPM.Client.Core.Security.LegacyPasswordStore.GetLegacyPassword();
                 
                 string adBlob = EZKPM.Client.Desktop.Services.AdKeyStorageService.RetrieveKeyFromAd();
-                bool isCorrect = CryptoService.InitializeFromBlob(adBlob, legacyPwd, out string newBlob, out string newPubKey);
+                string tpmBlob = EZKPM.Client.Desktop.Services.TpmKeyStorageService.RetrieveTpmBlob();
                 
-                if (isCorrect && !string.IsNullOrEmpty(newBlob))
+                bool isCorrect = CryptoService.InitializeFromStorage(
+                    adBlob, 
+                    tpmBlob, 
+                    legacyPwd, 
+                    EZKPM.Client.Desktop.Services.TpmKeyStorageService.IsTpmAvailable() ? EZKPM.Client.Desktop.Services.TpmKeyStorageService.ProtectHardwarePepper : null,
+                    EZKPM.Client.Desktop.Services.TpmKeyStorageService.IsTpmAvailable() ? EZKPM.Client.Desktop.Services.TpmKeyStorageService.UnprotectHardwarePepper : null,
+                    out string newAdBlob, 
+                    out string newTpmBlob, 
+                    out string newPubKey);
+                
+                if (isCorrect)
                 {
-                    EZKPM.Client.Desktop.Services.AdKeyStorageService.StoreKeyInAd(newBlob);
-                    // TODO: Upload newPubKey to Server if required
+                    if (!string.IsNullOrEmpty(newAdBlob))
+                        EZKPM.Client.Desktop.Services.AdKeyStorageService.StoreKeyInAd(newAdBlob);
+                    
+                    if (!string.IsNullOrEmpty(newTpmBlob))
+                        EZKPM.Client.Desktop.Services.TpmKeyStorageService.StoreTpmBlob(newTpmBlob);
                 }
                 
                 if (isCorrect)
@@ -270,11 +283,25 @@ namespace EZKPM.Client.Desktop.Views
             string pwd = txtBox?.Text ?? "";
             
             string adBlob = EZKPM.Client.Desktop.Services.AdKeyStorageService.RetrieveKeyFromAd();
-            bool isCorrect = CryptoService.InitializeFromBlob(adBlob, pwd, out string newBlob, out string newPubKey);
+            string tpmBlob = EZKPM.Client.Desktop.Services.TpmKeyStorageService.RetrieveTpmBlob();
             
-            if (isCorrect && !string.IsNullOrEmpty(newBlob))
+            bool isCorrect = CryptoService.InitializeFromStorage(
+                adBlob, 
+                tpmBlob, 
+                pwd, 
+                EZKPM.Client.Desktop.Services.TpmKeyStorageService.IsTpmAvailable() ? EZKPM.Client.Desktop.Services.TpmKeyStorageService.ProtectHardwarePepper : null,
+                EZKPM.Client.Desktop.Services.TpmKeyStorageService.IsTpmAvailable() ? EZKPM.Client.Desktop.Services.TpmKeyStorageService.UnprotectHardwarePepper : null,
+                out string newAdBlob, 
+                out string newTpmBlob, 
+                out string newPubKey);
+            
+            if (isCorrect)
             {
-                EZKPM.Client.Desktop.Services.AdKeyStorageService.StoreKeyInAd(newBlob);
+                if (!string.IsNullOrEmpty(newAdBlob))
+                    EZKPM.Client.Desktop.Services.AdKeyStorageService.StoreKeyInAd(newAdBlob);
+                
+                if (!string.IsNullOrEmpty(newTpmBlob))
+                    EZKPM.Client.Desktop.Services.TpmKeyStorageService.StoreTpmBlob(newTpmBlob);
             }
             
             if (isCorrect)

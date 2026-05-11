@@ -76,11 +76,22 @@ namespace EZKPM.Client.Desktop.Views
                 }
 
                 // 3. Generate Identity Public Key & Vault Keys
+                // 3. Generate Identity Public Key & Vault Keys
                 var cryptoService = new EZKPM.Client.Core.Cryptography.VaultCryptoService(new EZKPM.Client.Core.Cryptography.HybridPqcKeyWrapper());
-                cryptoService.InitializeFromBlob(null, pwd, out string newBlob, out string pubKeyBase64);
+                
+                cryptoService.GenerateAndStoreNewKeys(
+                    pwd, 
+                    EZKPM.Client.Desktop.Services.TpmKeyStorageService.IsTpmAvailable() ? EZKPM.Client.Desktop.Services.TpmKeyStorageService.ProtectHardwarePepper : null,
+                    out string newAdBlob, 
+                    out string newTpmBlob, 
+                    out string pubKeyBase64);
 
-                // 4. Backup to AD Blind Drop Container
-                EZKPM.Client.Desktop.Services.AdKeyStorageService.StoreKeyInAd(newBlob);
+                // 4. Backup to Storage
+                if (!string.IsNullOrEmpty(newAdBlob))
+                    EZKPM.Client.Desktop.Services.AdKeyStorageService.StoreKeyInAd(newAdBlob);
+                    
+                if (!string.IsNullOrEmpty(newTpmBlob))
+                    EZKPM.Client.Desktop.Services.TpmKeyStorageService.StoreTpmBlob(newTpmBlob);
 
                 // 4. Send to Server
                 var payload = new
