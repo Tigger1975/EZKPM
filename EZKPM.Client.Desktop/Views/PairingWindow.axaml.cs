@@ -95,9 +95,9 @@ namespace EZKPM.Client.Desktop.Views
                 string json = JsonSerializer.Serialize(payload);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                // Assuming server runs on localhost:5000 for local testing
-                using var http = new HttpClient();
-                var response = await http.PostAsync("http://localhost:5000/api/v1/auth/register-device", content);
+                var handler = new HttpClientHandler { UseDefaultCredentials = true };
+                using var http = new HttpClient(handler) { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) };
+                var response = await http.PostAsync("/api/v1/auth/register-device", content);
 
                 if (response.IsSuccessStatusCode)
                 {

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
@@ -399,6 +399,12 @@ Please write it down! Login in 8s...</value>
   </data>
   <data name="Main_PrivateFolder" xml:space="preserve">
     <value>Private</value>
+  </data>
+  <data name="Settings_CheckUpdate" xml:space="preserve">
+    <value>Manuelles Update prüfen</value>
+  </data>
+  <data name="Settings_About" xml:space="preserve">
+    <value>Über (Version)</value>
   </data>
   <data name="AssetEditor_ComboTwo" xml:space="preserve">
     <value>TwoStep (Username -&gt; Next -&gt; Password)</value>

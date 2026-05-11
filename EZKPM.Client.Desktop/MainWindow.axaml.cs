@@ -956,17 +956,28 @@ public partial class MainWindow : Window
             var newApiClient = new VaultApiClient(httpClient);
             
             // To properly apply the new API client to this window, we can just restart the application or swap it
-            // For now, swapping the reference in MainWindow might not cover other components (like AssetEditor)
-            // But we can inform the user to restart or attempt to reload. A restart is safest.
             var dialog = new Views.ConfirmationDialog("Server erfolgreich geändert. Die App wird nun neu gestartet.");
             await dialog.ShowDialogAsync(this);
             
             if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
             {
-                // Note: The kill switch handles external restarts, but here we can just exit.
                 Environment.Exit(0);
             }
         }
+    }
+
+    private async void CheckForUpdates_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var updaterLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<Services.UpdaterService>.Instance;
+        var updaterService = new Services.UpdaterService(updaterLogger);
+        ShowStatus("Prüfe auf Updates...");
+        await updaterService.CheckForUpdatesAsync(System.Threading.CancellationToken.None);
+    }
+
+    private void ShowVersion_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
+        ShowStatus($"EZKPM Vault Manager - Version {version}");
     }
 
     private async Task DeleteAssetRecursiveAsync(Guid folderId)

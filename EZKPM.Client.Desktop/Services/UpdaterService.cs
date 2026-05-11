@@ -53,7 +53,7 @@ namespace EZKPM.Client.Desktop.Services
             }
         }
 
-        private async Task CheckForUpdatesAsync(CancellationToken ct)
+        public async Task CheckForUpdatesAsync(CancellationToken ct)
         {
             var currentVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
             
