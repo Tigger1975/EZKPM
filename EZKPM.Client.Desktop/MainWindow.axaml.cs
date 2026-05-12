@@ -71,8 +71,7 @@ public partial class MainWindow : Window
         }, () => {
             if (Services.SessionManager.IsLocked) {
                 _cryptoService.ClearKeys();
-                _decryptedAssets.Clear();
-                _treeNodes.Clear();
+                ScrubSensitiveData();
             }
         });
         _bridgeServer.OnCredentialProvided = (assetTitle) => ShowNotification(assetTitle);
@@ -112,9 +111,7 @@ public partial class MainWindow : Window
 
         Services.SessionManager.OnSessionLocked += () => {
             _cryptoService.ClearKeys();
-            _decryptedAssets.Clear();
-            _treeNodes.Clear();
-            Avalonia.Threading.Dispatcher.UIThread.Post(() => UpdateDataGrid());
+            ScrubSensitiveData();
         };
 
         Services.SessionManager.OnSessionUnlocked += () => {
@@ -143,6 +140,37 @@ public partial class MainWindow : Window
         StartVulnerabilityScanner();
 
         this.Closing += MainWindow_Closing;
+    }
+
+    private void ScrubSensitiveData()
+    {
+        foreach (var asset in _decryptedAssets) {
+            asset.Password = string.Empty;
+            asset.TotpSecret = string.Empty;
+            asset.Notes = string.Empty;
+            asset.CardCvc = string.Empty;
+            asset.FileUploadData = null;
+            asset.FileUploadData2 = null;
+            if (asset.Attachments != null) asset.Attachments.Clear();
+            if (asset.CustomFields != null) {
+                foreach (var cf in asset.CustomFields) {
+                    if (cf.IsSecret) cf.Value = string.Empty;
+                }
+            }
+        }
+    }
+
+    private async Task<bool> EnsureUnlockedAndLoadedAsync(string reason)
+    {
+        if (!Services.SessionManager.IsLocked) return true;
+        
+        bool success = await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => Services.SessionManager.EnsureAuthenticated(reason));
+        if (success)
+        {
+            await LoadAssetsAsync();
+            return true;
+        }
+        return false;
     }
 
     private void StartVulnerabilityScanner()
@@ -736,6 +764,7 @@ public partial class MainWindow : Window
     private async void DeleteSelectedAssets_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (AssetsDataGrid.SelectedItems.Count == 0) return;
+        if (!await EnsureUnlockedAndLoadedAsync("Asset löschen")) return;
 
         var items = AssetsDataGrid.SelectedItems.Cast<VaultAssetPayload>().ToList();
         var isPapierkorb = (TypeFilterComboBox.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() == EZKPM.Client.Desktop.Resources.AppStrings.Main_FilterTrash;
@@ -784,6 +813,7 @@ public partial class MainWindow : Window
     private async void RestoreSelectedAssets_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (AssetsDataGrid.SelectedItems.Count == 0) return;
+        if (!await EnsureUnlockedAndLoadedAsync("Asset wiederherstellen")) return;
 
         var items = AssetsDataGrid.SelectedItems.Cast<VaultAssetPayload>().ToList();
         
@@ -813,6 +843,7 @@ public partial class MainWindow : Window
 
     private async void CleanOrphans_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
+        if (!await EnsureUnlockedAndLoadedAsync("Bereinigung durchführen")) return;
         var dialog = new Views.ConfirmationDialog($"Möchten Sie wirklich alle herrenlosen Assets und {_failedDecryptionIds.Count} nicht mehr entschlüsselbare Assets (wegen verlorenem Schlüssel) endgültig löschen?");
         var result = await dialog.ShowDialogAsync(this);
         if (!result) return;
@@ -1036,7 +1067,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void AssetsDataGrid_DoubleTapped(object sender, Avalonia.Input.TappedEventArgs e)
+    private async void AssetsDataGrid_DoubleTapped(object sender, Avalonia.Input.TappedEventArgs e)
     {
         if (sender is DataGrid grid && grid.SelectedItem is VaultAssetPayload payload)
         {
@@ -1068,7 +1099,10 @@ public partial class MainWindow : Window
             }
             else
             {
-        var editor = new Views.AssetEditorWindow(payload, _decryptedAssets.ToList(), _cryptoService, _apiClient);
+                if (!await EnsureUnlockedAndLoadedAsync("Asset ansehen")) return;
+                
+                var newPayload = _decryptedAssets.FirstOrDefault(a => a.TransientAssetId == payload.TransientAssetId) ?? payload;
+                var editor = new Views.AssetEditorWindow(newPayload, _decryptedAssets.ToList(), _cryptoService, _apiClient);
                 editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
                 editor.Show();
             }
@@ -1086,11 +1120,13 @@ public partial class MainWindow : Window
         return null;
     }
 
-    private void EditFolderMenuItem_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private async void EditFolderMenuItem_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (sender is MenuItem menuItem && menuItem.DataContext is VaultTreeNode node)
         {
-            var editor = new Views.AssetEditorWindow(node.Payload, _decryptedAssets.ToList(), _cryptoService, _apiClient);
+            if (!await EnsureUnlockedAndLoadedAsync("Ordner bearbeiten")) return;
+            var newPayload = _decryptedAssets.FirstOrDefault(a => a.TransientAssetId == node.Payload.TransientAssetId) ?? node.Payload;
+            var editor = new Views.AssetEditorWindow(newPayload, _decryptedAssets.ToList(), _cryptoService, _apiClient);
             editor.AssetSaved += async (s, ev) => await LoadAssetsAsync();
             editor.Show();
         }
@@ -1100,6 +1136,8 @@ public partial class MainWindow : Window
     {
         if (sender is MenuItem menuItem && menuItem.DataContext is VaultTreeNode node)
         {
+            if (!await EnsureUnlockedAndLoadedAsync("Ordner löschen")) return;
+            
             if (node.Children.Any())
             {
                 ShowStatus("Ordner ist nicht leer und kann nicht gelöscht werden.", isError: true);
