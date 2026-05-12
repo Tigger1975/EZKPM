@@ -82,7 +82,7 @@
                                 <TextBlock x:Name="BulkInviteTargetText" Text="Keine Auswahl" VerticalAlignment="Center" Foreground="#8B5CF6" FontWeight="Bold"/>
                             </StackPanel>
 
-                            <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto, Auto" Margin="0,10,0,0">
+                            <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto, Auto, Auto, Auto" Margin="0,10,0,0">
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="SMTP Server:" VerticalAlignment="Center" Margin="0,0,10,10"/>
                                 <TextBox x:Name="SmtpServerTextBox" Grid.Row="0" Grid.Column="1" Watermark="z.B. mail.firma.local" Margin="0,0,0,10"/>
 
@@ -91,6 +91,21 @@
 
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Absender E-Mail:" VerticalAlignment="Center" Margin="0,0,10,10"/>
                                 <TextBox x:Name="SmtpSenderTextBox" Grid.Row="2" Grid.Column="1" Watermark="z.B. ezkpm@firma.local" Margin="0,0,0,10"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="E-Mail Betreff:" VerticalAlignment="Center" Margin="0,0,10,10"/>
+                                <TextBox x:Name="EmailSubjectTextBox" Grid.Row="3" Grid.Column="1" Margin="0,0,0,10"/>
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="E-Mail Text:" VerticalAlignment="Top" Margin="0,5,10,10"/>
+                                <StackPanel Grid.Row="4" Grid.Column="1" Spacing="5" Margin="0,0,0,10">
+                                    <TextBlock Text="Platzhalter (Klicken zum Einfügen):" FontSize="12" Foreground="Gray"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,0,5">
+                                        <Button Content="{}{DisplayName}" Click="InsertPlaceholder_Click" FontSize="11" Padding="5,2" ToolTip.Tip="Anzeigename des Benutzers"/>
+                                        <Button Content="{}{SamAccountName}" Click="InsertPlaceholder_Click" FontSize="11" Padding="5,2" ToolTip.Tip="Anmeldename (z.B. max.muster)"/>
+                                        <Button Content="{}{ServerUrl}" Click="InsertPlaceholder_Click" FontSize="11" Padding="5,2" ToolTip.Tip="Download-Link des Clients"/>
+                                        <Button Content="{}{PairingCode}" Click="InsertPlaceholder_Click" FontSize="11" Padding="5,2" ToolTip.Tip="Einmal-Code für die Registrierung"/>
+                                    </StackPanel>
+                                    <TextBox x:Name="EmailBodyTextBox" AcceptsReturn="True" TextWrapping="Wrap" Height="150" FontFamily="Consolas"/>
+                                </StackPanel>
                             </Grid>
 
                             <Button x:Name="BulkInviteButton" Content="Alle aktiven AD-User einladen" Click="BulkInviteButton_Click" Background="#EF4444" Foreground="White" FontWeight="Bold" Padding="15,10" HorizontalAlignment="Right"/>

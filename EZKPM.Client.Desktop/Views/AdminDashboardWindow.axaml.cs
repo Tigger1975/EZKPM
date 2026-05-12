@@ -23,6 +23,29 @@ public partial class AdminDashboardWindow : Window
         _apiClient = apiClient;
         LoadAdminStatus();
         _ = LoadAlertsAsync();
+
+        // Default Email Template
+        var subjectBox = this.FindControl<TextBox>("EmailSubjectTextBox");
+        if (subjectBox != null) subjectBox.Text = "Ihre Einladung für EZKPM / Your invitation for EZKPM (Ironclad Vault)";
+
+        var bodyBox = this.FindControl<TextBox>("EmailBodyTextBox");
+        if (bodyBox != null)
+        {
+            bodyBox.Text = 
+                "Hallo {DisplayName},\n\n" +
+                "Sie wurden zur Nutzung von EZKPM (Ironclad Vault) eingeladen.\n" +
+                "1. Laden Sie den Client hier herunter: {ServerUrl}\n" +
+                "2. Klicken Sie nach der Installation auf folgenden Link, um sich zu verbinden:\n" +
+                "   ezkpm://pair?code={PairingCode}\n\n" +
+                "Alternativ können Sie den Code manuell eingeben: {PairingCode}\n\n" +
+                "---\n\n" +
+                "Hello {DisplayName},\n\n" +
+                "You have been invited to use EZKPM (Ironclad Vault).\n" +
+                "1. Download the client here: {ServerUrl}\n" +
+                "2. After installation, click the following link to connect:\n" +
+                "   ezkpm://pair?code={PairingCode}\n\n" +
+                "Alternatively, you can enter the code manually: {PairingCode}";
+        }
     }
 
     private async void LoadAdminStatus()
@@ -156,6 +179,26 @@ public partial class AdminDashboardWindow : Window
         }
     }
 
+    private void InsertPlaceholder_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Content is string placeholder)
+        {
+            var bodyBox = this.FindControl<TextBox>("EmailBodyTextBox");
+            if (bodyBox != null)
+            {
+                int caretIndex = bodyBox.CaretIndex;
+                if (caretIndex < 0) caretIndex = bodyBox.Text?.Length ?? 0;
+                
+                string currentText = bodyBox.Text ?? "";
+                bodyBox.Text = currentText.Insert(caretIndex, placeholder);
+                
+                // Set cursor after the inserted text
+                bodyBox.CaretIndex = caretIndex + placeholder.Length;
+                bodyBox.Focus();
+            }
+        }
+    }
+
     private async void BulkInviteButton_Click(object sender, RoutedEventArgs e)
     {
         if (_bulkInviteTarget == null)
@@ -168,6 +211,8 @@ public partial class AdminDashboardWindow : Window
         string smtpServer = this.FindControl<TextBox>("SmtpServerTextBox")?.Text;
         string smtpPortStr = this.FindControl<TextBox>("SmtpPortTextBox")?.Text;
         string smtpSender = this.FindControl<TextBox>("SmtpSenderTextBox")?.Text;
+        string emailSubjectTemplate = this.FindControl<TextBox>("EmailSubjectTextBox")?.Text ?? "Einladung";
+        string emailBodyTemplate = this.FindControl<TextBox>("EmailBodyTextBox")?.Text ?? "Code: {PairingCode}";
 
         if (string.IsNullOrWhiteSpace(smtpServer) || string.IsNullOrWhiteSpace(smtpSender))
         {
@@ -227,7 +272,7 @@ public partial class AdminDashboardWindow : Window
 
         if (allUsers.Count == 0)
         {
-            var dialog = new ConfirmationDialog("Keine aktiven AD-Benutzer mit E-Mail-Adresse gefunden.");
+            var dialog = new ConfirmationDialog("Keine aktiven AD-Benutzer mit E-Mail-Adresse in der Auswahl gefunden.");
             await dialog.ShowDialogAsync(this);
             return;
         }
@@ -265,24 +310,20 @@ public partial class AdminDashboardWindow : Window
                         var pairingCode = result.GetProperty("pairingCode").GetString();
 
                         string targetEmail = $"{user.SamAccountName}@{System.DirectoryServices.ActiveDirectory.Domain.GetCurrentDomain().Name}";
-                        string subject = "Ihre Einladung für EZKPM / Your invitation for EZKPM (Ironclad Vault)";
                         
-                        string bodyText = 
-                            $"Hallo {user.DisplayName},\n\n" +
-                            $"Sie wurden zur Nutzung von EZKPM (Ironclad Vault) eingeladen.\n" +
-                            $"1. Laden Sie den Client hier herunter: {serverUrl}\n" +
-                            $"2. Klicken Sie nach der Installation auf folgenden Link, um sich zu verbinden:\n" +
-                            $"   ezkpm://pair?code={pairingCode}\n\n" +
-                            $"Alternativ können Sie den Code manuell eingeben: {pairingCode}\n\n" +
-                            $"---\n\n" +
-                            $"Hello {user.DisplayName},\n\n" +
-                            $"You have been invited to use EZKPM (Ironclad Vault).\n" +
-                            $"1. Download the client here: {serverUrl}\n" +
-                            $"2. After installation, click the following link to connect:\n" +
-                            $"   ezkpm://pair?code={pairingCode}\n\n" +
-                            $"Alternatively, you can enter the code manually: {pairingCode}";
+                        string finalSubject = emailSubjectTemplate
+                            .Replace("{DisplayName}", user.DisplayName)
+                            .Replace("{SamAccountName}", user.SamAccountName)
+                            .Replace("{ServerUrl}", serverUrl)
+                            .Replace("{PairingCode}", pairingCode);
 
-                        var mailMessage = new System.Net.Mail.MailMessage(smtpSender, targetEmail, subject, bodyText);
+                        string finalBody = emailBodyTemplate
+                            .Replace("{DisplayName}", user.DisplayName)
+                            .Replace("{SamAccountName}", user.SamAccountName)
+                            .Replace("{ServerUrl}", serverUrl)
+                            .Replace("{PairingCode}", pairingCode);
+
+                        var mailMessage = new System.Net.Mail.MailMessage(smtpSender, targetEmail, finalSubject, finalBody);
                         await smtpClient.SendMailAsync(mailMessage);
                         successCount++;
                     }
