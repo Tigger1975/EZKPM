@@ -141,6 +141,127 @@ public partial class AdminDashboardWindow : Window
         }
     }
 
+    private async void BulkInviteButton_Click(object sender, RoutedEventArgs e)
+    {
+        string smtpServer = this.FindControl<TextBox>("SmtpServerTextBox")?.Text;
+        string smtpPortStr = this.FindControl<TextBox>("SmtpPortTextBox")?.Text;
+        string smtpSender = this.FindControl<TextBox>("SmtpSenderTextBox")?.Text;
+
+        if (string.IsNullOrWhiteSpace(smtpServer) || string.IsNullOrWhiteSpace(smtpSender))
+        {
+            var dialog = new ConfirmationDialog("Bitte füllen Sie SMTP Server und Absender E-Mail aus.");
+            await dialog.ShowDialogAsync(this);
+            return;
+        }
+
+        if (!int.TryParse(smtpPortStr, out int smtpPort)) smtpPort = 25;
+
+        // Fetch all active AD Users
+        var allUsers = await Task.Run(() => 
+        {
+            var list = new System.Collections.Generic.List<EZKPM.Client.Desktop.Services.AdPrincipal>();
+            try
+            {
+                var ctx = new System.DirectoryServices.AccountManagement.PrincipalContext(System.DirectoryServices.AccountManagement.ContextType.Domain);
+                var searcher = new System.DirectoryServices.AccountManagement.PrincipalSearcher(new System.DirectoryServices.AccountManagement.UserPrincipal(ctx));
+                foreach (var result in searcher.FindAll())
+                {
+                    if (result is System.DirectoryServices.AccountManagement.UserPrincipal u && u.Enabled == true && u.Sid != null && !string.IsNullOrEmpty(u.EmailAddress))
+                    {
+                        list.Add(new EZKPM.Client.Desktop.Services.AdPrincipal
+                        {
+                            Sid = u.Sid.Value,
+                            DisplayName = u.DisplayName ?? u.SamAccountName,
+                            SamAccountName = u.SamAccountName,
+                            IsAccountDisabled = false
+                        });
+                    }
+                }
+            }
+            catch { }
+            return list;
+        });
+
+        if (allUsers.Count == 0)
+        {
+            var dialog = new ConfirmationDialog("Keine aktiven AD-Benutzer mit E-Mail-Adresse gefunden.");
+            await dialog.ShowDialogAsync(this);
+            return;
+        }
+
+        var confirmDialog = new ConfirmationDialog($"Möchten Sie wirklich an {allUsers.Count} Benutzer eine Einladung senden?\nDer Vorgang läuft im Hintergrund.");
+        if (!await confirmDialog.ShowDialogAsync(this)) return;
+
+        var btn = this.FindControl<Button>("BulkInviteButton");
+        if (btn != null) btn.IsEnabled = false;
+
+        string serverUrl = EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl;
+        int successCount = 0;
+        int errorCount = 0;
+
+        await Task.Run(async () =>
+        {
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            using var smtpClient = new System.Net.Mail.SmtpClient(smtpServer, smtpPort);
+            
+            // SMTP is often slow, we do it synchronously per user to not overwhelm the API or Exchange Server
+            foreach (var user in allUsers)
+            {
+                try
+                {
+                    var sidHash = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(user.Sid)));
+                    var nameHash = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(user.SamAccountName)));
+
+                    var payload = new { HashedSid = sidHash, HashedUsername = nameHash };
+                    var response = await _apiClient.HttpClient.PostAsJsonAsync("/api/v1/auth/invite", payload);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                        var pairingCode = result.GetProperty("pairingCode").GetString();
+
+                        string targetEmail = $"{user.SamAccountName}@{System.DirectoryServices.ActiveDirectory.Domain.GetCurrentDomain().Name}";
+                        string subject = "Ihre Einladung für EZKPM / Your invitation for EZKPM (Ironclad Vault)";
+                        
+                        string bodyText = 
+                            $"Hallo {user.DisplayName},\n\n" +
+                            $"Sie wurden zur Nutzung von EZKPM (Ironclad Vault) eingeladen.\n" +
+                            $"1. Laden Sie den Client hier herunter: {serverUrl}\n" +
+                            $"2. Klicken Sie nach der Installation auf folgenden Link, um sich zu verbinden:\n" +
+                            $"   ezkpm://pair?code={pairingCode}\n\n" +
+                            $"Alternativ können Sie den Code manuell eingeben: {pairingCode}\n\n" +
+                            $"---\n\n" +
+                            $"Hello {user.DisplayName},\n\n" +
+                            $"You have been invited to use EZKPM (Ironclad Vault).\n" +
+                            $"1. Download the client here: {serverUrl}\n" +
+                            $"2. After installation, click the following link to connect:\n" +
+                            $"   ezkpm://pair?code={pairingCode}\n\n" +
+                            $"Alternatively, you can enter the code manually: {pairingCode}";
+
+                        var mailMessage = new System.Net.Mail.MailMessage(smtpSender, targetEmail, subject, bodyText);
+                        await smtpClient.SendMailAsync(mailMessage);
+                        successCount++;
+                    }
+                    else
+                    {
+                        errorCount++;
+                    }
+                }
+                catch
+                {
+                    errorCount++;
+                }
+            }
+        });
+
+        Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+        {
+            if (btn != null) btn.IsEnabled = true;
+            var dialog = new ConfirmationDialog($"Bulk Invite abgeschlossen.\nErfolgreich gesendet: {successCount}\nFehler: {errorCount}");
+            await dialog.ShowDialogAsync(this);
+        });
+    }
+
     private async void SearchDisabledUserButton_Click(object sender, RoutedEventArgs e)
     {
         var picker = new AdPickerWindow(EZKPM.Client.Desktop.Services.AdPickerFilterMode.DisabledOnly);
