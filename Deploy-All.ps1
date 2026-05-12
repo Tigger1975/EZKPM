@@ -82,7 +82,18 @@ try {
     Remove-Item -Path "$IISPath\app_offline.htm" -Force -ErrorAction SilentlyContinue
 }
 
-Write-Host "`n[7/7] Starte lokalen Desktop-Client..." -ForegroundColor Yellow
+Write-Host "`n[7/8] Verteile Client-Dateien an Netzlaufwerk/Freigabe..." -ForegroundColor Yellow
+Write-Host "      Kopiere Client nach T:\Kh\EZKPM_Client\ (wartet bei gesperrten Dateien)..." -ForegroundColor Yellow
+if (!(Test-Path "T:\Kh\EZKPM_Client")) { New-Item -ItemType Directory -Force -Path "T:\Kh\EZKPM_Client" | Out-Null }
+try {
+    # /R:1000 = Retry up to 1000 times (approx. 83 minutes)
+    # /W:5 = Wait 5 seconds between retries
+    # /XD * = Ignore no directories, mirror completely
+    robocopy $PublishClientPath "T:\Kh\EZKPM_Client" /MIR /R:1000 /W:5 | Out-Null
+} catch {
+}
+
+Write-Host "`n[8/8] Starte lokalen Desktop-Client..." -ForegroundColor Yellow
 Start-Process "$PublishClientPath\EZKPM.Client.Desktop.exe" -WorkingDirectory $PublishClientPath
 
 Write-Host "`n==========================================" -ForegroundColor Green
