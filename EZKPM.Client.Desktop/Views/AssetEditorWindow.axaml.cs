@@ -724,8 +724,24 @@ public partial class AssetEditorWindow : Window
                 return false;
             }
 
+            var groupSids = new System.Collections.Generic.List<string>();
+            try
+            {
+                var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+                if (identity.Groups != null)
+                {
+                    foreach (var group in identity.Groups)
+                    {
+                        groupSids.Add(HashSid(group.Value));
+                    }
+                }
+            }
+            catch { }
+
             // Validation: Last-Man-Standing & Public Key Check
-            bool isCurrentUserOwner = payload.Acls.Any(a => a.HashedSid == HashSid(currentUserSid) && a.PermissionLevel == 3);
+            bool isCurrentUserOwner = payload.Acls.Any(a => 
+                (a.HashedSid == HashSid(currentUserSid) || groupSids.Contains(a.HashedSid)) && 
+                a.PermissionLevel == 3);
             if (!isCurrentUserOwner)
             {
                 // In a full implementation, we would query the server if the other owners have valid Public Keys.
