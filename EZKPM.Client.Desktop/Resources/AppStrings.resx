@@ -616,4 +616,28 @@ Please write it down! Login in 8s...</value>
   <data name="AssetEditor_TipAuditLog" xml:space="preserve">
     <value>If checked, fetching or copying this password will generate a silent audit log entry.</value>
   </data>
+  <data name="AuthReason_CopyPassword" xml:space="preserve">
+    <value>Copy Password</value>
+  </data>
+  <data name="AuthReason_CopyAllDetails" xml:space="preserve">
+    <value>Copy All Details</value>
+  </data>
+  <data name="AuthReason_ShowPassword" xml:space="preserve">
+    <value>Show Password in Plaintext</value>
+  </data>
+  <data name="AuthReason_CopyTotpSecret" xml:space="preserve">
+    <value>Copy TOTP Secret</value>
+  </data>
+  <data name="AuthReason_EditVault" xml:space="preserve">
+    <value>Edit/Save Vault</value>
+  </data>
+  <data name="AuthReason_AutoType" xml:space="preserve">
+    <value>Execute Auto-Type</value>
+  </data>
+  <data name="AuthReason_RotationAssistant" xml:space="preserve">
+    <value>Open Rotation Assistant</value>
+  </data>
+  <data name="AuthReason_AdminPanel" xml:space="preserve">
+    <value>Open Admin Panel</value>
+  </data>
 </root>

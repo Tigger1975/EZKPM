@@ -380,7 +380,7 @@ public partial class AssetEditorWindow : Window
 
     private async void CopyPasswordButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!Services.SessionManager.EnsureAuthenticated("Passwort kopieren")) return;
+        if (!Services.SessionManager.EnsureAuthenticated(EZKPM.Client.Desktop.Resources.AppStrings.AuthReason_CopyPassword)) return;
 
         var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
         if (clipboard != null)
@@ -403,7 +403,7 @@ public partial class AssetEditorWindow : Window
 
     private async void CopyAllDetailsButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!Services.SessionManager.EnsureAuthenticated("Alle Details kopieren")) return;
+        if (!Services.SessionManager.EnsureAuthenticated(EZKPM.Client.Desktop.Resources.AppStrings.AuthReason_CopyAllDetails)) return;
 
         var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
         if (clipboard != null)
@@ -534,7 +534,7 @@ public partial class AssetEditorWindow : Window
     {
         if (ShowPasswordCheckBox.IsChecked == true)
         {
-            if (!Services.SessionManager.EnsureAuthenticated("Passwort im Klartext anzeigen"))
+            if (!Services.SessionManager.EnsureAuthenticated(EZKPM.Client.Desktop.Resources.AppStrings.AuthReason_ShowPassword))
             {
                 ShowPasswordCheckBox.IsChecked = false;
                 return;
@@ -559,7 +559,7 @@ public partial class AssetEditorWindow : Window
 
     private async void CopyTotpSecretButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!Services.SessionManager.EnsureAuthenticated("TOTP Secret kopieren")) return;
+        if (!Services.SessionManager.EnsureAuthenticated(EZKPM.Client.Desktop.Resources.AppStrings.AuthReason_CopyTotpSecret)) return;
 
         var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
         var box = this.FindControl<TextBox>("TotpSecretTextBox");
@@ -618,7 +618,7 @@ public partial class AssetEditorWindow : Window
 
     private async Task<bool> SaveAssetAsync()
     {
-        if (!Services.SessionManager.EnsureAuthenticated("Tresor bearbeiten/speichern")) return false;
+        if (!Services.SessionManager.EnsureAuthenticated(EZKPM.Client.Desktop.Resources.AppStrings.AuthReason_EditVault)) return false;
 
         try
         {
@@ -839,7 +839,7 @@ public partial class AssetEditorWindow : Window
 
     private async void PerformAutoTypeButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!Services.SessionManager.EnsureAuthenticated("Auto-Type ausführen")) return;
+        if (!Services.SessionManager.EnsureAuthenticated(EZKPM.Client.Desktop.Resources.AppStrings.AuthReason_AutoType)) return;
 
         // Hide window temporarily so focus goes back to the underlying app
         this.WindowState = WindowState.Minimized;

@@ -435,7 +435,7 @@ public partial class MainWindow : Window
         
         if (result != null)
         {
-            if (!Services.SessionManager.EnsureAuthenticated("Auto-Type ausführen")) return;
+            if (!Services.SessionManager.EnsureAuthenticated(EZKPM.Client.Desktop.Resources.AppStrings.AuthReason_AutoType)) return;
 
             var fullPayload = GetDecryptedAssetOnDemand(result.TransientAssetId.GetValueOrDefault()) ?? result;
 
@@ -1001,7 +1001,7 @@ public partial class MainWindow : Window
 
     private async void OpenRotationAssistant_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        if (!Services.SessionManager.EnsureAuthenticated("Rotation Assistant öffnen")) return;
+        if (!Services.SessionManager.EnsureAuthenticated(EZKPM.Client.Desktop.Resources.AppStrings.AuthReason_RotationAssistant)) return;
 
         var assistant = new Views.RotationAssistantWindow(_decryptedAssets.ToList(), _cryptoService, _apiClient);
         await assistant.ShowDialog(this);
@@ -1012,7 +1012,7 @@ public partial class MainWindow : Window
 
     private async void OpenAdminPanel_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        if (!Services.SessionManager.EnsureAuthenticated("Admin Panel öffnen")) return;
+        if (!Services.SessionManager.EnsureAuthenticated(EZKPM.Client.Desktop.Resources.AppStrings.AuthReason_AdminPanel)) return;
 
         var adminDashboard = new Views.AdminDashboardWindow(_apiClient, _decryptedAssets.ToList());
         await adminDashboard.ShowDialog(this);
@@ -1507,7 +1507,7 @@ public partial class MainWindow : Window
 
     private async void DataGridAutoType_Click(object sender, RoutedEventArgs e)
     {
-        if (!Services.SessionManager.EnsureAuthenticated("Auto-Type ausführen")) return;
+        if (!Services.SessionManager.EnsureAuthenticated(EZKPM.Client.Desktop.Resources.AppStrings.AuthReason_AutoType)) return;
 
         if (sender is Button btn && btn.Tag is VaultAssetPayload payload)
         {

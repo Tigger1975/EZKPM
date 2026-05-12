@@ -674,4 +674,28 @@ Bitte schreiben Sie es auf! Einloggen in 8 Sekunden...</value>
   <data name="Settings_About" xml:space="preserve">
     <value>Über (Version)</value>
   </data>
+  <data name="AuthReason_CopyPassword" xml:space="preserve">
+    <value>Passwort kopieren</value>
+  </data>
+  <data name="AuthReason_CopyAllDetails" xml:space="preserve">
+    <value>Alle Details kopieren</value>
+  </data>
+  <data name="AuthReason_ShowPassword" xml:space="preserve">
+    <value>Passwort im Klartext anzeigen</value>
+  </data>
+  <data name="AuthReason_CopyTotpSecret" xml:space="preserve">
+    <value>TOTP Secret kopieren</value>
+  </data>
+  <data name="AuthReason_EditVault" xml:space="preserve">
+    <value>Tresor bearbeiten/speichern</value>
+  </data>
+  <data name="AuthReason_AutoType" xml:space="preserve">
+    <value>Auto-Type ausführen</value>
+  </data>
+  <data name="AuthReason_RotationAssistant" xml:space="preserve">
+    <value>Rotation Assistant öffnen</value>
+  </data>
+  <data name="AuthReason_AdminPanel" xml:space="preserve">
+    <value>Admin Panel öffnen</value>
+  </data>
 </root>

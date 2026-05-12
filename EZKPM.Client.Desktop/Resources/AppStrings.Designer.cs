@@ -889,6 +889,78 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Open Admin Panel ähnelt.
+        /// </summary>
+        public static string AuthReason_AdminPanel {
+            get {
+                return ResourceManager.GetString("AuthReason_AdminPanel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Execute Auto-Type ähnelt.
+        /// </summary>
+        public static string AuthReason_AutoType {
+            get {
+                return ResourceManager.GetString("AuthReason_AutoType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Copy All Details ähnelt.
+        /// </summary>
+        public static string AuthReason_CopyAllDetails {
+            get {
+                return ResourceManager.GetString("AuthReason_CopyAllDetails", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Copy Password ähnelt.
+        /// </summary>
+        public static string AuthReason_CopyPassword {
+            get {
+                return ResourceManager.GetString("AuthReason_CopyPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Copy TOTP Secret ähnelt.
+        /// </summary>
+        public static string AuthReason_CopyTotpSecret {
+            get {
+                return ResourceManager.GetString("AuthReason_CopyTotpSecret", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Edit/Save Vault ähnelt.
+        /// </summary>
+        public static string AuthReason_EditVault {
+            get {
+                return ResourceManager.GetString("AuthReason_EditVault", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Open Rotation Assistant ähnelt.
+        /// </summary>
+        public static string AuthReason_RotationAssistant {
+            get {
+                return ResourceManager.GetString("AuthReason_RotationAssistant", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Show Password in Plaintext ähnelt.
+        /// </summary>
+        public static string AuthReason_ShowPassword {
+            get {
+                return ResourceManager.GetString("AuthReason_ShowPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die No ähnelt.
         /// </summary>
         public static string ConfirmDialog_BtnNo {
