@@ -22,7 +22,7 @@ namespace EZKPM.Client.Desktop.Services
             public string SamAccountName { get; set; }
         }
 
-        public Task StartAsync(int port, string allowedSid, EZKPM.Client.Core.Services.VaultApiClient apiClient)
+        public Task StartAsync(int port, string allowedSid, EZKPM.Client.Core.Services.VaultApiClient apiClient, Func<Task> syncAction)
         {
             if (_listener != null) return Task.CompletedTask;
 
@@ -35,7 +35,7 @@ namespace EZKPM.Client.Desktop.Services
             {
                 _listener.Start();
                 _cts = new CancellationTokenSource();
-                _listenTask = ListenLoop(allowedSid, apiClient, _cts.Token);
+                _listenTask = ListenLoop(allowedSid, apiClient, syncAction, _cts.Token);
                 Console.WriteLine($"Local Admin API listening on http://localhost:{port}/api/admin/");
             }
             catch (Exception ex)
@@ -46,14 +46,14 @@ namespace EZKPM.Client.Desktop.Services
             return Task.CompletedTask;
         }
 
-        private async Task ListenLoop(string allowedSid, EZKPM.Client.Core.Services.VaultApiClient apiClient, CancellationToken token)
+        private async Task ListenLoop(string allowedSid, EZKPM.Client.Core.Services.VaultApiClient apiClient, Func<Task> syncAction, CancellationToken token)
         {
             while (!token.IsCancellationRequested)
             {
                 try
                 {
                     var context = await _listener.GetContextAsync();
-                    _ = ProcessRequestAsync(context, allowedSid, apiClient);
+                    _ = ProcessRequestAsync(context, allowedSid, apiClient, syncAction);
                 }
                 catch (HttpListenerException) when (token.IsCancellationRequested)
                 {
@@ -67,7 +67,7 @@ namespace EZKPM.Client.Desktop.Services
             }
         }
 
-        private async Task ProcessRequestAsync(HttpListenerContext context, string allowedSid, EZKPM.Client.Core.Services.VaultApiClient apiClient)
+        private async Task ProcessRequestAsync(HttpListenerContext context, string allowedSid, EZKPM.Client.Core.Services.VaultApiClient apiClient, Func<Task> syncAction)
         {
             var request = context.Request;
             var response = context.Response;
@@ -100,6 +100,20 @@ namespace EZKPM.Client.Desktop.Services
                 {
                     var resObj = new { Status = "Online", Message = "EZKPM Local Admin API is running." };
                     await SendJsonResponseAsync(response, 200, resObj);
+                    return;
+                }
+
+                if (method == "POST" && path == "/api/admin/sync")
+                {
+                    if (syncAction != null)
+                    {
+                        await syncAction();
+                        await SendJsonResponseAsync(response, 200, new { Status = "Success", Message = "AD Group Sync completed." });
+                    }
+                    else
+                    {
+                        await SendResponseAsync(response, 500, "Sync action not configured.");
+                    }
                     return;
                 }
 
