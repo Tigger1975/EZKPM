@@ -970,13 +970,24 @@ public partial class AdminDashboardWindow : Window
                         color = "#EF4444"; // Red
                     }
 
+                    string lastLogin = "";
+                    if (registeredMatch?.LastLoginAt != null)
+                    {
+                        lastLogin = "Zuletzt online: " + registeredMatch.LastLoginAt.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm");
+                    }
+                    else if (registeredMatch != null && registeredMatch.IsPaired)
+                    {
+                        lastLogin = "Zuletzt online: Unbekannt";
+                    }
+
                     displayList.Add(new UserManagementViewModel
                     {
                         Sid = adUser.Sid,
                         DisplayName = adUser.DisplayName,
                         SamAccountName = adUser.SamAccountName,
                         StatusText = status,
-                        StatusColor = color
+                        StatusColor = color,
+                        LastLoginText = lastLogin
                     });
                 }
             }
@@ -1009,4 +1020,5 @@ public class UserManagementViewModel
     public string SamAccountName { get; set; }
     public string StatusText { get; set; }
     public string StatusColor { get; set; }
+    public string LastLoginText { get; set; }
 }

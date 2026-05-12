@@ -255,6 +255,7 @@ namespace EZKPM.Server.PDP.Data
         public string IdentityPublicKey { get; set; } // Base64 ECDSA/Ed25519 Public Key
         public string EncryptedMasterKeyBackup { get; set; }
         public bool IsAdmin { get; set; }
+        public DateTime? LastLoginAt { get; set; }
     }
 
     public class VaultRecoveryRequest

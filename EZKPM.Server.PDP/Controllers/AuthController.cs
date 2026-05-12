@@ -110,7 +110,8 @@ namespace EZKPM.Server.PDP.Controllers
                 {
                     HashedSid = u.HashedSid,
                     IsAdmin = u.IsAdmin,
-                    IsPaired = !string.IsNullOrEmpty(u.IdentityPublicKey)
+                    IsPaired = !string.IsNullOrEmpty(u.IdentityPublicKey),
+                    LastLoginAt = u.LastLoginAt
                 })
                 .ToListAsync();
 
@@ -295,6 +296,9 @@ namespace EZKPM.Server.PDP.Controllers
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var jwt = tokenHandler.WriteToken(token);
+
+            profile.LastLoginAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
 
             return Ok(new { Token = jwt });
         }

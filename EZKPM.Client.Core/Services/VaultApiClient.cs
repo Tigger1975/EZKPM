@@ -60,6 +60,7 @@ namespace EZKPM.Client.Core.Services
             public string HashedSid { get; set; }
             public bool IsAdmin { get; set; }
             public bool IsPaired { get; set; }
+            public DateTime? LastLoginAt { get; set; }
         }
 
         public class ServerInviteDto
