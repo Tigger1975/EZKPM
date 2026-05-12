@@ -5,6 +5,8 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>Assets\server_icon.ico</ApplicationIcon>
+    <BuildDate Condition="'$(BuildDate)' == ''">$([System.DateTime]::Now.ToString("yyyyMMddHHmmss"))</BuildDate>
+    <InformationalVersion>1.0.8.$(BuildDate)</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

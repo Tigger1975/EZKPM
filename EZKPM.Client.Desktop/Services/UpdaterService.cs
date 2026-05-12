@@ -12,6 +12,7 @@ using EZKPM.Shared.Contracts;
 using EZKPM.Client.Desktop.Views;
 using System.Reflection;
 using System.Security.Principal;
+using System.Net.Http.Json;
 
 namespace EZKPM.Client.Desktop.Services
 {
@@ -53,9 +54,59 @@ namespace EZKPM.Client.Desktop.Services
             }
         }
 
+        public static async Task<bool> CheckAndPromptForUpdateAtStartupAsync(Avalonia.Controls.Window parentWindow)
+        {
+            var serverUrl = ConfigurationManager.CurrentConfig.ServerUrl;
+            if (string.IsNullOrEmpty(serverUrl)) return false;
+
+            var currentVersion = (System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(System.Reflection.Assembly.GetExecutingAssembly())?.InformationalVersion ?? "0.0.0.0").Split('+')[0];
+            
+            var handler = new HttpClientHandler 
+            { 
+                UseDefaultCredentials = true,
+                ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+            };
+            using var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };
+            
+            try 
+            {
+                var url = $"{serverUrl}/api/updater/check?currentVersion={currentVersion}";
+                var response = await httpClient.GetAsync(url);
+                if (!response.IsSuccessStatusCode) return false;
+
+                var json = await response.Content.ReadAsStringAsync();
+                var updateInfo = JsonSerializer.Deserialize<UpdateCheckResponseDto>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (updateInfo != null && updateInfo.UpdateAvailable)
+                {
+                    bool isMachineWide = AppContext.BaseDirectory.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), StringComparison.OrdinalIgnoreCase);
+                    bool isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+
+                    if (isMachineWide && !isAdmin)
+                    {
+                        var msgBox = new ConfirmationDialog($"Ein kritisches Update (v{updateInfo.LatestVersion}) ist verfügbar.\n\nDa EZKPM zentral installiert wurde, kontaktieren Sie bitte Ihre IT zur Softwareverteilung.");
+                        await msgBox.ShowDialogAsync(parentWindow);
+                        return false; 
+                    }
+
+                    var updatePrompt = new ConfirmationDialog($"Ein Update auf Version {updateInfo.LatestVersion} ist verfügbar.\n\nRelease Notes:\n{updateInfo.ReleaseNotes}\n\nMöchten Sie das Update jetzt durchführen?");
+                    bool doUpdate = await updatePrompt.ShowDialogAsync(parentWindow);
+                    
+                    if (doUpdate)
+                    {
+                        var updaterService = new UpdaterService(new Microsoft.Extensions.Logging.Abstractions.NullLogger<UpdaterService>());
+                        await updaterService.PerformUpdateAsync(updateInfo.DownloadUrl);
+                        return true; 
+                    }
+                }
+            }
+            catch { }
+            return false;
+        }
+
         public async Task CheckForUpdatesAsync(CancellationToken ct)
         {
-            var currentVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
+            var currentVersion = (System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(System.Reflection.Assembly.GetExecutingAssembly())?.InformationalVersion ?? "0.0.0.0").Split('+')[0];
             
             var url = $"{_serverUrl}/api/updater/check?currentVersion={currentVersion}";
             var response = await _httpClient.GetAsync(url, ct);
@@ -105,7 +156,7 @@ namespace EZKPM.Client.Desktop.Services
             });
         }
 
-        private async Task PerformUpdateAsync(string downloadUrl)
+        public async Task PerformUpdateAsync(string downloadUrl)
         {
             try
             {

@@ -15,6 +15,7 @@ namespace EZKPM.Server.PDP.Controllers
     /// Zentraler API-Endpunkt (PDP) für den Abruf verschlüsselter Assets.
     /// Erzwingt Zero-Knowledge, AD-SID-Prüfungen und Expiration-Policies.
     /// </summary>
+    [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
     [ApiController]
     [Route("api/v1/vault")]
     public class VaultController : ControllerBase

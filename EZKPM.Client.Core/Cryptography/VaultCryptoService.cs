@@ -45,10 +45,11 @@ namespace EZKPM.Client.Core.Cryptography
             newPublicKeyBase64 = null;
             string effectivePassword = string.IsNullOrEmpty(masterPassword) ? "EZKPM_SEAMLESS_SSO" : masterPassword;
 
-            // 1. Try TPM Blob First (Tier 2)
-            if (!string.IsNullOrEmpty(tpmBlob) && tpmUnprotect != null)
+            // 1. Try local Blob First (Tier 2)
+            if (!string.IsNullOrEmpty(tpmBlob))
             {
-                if (DecryptKeysFromBlob(tpmBlob, effectivePassword, true, tpmUnprotect))
+                bool expectTpmLocally = tpmUnprotect != null;
+                if (DecryptKeysFromBlob(tpmBlob, effectivePassword, expectTpmLocally, tpmUnprotect))
                     return CryptoInitResult.Success;
             }
 
@@ -109,6 +110,10 @@ namespace EZKPM.Client.Core.Cryptography
             if (tpmProtect != null)
             {
                 newTpmBlob = EncryptKeysToBlob(effectivePassword, x25519Mat, kyberMat, ecdsaPriv, true, tpmProtect);
+            }
+            else
+            {
+                newTpmBlob = EncryptKeysToBlob(effectivePassword, x25519Mat, kyberMat, ecdsaPriv, false, null);
             }
             
             CryptographicOperations.ZeroMemory(x25519Mat);

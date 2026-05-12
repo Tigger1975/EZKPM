@@ -16,21 +16,21 @@ $UpdatesDir = "$PublishServerPath\Updates"
 Write-Host "`n[1/7] Stoppe laufenden lokalen Desktop-Client..." -ForegroundColor Yellow
 Stop-Process -Name "EZKPM.Client.Desktop" -Force -ErrorAction SilentlyContinue
 
+$BuildDate = Get-Date -Format "yyyyMMddHHmmss"
+
 Write-Host "`n[2/7] Kompiliere Server (PDP)..." -ForegroundColor Yellow
-# Kein Remove-Item, damit dotnet publish inkrementell schneller arbeiten kann
-dotnet publish "$RepoPath\EZKPM.Server.PDP\EZKPM.Server.PDP.csproj" -c Release -o $PublishServerPath
+if (Test-Path $PublishServerPath) { Remove-Item -Path "$PublishServerPath\*" -Recurse -Force -ErrorAction SilentlyContinue }
+dotnet publish "$RepoPath\EZKPM.Server.PDP\EZKPM.Server.PDP.csproj" -c Release -o $PublishServerPath -p:BuildDate=$BuildDate
 
 Write-Host "`n[3/7] Kompiliere Client (Desktop & Extension Bridge)..." -ForegroundColor Yellow
-# Kein Remove-Item, um nur geänderte Dateien zu aktualisieren
-dotnet publish "$RepoPath\EZKPM.Client.Desktop\EZKPM.Client.Desktop.csproj" -c Release -o $PublishClientPath
+if (Test-Path $PublishClientPath) { Remove-Item -Path "$PublishClientPath\*" -Recurse -Force -ErrorAction SilentlyContinue }
+dotnet publish "$RepoPath\EZKPM.Client.Desktop\EZKPM.Client.Desktop.csproj" -c Release -o $PublishClientPath -p:BuildDate=$BuildDate
 
 if (!(Test-Path $UpdatesDir)) { New-Item -ItemType Directory -Force -Path $UpdatesDir | Out-Null }
 $zipPath = "$UpdatesDir\ClientUpdate.zip"
 
-# Lese Version aus csproj aus (für Logs und JSON)
-$csproj = [xml](Get-Content "$RepoPath\EZKPM.Client.Desktop\EZKPM.Client.Desktop.csproj")
-$clientVersion = $csproj.Project.PropertyGroup.FileVersion
-if ([string]::IsNullOrWhiteSpace($clientVersion)) { $clientVersion = $csproj.Project.PropertyGroup.AssemblyVersion }
+# Lese InformationalVersion (die den BuildDate beinhaltet)
+$clientVersion = dotnet msbuild "$RepoPath\EZKPM.Client.Desktop\EZKPM.Client.Desktop.csproj" -getProperty:InformationalVersion -p:BuildDate=$BuildDate
 if ([string]::IsNullOrWhiteSpace($clientVersion)) { $clientVersion = "1.0.0.0" }
 
 
@@ -46,6 +46,10 @@ if (Test-Path $zipPath) {
 if ($needsZip) {
     Write-Host "`n[4/7] Erstelle OTA-Update Paket fuer Clients (Aenderungen erkannt)..." -ForegroundColor Yellow
     if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
+    
+    # Clean up debugging symbols to drastically reduce size (saves > 100MB)
+    Get-ChildItem -Path $PublishClientPath -Filter *.pdb -Recurse | Remove-Item -Force
+    
     Compress-Archive -Path "$PublishClientPath\*" -DestinationPath $zipPath -Force
 
     $versionJson = @{

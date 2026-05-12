@@ -23,7 +23,7 @@ namespace EZKPM.Client.Desktop.Views
             var versionText = this.FindControl<TextBlock>("VersionText");
             if (versionText != null)
             {
-                versionText.Text = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
+                versionText.Text = (System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(System.Reflection.Assembly.GetExecutingAssembly())?.InformationalVersion ?? "Unknown").Split('+')[0];
             }
 
             this.Closed += (s, e) => IsClosed = true;
@@ -121,7 +121,7 @@ namespace EZKPM.Client.Desktop.Views
                 }
                 baseUrl = baseUrl?.TrimEnd('/');
 
-                var currentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
+                var currentVersion = (System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(System.Reflection.Assembly.GetExecutingAssembly())?.InformationalVersion ?? "0.0.0.0").Split('+')[0];
                 var url = $"{baseUrl}/api/updater/check?currentVersion={currentVersion}";
                 
                 var handler = new System.Net.Http.HttpClientHandler 

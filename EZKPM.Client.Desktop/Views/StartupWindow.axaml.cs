@@ -38,6 +38,13 @@ namespace EZKPM.Client.Desktop.Views
                 return; // Wait for SaveConfigButton_Click
             }
 
+            // 1.5 Update Check
+            if (await Services.UpdaterService.CheckAndPromptForUpdateAtStartupAsync(this))
+            {
+                // App is updating and will restart, stop startup sequence.
+                return;
+            }
+
             // If config is OK, proceed to Auth phase
             ShowAuthPhase();
         }
@@ -77,6 +84,13 @@ namespace EZKPM.Client.Desktop.Views
                 
                 var configPanel = this.FindControl<StackPanel>("ServerConfigPanel");
                 if (configPanel != null) configPanel.IsVisible = false;
+
+                // 1.5 Update Check
+                if (await Services.UpdaterService.CheckAndPromptForUpdateAtStartupAsync(this))
+                {
+                    // App is updating and will restart, stop startup sequence.
+                    return;
+                }
 
                 ShowAuthPhase();
             }
@@ -265,6 +279,55 @@ namespace EZKPM.Client.Desktop.Views
                     status.Foreground = Avalonia.Media.Brushes.Red;
                     status.IsVisible = true;
                 }
+            }
+        }
+        public void ShowAuthErrorAndResetOption()
+        {
+            var txt = this.FindControl<TextBlock>("SplashStatusText");
+            if (txt != null)
+            {
+                txt.Text = "Login fehlgeschlagen. Ist der Server zurückgesetzt worden?";
+                txt.Foreground = Avalonia.Media.Brushes.Red;
+            }
+            var prog = this.FindControl<ProgressBar>("SplashProgress");
+            if (prog != null) prog.IsVisible = false;
+            
+            var btn = this.FindControl<Button>("ResetClientButton");
+            if (btn != null) btn.IsVisible = true;
+        }
+
+        private void ResetClientButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Lösche config
+                var configPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EZKPM", "config.json");
+                if (System.IO.File.Exists(configPath)) System.IO.File.Delete(configPath);
+                
+                // Lösche lokale DB
+                var dbPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EZKPM", "ezkpm_local.db");
+                if (System.IO.File.Exists(dbPath)) System.IO.File.Delete(dbPath);
+
+                // Lösche DPAPI Keys (Optional, aber wir machen es mal)
+                DpapiMasterKeyStore.ClearMachineSecret();
+                
+                // Lösche TPM
+                if (EZKPM.Client.Desktop.Services.TpmKeyStorageService.IsTpmAvailable())
+                {
+                    EZKPM.Client.Desktop.Services.TpmKeyStorageService.ClearTpmBlob();
+                }
+                
+                EZKPM.Client.Desktop.Services.AdKeyStorageService.ClearAdKey();
+
+                // Neustart des Clients
+                var pairingWin = new PairingWindow();
+                pairingWin.Show();
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                var txt = this.FindControl<TextBlock>("SplashStatusText");
+                if (txt != null) txt.Text = "Fehler beim Reset: " + ex.Message;
             }
         }
 

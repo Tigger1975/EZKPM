@@ -80,5 +80,12 @@ namespace EZKPM.Client.Core.Cryptography
             byte[] encryptedKey = ProtectedData.Protect(key, null, DataProtectionScope.CurrentUser);
             File.WriteAllBytes(keyPath, encryptedKey);
         }
+
+        public static void ClearMachineSecret()
+        {
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var keyPath = Path.Combine(appData, AppFolderName, KeyFileName);
+            if (File.Exists(keyPath)) File.Delete(keyPath);
+        }
     }
 }

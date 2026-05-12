@@ -109,5 +109,10 @@ namespace EZKPM.Client.Desktop.Services
             }
             return null;
         }
+        public static void ClearTpmBlob()
+        {
+            string path = GetTpmBlobPath();
+            if (File.Exists(path)) File.Delete(path);
+        }
     }
 }

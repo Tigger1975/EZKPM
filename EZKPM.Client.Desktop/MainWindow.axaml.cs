@@ -247,6 +247,36 @@ public partial class MainWindow : Window
         if (splash != null) splash.UpdateStatus(EZKPM.Client.Desktop.Resources.AppStrings.Startup_StatusConnect, 20);
         await Task.Delay(500); // Artificial delay to let the splash screen render
 
+        try
+        {
+            var currentUserSid = EZKPM.Client.Desktop.Services.AdSearchService.GetCurrentUser()?.Sid ?? "S-1-5-21-DUMMY-TEST-USER";
+            string hashedSid = HashSid(currentUserSid);
+            bool isAuthenticated = await _apiClient.AuthenticateAsync(_cryptoService.IdentityKey, hashedSid);
+            
+            if (!isAuthenticated)
+            {
+                ShowStatus("Login failed. Cannot retrieve JWT token from Server.", isError: true);
+                if (splash != null)
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() => {
+                        splash.ShowAuthErrorAndResetOption();
+                    });
+                }
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowStatus($"Auth Error: {ex.Message}", isError: true);
+            if (splash != null)
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => {
+                    splash.ShowAuthErrorAndResetOption();
+                });
+            }
+            return;
+        }
+
         await LoadAssetsAsync(splash);
         
         if (splash != null)
@@ -976,7 +1006,7 @@ public partial class MainWindow : Window
 
     private void ShowVersion_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
+        var version = (System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(System.Reflection.Assembly.GetExecutingAssembly())?.InformationalVersion ?? "1.0.0").Split('+')[0];
         ShowStatus($"EZKPM Vault Manager - Version {version}");
     }
 

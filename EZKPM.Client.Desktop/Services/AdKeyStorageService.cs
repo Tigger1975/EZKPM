@@ -105,5 +105,11 @@ namespace EZKPM.Client.Desktop.Services
                 Program.LogDebug($"[AdKeyStorageService] Fehler beim Sichern des Keys ins AD: {ex.Message}");
             }
         }
+
+        public static void ClearAdKey()
+        {
+            // Optional: Lösche das AD-Objekt. Für den lokalen Reset ignorieren wir es hier erst einmal.
+            Program.LogDebug("[AdKeyStorageService] ClearAdKey aufgerufen. AD Objekt wird beibehalten.");
+        }
     }
 }

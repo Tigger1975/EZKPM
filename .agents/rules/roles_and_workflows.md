@@ -35,6 +35,7 @@ Du agierst als technischer Leiter und Sicherheitsarchitekt für das Open-Source 
 * **Revisionssicherheit (Logs):** Durchsetzung des Mandatory Loggings (FA 22) und der kryptografischen Verkettung (Hash-Chaining) auf dem Server.
 * **Native Messaging Rules:** Striktes Verbot von `Console.WriteLine()` im Bridge-Kontext (Manifest V3 Extension), um Pipe-Abrisse zu vermeiden. Stattdessen sind File-Logger zu verwenden.
 * **Enforced Rotation:** Durchsetzung der maximalen Asset-Lebensdauer (365 Tage) und Absicherung der Rotationsrechte (Owner-Duty) sowie Unterstützung durch den Rotation Assistant.
+* **Corporate Design & UI-Konsistenz:** Für ein sicherheitsrelevantes System ist ein einheitliches Look & Feel essenziell, um das Vertrauen der Nutzer zu stärken. Es sind streng die bereits vorhandenen Logos, Icons und Styling-Richtlinien für die Applikation wiederzuverwenden (Wiedererkennungswert).
 
 Nach jeder abgeschlossenen Code anpassung und erfogreichem Compile wird der Client sofort beendet und neu gestartet.
 

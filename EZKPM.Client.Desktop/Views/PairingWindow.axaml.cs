@@ -18,6 +18,7 @@ namespace EZKPM.Client.Desktop.Views
         public PairingWindow()
         {
             InitializeComponent();
+            AttachHandlers();
         }
 
         public PairingWindow(string pairingCode)
@@ -26,9 +27,14 @@ namespace EZKPM.Client.Desktop.Views
             _pairingCode = pairingCode;
             
             var codeTextBox = this.FindControl<TextBox>("CodeTextBox");
-            if (codeTextBox != null)
+            if (codeTextBox != null && !string.IsNullOrEmpty(_pairingCode))
                 codeTextBox.Text = _pairingCode;
 
+            AttachHandlers();
+        }
+
+        private void AttachHandlers()
+        {
             var registerBtn = this.FindControl<Button>("RegisterButton");
             if (registerBtn != null)
                 registerBtn.Click += OnRegisterClick;
@@ -112,7 +118,17 @@ namespace EZKPM.Client.Desktop.Views
                     
                     Dispatcher.UIThread.Post(() =>
                     {
+                        // Bypass the >5min inactivity lock for the very first startup right after pairing
+                        // because we want a smooth onboarding experience.
+                        typeof(EZKPM.Client.Desktop.Services.SessionManager)
+                            .GetProperty("IsLocked")?
+                            .SetValue(null, false);
+
                         var startup = new StartupWindow();
+                        if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+                        {
+                            desktop.MainWindow = startup;
+                        }
                         startup.Show();
                         this.Close();
                     });

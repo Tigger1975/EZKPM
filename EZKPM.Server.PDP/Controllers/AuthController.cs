@@ -167,5 +167,64 @@ namespace EZKPM.Server.PDP.Controllers
 
             return Ok(new { Status = "Success", Message = "Device successfully paired." });
         }
+        public class LoginRequestDto
+        {
+            public string HashedSid { get; set; }
+            public long Timestamp { get; set; }
+            public string Signature { get; set; } // Base64 ECDSA Signature
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto request, [FromServices] Microsoft.Extensions.Configuration.IConfiguration config)
+        {
+            if (string.IsNullOrWhiteSpace(request.HashedSid) || string.IsNullOrWhiteSpace(request.Signature))
+                return BadRequest("Missing required fields.");
+
+            // Check timestamp to prevent replay attacks (allow 5 mins drift)
+            var requestTime = DateTimeOffset.FromUnixTimeSeconds(request.Timestamp);
+            if (Math.Abs((DateTimeOffset.UtcNow - requestTime).TotalMinutes) > 5)
+                return Unauthorized("Timestamp is invalid or expired.");
+
+            var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == request.HashedSid);
+            if (profile == null || string.IsNullOrEmpty(profile.IdentityPublicKey))
+                return Unauthorized("User not registered or missing identity key.");
+
+            // Verify signature
+            try
+            {
+                byte[] pubKeyBytes = Convert.FromBase64String(profile.IdentityPublicKey);
+                using var ecdsa = ECDsa.Create();
+                ecdsa.ImportSubjectPublicKeyInfo(pubKeyBytes, out _);
+
+                string dataToSign = $"{request.HashedSid}:{request.Timestamp}";
+                byte[] dataBytes = System.Text.Encoding.UTF8.GetBytes(dataToSign);
+                byte[] signatureBytes = Convert.FromBase64String(request.Signature);
+
+                if (!ecdsa.VerifyData(dataBytes, signatureBytes, HashAlgorithmName.SHA256))
+                {
+                    return Unauthorized("Invalid signature.");
+                }
+            }
+            catch
+            {
+                return Unauthorized("Signature validation failed.");
+            }
+
+            // Generate JWT
+            var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var key = System.Text.Encoding.UTF8.GetBytes(config["Jwt:Key"] ?? "EZKPM_Fallback_Secret_Key_32_Bytes_Long_Minimum");
+            var tokenDescriptor = new Microsoft.IdentityModel.Tokens.SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, request.HashedSid), new Claim(ClaimTypes.PrimarySid, request.HashedSid) }),
+                Expires = DateTime.UtcNow.AddDays(1),
+                Issuer = "EZKPM_Server",
+                Audience = "EZKPM_Client",
+                SigningCredentials = new Microsoft.IdentityModel.Tokens.SigningCredentials(new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(key), Microsoft.IdentityModel.Tokens.SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var jwt = tokenHandler.WriteToken(token);
+
+            return Ok(new { Token = jwt });
+        }
     }
 }

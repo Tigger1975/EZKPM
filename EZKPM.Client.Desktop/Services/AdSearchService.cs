@@ -38,12 +38,26 @@ public static class AdSearchService
             {
                 if (OperatingSystem.IsWindows())
                 {
-                    using var context = new PrincipalContext(ContextType.Domain);
-                    using var user = UserPrincipal.FindByIdentity(context, identity.Name);
-                    if (user != null && !string.IsNullOrWhiteSpace(user.DisplayName))
+                    // Fast check if the machine is actually joined to a domain
+                    bool isDomainJoined = false;
+                    try 
                     {
-                        displayName = user.DisplayName;
-                        samAccountName = user.SamAccountName;
+                        using (var winContext = new PrincipalContext(ContextType.Machine)) 
+                        {
+                            isDomainJoined = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().DomainName != string.Empty;
+                        }
+                    } 
+                    catch { }
+
+                    if (isDomainJoined)
+                    {
+                        using var context = new PrincipalContext(ContextType.Domain);
+                        using var user = UserPrincipal.FindByIdentity(context, identity.Name);
+                        if (user != null && !string.IsNullOrWhiteSpace(user.DisplayName))
+                        {
+                            displayName = user.DisplayName;
+                            samAccountName = user.SamAccountName;
+                        }
                     }
                 }
             }

@@ -22,8 +22,14 @@ namespace EZKPM.Server.PDP.Controllers
 
         private string GetUserSid()
         {
-            var identity = HttpContext.User.Identity as System.Security.Principal.WindowsIdentity;
-            return EZKPM.Server.PDP.Services.SidHasher.HashSid(identity?.User?.Value ?? "SYSTEM");
+            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+#pragma warning disable CA1416
+                var identity = HttpContext.User.Identity as System.Security.Principal.WindowsIdentity;
+                return EZKPM.Server.PDP.Services.SidHasher.HashSid(identity?.User?.Value ?? "SYSTEM");
+#pragma warning restore CA1416
+            }
+            return EZKPM.Server.PDP.Services.SidHasher.HashSid("SYSTEM");
         }
 
         private async Task<bool> IsAdminAsync()

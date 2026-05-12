@@ -24,6 +24,30 @@ namespace EZKPM.Client.Core.Services
             return await response.Content.ReadFromJsonAsync<VaultAssetResponseDto>();
         }
 
+        public async Task<bool> AuthenticateAsync(System.Security.Cryptography.ECDsa identityKey, string hashedSid)
+        {
+            long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            string dataToSign = $"{hashedSid}:{timestamp}";
+            byte[] dataBytes = System.Text.Encoding.UTF8.GetBytes(dataToSign);
+            byte[] signatureBytes = identityKey.SignData(dataBytes, System.Security.Cryptography.HashAlgorithmName.SHA256);
+            
+            var request = new {
+                HashedSid = hashedSid,
+                Timestamp = timestamp,
+                Signature = Convert.ToBase64String(signatureBytes)
+            };
+
+            var response = await _httpClient.PostAsJsonAsync("/api/v1/auth/login", request);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                var token = result.GetProperty("Token").GetString();
+                _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                return true;
+            }
+            return false;
+        }
+
         public async Task<System.Collections.Generic.List<VaultAssetResponseDto>> GetAllAssetsAsync()
         {
             var response = await _httpClient.GetAsync("/api/v1/vault/assets/all");

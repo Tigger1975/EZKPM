@@ -118,6 +118,9 @@ Code & Fallback: Die gesamte Code-Basis, Variablen, Kommentare sowie die Fallbac
 Benutzeroberfläche (GUI): Sämtliche Texte, Meldungen und UI-Elemente, mit denen normale Nutzer in Berührung kommen, müssen dynamisch in die Sprache des Clients übersetzt werden.
 Übersetzungslogik: Als Grundlage für die Lokalisierung und Übersetzungslogik wird das ResX-System (verwaltet z. B. über ResXManager) verwendet. Hardcodierte Strings in der GUI sind nicht zulässig.
 
+5.6 Corporate Design & Look-and-Feel (Neu):
+Ein einheitliches Look & Feel ist bei sicherheitsrelevanter Software das A und O für das Vertrauen der Nutzer. Es sind immer streng die schon vorhandenen Logos und Icons für die Applikation zu verwenden (Sicherung des Wiedererkennungsmerkmals).
+
 6. Projektstatus & Meilensteine
 
 6.1 Abgeschlossene Meilensteine (Erreicht)

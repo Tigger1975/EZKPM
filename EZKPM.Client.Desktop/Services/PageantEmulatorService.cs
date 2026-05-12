@@ -51,12 +51,15 @@ namespace EZKPM.Client.Desktop.Services
             return Task.CompletedTask;
         }
 
+        private Win32.WndProc _wndProcDelegate;
+
         private void WindowThreadProc()
         {
+            _wndProcDelegate = new Win32.WndProc(WndProc);
             var wndClass = new Win32.WNDCLASS
             {
                 lpszClassName = "Pageant",
-                lpfnWndProc = Marshal.GetFunctionPointerForDelegate((Win32.WndProc)WndProc)
+                lpfnWndProc = Marshal.GetFunctionPointerForDelegate(_wndProcDelegate)
             };
 
             ushort classAtom = Win32.RegisterClass(ref wndClass);

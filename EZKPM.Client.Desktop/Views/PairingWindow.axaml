@@ -10,7 +10,10 @@
         
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,20">
-            <TextBlock Text="🛡️ Ironclad Vault Setup" FontSize="24" FontWeight="Bold" Foreground="#4A90E2" HorizontalAlignment="Center"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
+                <Image Source="avares://EZKPM.Client.Desktop/Assets/logo.png" Width="32" Height="32" />
+                <TextBlock Text="Ironclad Vault Setup" FontSize="24" FontWeight="Bold" Foreground="#4A90E2" VerticalAlignment="Center"/>
+            </StackPanel>
             <TextBlock Text="Willkommen bei EZKPM. Ihr Gerät wird jetzt mit dem Server verbunden." Foreground="LightGray" TextWrapping="Wrap" TextAlignment="Center" Margin="0,10,0,0"/>
         </StackPanel>
 

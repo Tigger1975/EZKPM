@@ -42,15 +42,24 @@ namespace EZKPM.Client.Desktop.Services
 
             try
             {
+                IntPtr parentHandle = IntPtr.Zero;
+                if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+                {
+                    parentHandle = desktop.MainWindow?.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+                }
+
                 var uiInfo = new CREDUI_INFO
                 {
                     cbSize = Marshal.SizeOf(typeof(CREDUI_INFO)),
+                    hwndParent = parentHandle,
                     pszCaptionText = "EZK-PM Enterprise",
                     pszMessageText = message
                 };
 
                 uint authPackage = 0;
                 bool save = false;
+
+                Program.LogDebug($"Triggering CredUI prompt. Parent HWND: {parentHandle}");
 
                 uint result = CredUIPromptForWindowsCredentials(
                     ref uiInfo,

@@ -12,7 +12,7 @@
     
     <Border Background="#111827" CornerRadius="20" Padding="30" BorderBrush="#1F2937" BorderThickness="1" BoxShadow="0 10 30 0 #40000000">
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="20">
-            <Image Source="avares://EZKPM.Client.Desktop/Assets/logo.png" Width="120" Height="120" />
+            <Image Source="avares://EZKPM.Client.Desktop/Assets/logo.png" Width="240" Height="240" />
             <TextBlock Text="Ironclad Vault (EZKPM)" FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" />
             
             <!-- SERVER CONFIG PANEL -->
@@ -82,7 +82,8 @@
             <!-- SPLASH PANEL -->
             <StackPanel x:Name="SplashPanel" IsVisible="False" Spacing="15">
                 <TextBlock x:Name="SplashStatusText" Text="{x:Static res:AppStrings.Startup_SplashDecr}" Foreground="#9CA3AF" FontSize="14" HorizontalAlignment="Center" />
-                <ProgressBar IsIndeterminate="True" Height="4" Width="250" Margin="0,10,0,0" CornerRadius="2" Foreground="#3B82F6" Background="#374151" />
+                <ProgressBar x:Name="SplashProgress" IsIndeterminate="True" Height="4" Width="250" Margin="0,10,0,0" CornerRadius="2" Foreground="#3B82F6" Background="#374151" />
+                <Button x:Name="ResetClientButton" Content="Verbindung trennen / Reset" IsVisible="False" Background="#EF4444" Foreground="White" HorizontalAlignment="Center" Padding="10,5" Click="ResetClientButton_Click"/>
             </StackPanel>
 
         </StackPanel>
