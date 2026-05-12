@@ -7,17 +7,16 @@ namespace EZKPM.Client.Desktop.Services
     public static class WindowsAuthService
     {
         [DllImport("credui.dll", CharSet = CharSet.Unicode)]
-        private static extern uint CredUIPromptForCredentials(
-            ref CREDUI_INFO uiInfo,
-            string targetName,
-            IntPtr reserved1,
-            uint iError,
-            System.Text.StringBuilder userName,
-            uint maxUserName,
-            System.Text.StringBuilder password,
-            uint maxPassword,
-            ref bool save,
-            uint flags);
+        private static extern uint CredUIPromptForWindowsCredentials(
+            ref CREDUI_INFO pUiInfo,
+            int authError,
+            ref uint authPackage,
+            IntPtr inAuthBuffer,
+            uint inAuthBufferSize,
+            out IntPtr refOutAuthBuffer,
+            out uint refOutAuthBufferSize,
+            ref bool fSave,
+            int flags);
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         private struct CREDUI_INFO
@@ -29,8 +28,8 @@ namespace EZKPM.Client.Desktop.Services
             public IntPtr hbmBanner;
         }
 
-        private const uint CREDUI_FLAGS_GENERIC_CREDENTIALS = 0x1;
-        private const uint CREDUI_FLAGS_ALWAYS_SHOW_UI = 0x2;
+        private const int CREDUIWIN_ENUMERATE_CURRENT_USER = 0x200;
+        private const int CRED_PACK_PROTECTED_CREDENTIALS = 1;
         private const uint ERROR_SUCCESS = 0;
         private const uint ERROR_CANCELLED = 1223;
 
@@ -57,66 +56,87 @@ namespace EZKPM.Client.Desktop.Services
                     pszMessageText = message
                 };
 
+                uint authPackage = 0;
                 bool save = false;
-
-                // Pre-fill with the currently logged-in user
-                var currentUser = WindowsIdentity.GetCurrent().Name;
-                var userName = new System.Text.StringBuilder(currentUser, 256);
-                var password = new System.Text.StringBuilder(256);
 
                 Program.LogDebug($"Triggering CredUI prompt. Parent HWND: {parentHandle}");
 
-                uint result = CredUIPromptForCredentials(
+                uint result = CredUIPromptForWindowsCredentials(
                     ref uiInfo,
-                    "EZKPM",
+                    0,
+                    ref authPackage,
                     IntPtr.Zero,
                     0,
-                    userName,
-                    256,
-                    password,
-                    256,
+                    out IntPtr outAuthBuffer,
+                    out uint outAuthBufferSize,
                     ref save,
-                    CREDUI_FLAGS_GENERIC_CREDENTIALS | CREDUI_FLAGS_ALWAYS_SHOW_UI);
+                    CREDUIWIN_ENUMERATE_CURRENT_USER);
 
-                if (result == ERROR_SUCCESS)
+                if (result == ERROR_SUCCESS && outAuthBuffer != IntPtr.Zero)
                 {
-                    string userStr = userName.ToString();
-                    string pwdStr = password.ToString();
-                    
-                    // Wipe password from StringBuilder
-                    password.Clear();
-
-                    string resolvedDomain = Environment.MachineName;
-                    string userOnly = userStr;
-
-                    if (userStr.Contains("\\"))
+                    try
                     {
-                        var parts = userStr.Split('\\');
-                        resolvedDomain = parts[0];
-                        userOnly = parts[1];
+                        var user = new System.Text.StringBuilder(100);
+                        int userLen = 100;
+                        var domain = new System.Text.StringBuilder(100);
+                        int domainLen = 100;
+                        var pwd = new System.Text.StringBuilder(100);
+                        int pwdLen = 100;
+
+                        // Use CRED_PACK_PROTECTED_CREDENTIALS (1) to decrypt the opaque LSA buffer!
+                        bool unpacked = CredUnPackAuthenticationBuffer(CRED_PACK_PROTECTED_CREDENTIALS, outAuthBuffer, outAuthBufferSize, user, ref userLen, domain, ref domainLen, pwd, ref pwdLen);
+                        
+                        if (unpacked)
+                        {
+                            string resolvedDomain = domain.ToString();
+                            if (string.IsNullOrEmpty(resolvedDomain))
+                            {
+                                var identityName = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+                                if (identityName.Contains("\\"))
+                                {
+                                    resolvedDomain = identityName.Split('\\')[0];
+                                }
+                                else
+                                {
+                                    resolvedDomain = Environment.MachineName;
+                                }
+                            }
+
+                            var contextType = string.Equals(resolvedDomain, Environment.MachineName, StringComparison.OrdinalIgnoreCase) 
+                                ? System.DirectoryServices.AccountManagement.ContextType.Machine 
+                                : System.DirectoryServices.AccountManagement.ContextType.Domain;
+
+                            // Validate the unpacked credentials against the OS
+                            using var context = new System.DirectoryServices.AccountManagement.PrincipalContext(contextType, resolvedDomain);
+
+                            bool isValid = context.ValidateCredentials(user.ToString(), pwd.ToString());
+                            
+                            // Securely wipe the string builder
+                            pwd.Clear();
+
+                            if (!isValid)
+                            {
+                                Program.LogDebug($"Credential validation failed! Incorrect password for user {resolvedDomain}\\{user}.");
+                                return false;
+                            }
+                            
+                            return true;
+                        }
+                        else
+                        {
+                            int err = Marshal.GetLastWin32Error();
+                            Program.LogDebug($"CredUnPackAuthenticationBuffer failed with error {err}");
+                        }
                     }
-                    else if (userStr.Contains("@"))
+                    finally
                     {
-                        var parts = userStr.Split('@');
-                        resolvedDomain = parts[1];
-                        userOnly = parts[0];
+                        Marshal.FreeCoTaskMem(outAuthBuffer);
                     }
-
-                    var contextType = string.Equals(resolvedDomain, Environment.MachineName, StringComparison.OrdinalIgnoreCase) 
-                        ? System.DirectoryServices.AccountManagement.ContextType.Machine 
-                        : System.DirectoryServices.AccountManagement.ContextType.Domain;
-
-                    using var context = new System.DirectoryServices.AccountManagement.PrincipalContext(contextType, resolvedDomain);
-
-                    bool isValid = context.ValidateCredentials(userOnly, pwdStr);
-                    
-                    if (!isValid)
-                    {
-                        Program.LogDebug($"Credential validation failed! Incorrect password for user {resolvedDomain}\\{userOnly}.");
-                        return false;
-                    }
-                    
-                    return true;
+                }
+                
+                if (outAuthBuffer != IntPtr.Zero)
+                {
+                    Marshal.FreeCoTaskMem(outAuthBuffer);
                 }
 
                 if (result == ERROR_CANCELLED) 
@@ -134,5 +154,17 @@ namespace EZKPM.Client.Desktop.Services
                 return false;
             }
         }
+
+        [DllImport("credui.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern bool CredUnPackAuthenticationBuffer(
+            int dwFlags,
+            IntPtr pAuthBuffer,
+            uint cbAuthBuffer,
+            System.Text.StringBuilder pszUserName,
+            ref int pcchMaxUserName,
+            System.Text.StringBuilder pszDomainName,
+            ref int pcchMaxDomainName,
+            System.Text.StringBuilder pszPassword,
+            ref int pcchMaxPassword);
     }
 }
