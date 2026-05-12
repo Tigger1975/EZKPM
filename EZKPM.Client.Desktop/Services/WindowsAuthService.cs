@@ -70,7 +70,7 @@ namespace EZKPM.Client.Desktop.Services
                     out IntPtr outAuthBuffer,
                     out uint outAuthBufferSize,
                     ref save,
-                    CREDUIWIN_ENUMERATE_CURRENT_USER);
+                    CREDUIWIN_ENUMERATE_CURRENT_USER | CREDUIWIN_IN_CRED_ONLY);
 
                 if (result == ERROR_SUCCESS && outAuthBuffer != IntPtr.Zero)
                 {
