@@ -70,6 +70,27 @@
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
+        <Style Selector="Button.autotype">
+            <Setter Property="Background" Value="#FACC15"/>
+            <Setter Property="Foreground" Value="#111827"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="10,4"/>
+        </Style>
+        <Style Selector="Button.autotype:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#EAB308"/>
+            <Setter Property="Foreground" Value="#111827"/>
+        </Style>
+        <!-- DataGrid Styles -->
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#111827"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="SeparatorBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="DataGridRow">
+            <Setter Property="MinHeight" Value="45"/>
+        </Style>
     </Window.Styles>
 
     <Grid ColumnDefinitions="320, *">
@@ -142,90 +163,86 @@
         </ThemeVariantScope>
 
         <!-- Main Area -->
-        <Grid Grid.Column="1" RowDefinitions="*, Auto">
-            <TabControl Grid.Row="0" x:Name="MainTabControl" Margin="10">
-                <TabItem Header="{x:Static res:AppStrings.Main_TabAssets}" x:Name="AssetListTab">
-                    <Grid RowDefinitions="Auto, *">
-                        <!-- Toolbar -->
-                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10" Spacing="10">
-                            <TextBox x:Name="SearchTextBox" PlaceholderText="{x:Static res:AppStrings.Main_SearchWatermark}" Width="250" TextChanged="SearchTextBox_TextChanged" />
-                            <ComboBox x:Name="TypeFilterComboBox" Width="150" SelectedIndex="0" SelectionChanged="TypeFilterComboBox_SelectionChanged">
-                                <ComboBoxItem Content="{x:Static res:AppStrings.Main_FilterAll}" />
-                                <ComboBoxItem Content="{x:Static res:AppStrings.Main_FilterExpired}" />
-                                <ComboBoxItem Content="{x:Static res:AppStrings.Main_FilterTrash}" />
-                                <ComboBoxItem Content="Login" />
-                                <ComboBoxItem Content="Passkey" />
-                                <ComboBoxItem Content="Payment" />
-                                <ComboBoxItem Content="SecureNote" />
-                                <ComboBoxItem Content="SSH Key" />
-                                <ComboBoxItem Content="SSL Key" />
-                                <ComboBoxItem Content="API Key" />
-                                <ComboBoxItem Content="Authenticator" />
-                            </ComboBox>
-                            <Button Content="{x:Static res:AppStrings.Main_BtnImport}" Classes="outline" Click="ImportKeePass_Click" />
-                            <Button Content="{x:Static res:AppStrings.Main_BtnClean}" Classes="outline" Click="CleanOrphans_Click" ToolTip.Tip="{x:Static res:AppStrings.Main_BtnCleanTooltip}" />
-                            <Button x:Name="RestoreSelectedAssetsButton" Content="{x:Static res:AppStrings.Main_BtnRestore}" Classes="outline" Click="RestoreSelectedAssets_Click" Foreground="#10B981" BorderBrush="#10B981" IsVisible="False" />
-                            <Button Content="{x:Static res:AppStrings.Main_BtnDelete}" Classes="outline" Click="DeleteSelectedAssets_Click" Foreground="#EF4444" BorderBrush="#EF4444" />
-                        </StackPanel>
+        <Grid Grid.Column="1" RowDefinitions="Auto, *, Auto" Margin="30">
+            <!-- Header -->
+            <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,20">
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock x:Name="CurrentFolderTitle" Text="All Items" FontSize="26" FontWeight="Bold" Foreground="#111827"/>
+                    <TextBlock x:Name="CurrentFolderItemCount" Text="0 items" FontSize="14" Foreground="#6B7280" Margin="0,2,0,0"/>
+                </StackPanel>
+                
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <TextBox x:Name="SearchTextBox" PlaceholderText="🔍 Search Passwords..." Width="220" TextChanged="SearchTextBox_TextChanged" CornerRadius="20" Background="White" BorderBrush="#E5E7EB"/>
+                    
+                    <Button Content="..." Classes="outline" ToolTip.Tip="Weitere Aktionen" CornerRadius="20" Width="36" HorizontalContentAlignment="Center">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Filter: Alle Typen" x:Name="MenuFilterAll" Click="MenuFilter_Click" Tag="All" />
+                                <MenuItem Header="Filter: Login" Click="MenuFilter_Click" Tag="Login" />
+                                <MenuItem Header="Filter: Payment" Click="MenuFilter_Click" Tag="Payment" />
+                                <MenuItem Header="Filter: Passkey" Click="MenuFilter_Click" Tag="Passkey" />
+                                <MenuItem Header="Filter: SecureNote" Click="MenuFilter_Click" Tag="SecureNote" />
+                                <MenuItem Header="Filter: Papierkorb" Click="MenuFilter_Click" Tag="Trash" />
+                                <MenuItem Header="Filter: Abgelaufen" Click="MenuFilter_Click" Tag="Expired" />
+                                <Separator />
+                                <MenuItem Header="{x:Static res:AppStrings.Main_BtnImport}" Click="ImportKeePass_Click" />
+                                <MenuItem Header="{x:Static res:AppStrings.Main_BtnClean}" Click="CleanOrphans_Click" />
+                                <MenuItem x:Name="MenuRestoreAssets" Header="{x:Static res:AppStrings.Main_BtnRestore}" Click="RestoreSelectedAssets_Click" IsVisible="False" Foreground="#10B981" />
+                                <MenuItem Header="{x:Static res:AppStrings.Main_BtnDelete}" Click="DeleteSelectedAssets_Click" Foreground="#EF4444" />
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
+            </Grid>
 
-                        <DataGrid Grid.Row="1" x:Name="AssetsDataGrid" x:DataType="contracts:VaultAssetPayload" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All" BorderThickness="1" BorderBrush="#E5E7EB" DoubleTapped="AssetsDataGrid_DoubleTapped" Background="White" SelectionMode="Extended" CanUserSortColumns="True">
-                            <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="{x:Static res:AppStrings.Main_ColType}" Width="60" SortMemberPath="AssetType">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate DataType="contracts:VaultAssetPayload">
-                                            <TextBlock Text="{Binding AssetType, Converter={StaticResource IconConverter}}" FontFamily="Segoe UI Emoji" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
+            <!-- DataGrid -->
+            <Border Grid.Row="1" Background="White" CornerRadius="8" BorderBrush="#E5E7EB" BorderThickness="1" ClipToBounds="True">
+                <DataGrid x:Name="AssetsDataGrid" x:DataType="contracts:VaultAssetPayload" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#F3F4F6" DoubleTapped="AssetsDataGrid_DoubleTapped" Background="White" SelectionMode="Extended" CanUserSortColumns="True">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Type" Width="70" SortMemberPath="AssetType">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="contracts:VaultAssetPayload">
+                                    <TextBlock Text="{Binding AssetType, Converter={StaticResource IconConverter}}" FontFamily="Segoe UI Emoji" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="{x:Static res:AppStrings.Main_ColName}" Width="2*" SortMemberPath="Title">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate DataType="contracts:VaultAssetPayload">
-                                            <StackPanel Orientation="Horizontal" Spacing="5" Margin="5,0" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
-                                                <Border Background="#EF4444" CornerRadius="3" Padding="4,2" VerticalAlignment="Center" IsVisible="{Binding IsExpired}">
-                                                    <TextBlock Text="{x:Static res:AppStrings.Main_LblExpired}" Foreground="White" FontSize="10" FontWeight="Bold" />
-                                                </Border>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="{x:Static res:AppStrings.Main_ColPath}" Binding="{Binding FullPath}" Width="2*" Foreground="#6B7280" />
+                        <DataGridTemplateColumn Header="Name" Width="2*" SortMemberPath="Title">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="contracts:VaultAssetPayload">
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="5,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#111827" />
+                                        <Border Background="#EF4444" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" IsVisible="{Binding IsExpired}">
+                                            <TextBlock Text="{x:Static res:AppStrings.Main_LblExpired}" Foreground="White" FontSize="10" FontWeight="Bold" />
+                                        </Border>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        
+                        <DataGridTextColumn Header="Path" Binding="{Binding FullPath}" Width="2*" Foreground="#4B5563" />
 
-                                <DataGridTemplateColumn Header="{x:Static res:AppStrings.Main_ColDesc}" Width="3*" SortMemberPath="DetailedDescription">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate DataType="contracts:VaultAssetPayload">
-                                            <TextBlock Text="{Binding DetailedDescription}" TextWrapping="Wrap" MaxLines="3" TextTrimming="CharacterEllipsis" Margin="5" VerticalAlignment="Center" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Description" Width="2*" SortMemberPath="DetailedDescription">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="contracts:VaultAssetPayload">
+                                    <TextBlock Text="{Binding DetailedDescription}" MaxLines="1" TextTrimming="CharacterEllipsis" Margin="5" VerticalAlignment="Center" Foreground="#4B5563" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="URL" Width="2*" SortMemberPath="Url">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate DataType="contracts:VaultAssetPayload">
-                                            <TextBlock Text="{Binding Url, Converter={StaticResource TruncateConverter}}" VerticalAlignment="Center" Margin="5" Foreground="#3B82F6" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-
-                                <DataGridTemplateColumn Header="Aktionen" Width="Auto">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate DataType="contracts:VaultAssetPayload">
-                                            <Button Content="⌨️ Auto-Type" Classes="outline" Padding="5,2" Margin="5" Click="DataGridAutoType_Click" Tag="{Binding}" IsVisible="{Binding HasAutoTypeConfigured}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
-                </TabItem>
-
-            </TabControl>
-
-            <!-- Status Message pinned to bottom -->
-            <Border Grid.Row="1" Background="White" BorderThickness="0,1,0,0" BorderBrush="#E5E7EB" Padding="20,10">
-                <SelectableTextBlock x:Name="StatusTextBlock" Text="" Foreground="#4B5563" FontSize="13" TextWrapping="Wrap" />
+                        <DataGridTemplateColumn Header="Auto-Type" Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="contracts:VaultAssetPayload">
+                                    <Button Content="Auto-Type" Classes="autotype" Margin="10,5" Click="DataGridAutoType_Click" Tag="{Binding}" IsVisible="{Binding HasAutoTypeConfigured}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
             </Border>
+
+            <!-- Status Message -->
+            <SelectableTextBlock Grid.Row="2" x:Name="StatusTextBlock" Text="" Foreground="#6B7280" FontSize="12" Margin="0,10,0,0" HorizontalAlignment="Center" />
         </Grid>
     </Grid>
 </Window>

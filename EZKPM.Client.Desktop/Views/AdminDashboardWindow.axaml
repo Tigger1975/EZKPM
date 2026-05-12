@@ -1,231 +1,319 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="EZKPM.Client.Desktop.Views.AdminDashboardWindow"
-        Title="Admin Dashboard" Width="800" Height="600"
-        WindowStartupLocation="CenterOwner" Background="#F9FAFB">
+        Title="Admin Dashboard" Width="1200" Height="800"
+        WindowStartupLocation="CenterOwner" Background="#F5F7FA" FontFamily="Inter, sans-serif">
     
+    <Window.Styles>
+        <Style Selector="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="TabItem">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Padding" Value="15,12"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Foreground" Value="#4B5563"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+        <Style Selector="TabItem:selected">
+            <Setter Property="Background" Value="#E0E7FF"/>
+            <Setter Property="Foreground" Value="#1E3A8A"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="TabItem:pointerover /template/ Border#PART_LayoutRoot">
+            <Setter Property="Background" Value="#F3F4F6"/>
+        </Style>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="BorderBrush" Value="#E5E7EB"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="24"/>
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="Padding" Value="10,8"/>
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+    </Window.Styles>
+
     <Grid RowDefinitions="Auto, *">
-        <Border Grid.Row="0" Background="#1E293B" Padding="20">
-            <StackPanel>
-                <TextBlock Text="🛡️ Admin Dashboard" FontSize="24" FontWeight="Bold" Foreground="White" />
-                <TextBlock x:Name="BootstrapWarningText" Text="⚠️ BOOTSTRAP MODUS AKTIV: Es gibt keine Administratoren. Sie können sich selbst als Admin hinzufügen." Foreground="#FACC15" IsVisible="False" Margin="0,5,0,0"/>
-            </StackPanel>
+        <!-- Top Header -->
+        <Border Grid.Row="0" Background="#1E293B" Padding="25,15">
+            <Grid ColumnDefinitions="*, Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <TextBlock Text="🛡️" FontSize="26" VerticalAlignment="Center"/>
+                    <TextBlock Text="Admin Dashboard" FontSize="22" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" />
+                    <TextBlock x:Name="BootstrapWarningText" Text="⚠️ BOOTSTRAP MODUS AKTIV" Foreground="#FACC15" VerticalAlignment="Center" IsVisible="False" Margin="20,0,0,0" FontWeight="Bold"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <TextBlock Text="Enterprise Access Manager" Foreground="#94A3B8" VerticalAlignment="Center" FontSize="14"/>
+                    <TextBlock Text="⚙️" FontSize="20" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                </StackPanel>
+            </Grid>
         </Border>
 
-        <TabControl Grid.Row="1" Margin="10">
-            <TabItem Header="Admin-Verwaltung">
-                <Grid RowDefinitions="Auto, Auto, Auto, *" Margin="10">
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
-                        <TextBlock Text="User SID oder Name suchen:" VerticalAlignment="Center"/>
-                        <TextBox x:Name="SearchAdminTextBox" Width="200" Watermark="Suche im AD..."/>
-                        <Button Content="Suchen" Click="SearchAdminButton_Click" Classes="primary" Background="#3B82F6" Foreground="White" />
-                    </StackPanel>
-                    
-                    <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10">
-                        <TextBlock Text="Ausgewählter Benutzer:" FontSize="14" Foreground="Gray" HorizontalAlignment="Center"/>
-                        <TextBlock x:Name="SelectedAdminText" Text="Keine Auswahl" FontSize="18" FontWeight="Bold" Foreground="#3B82F6" HorizontalAlignment="Center"/>
-                    </StackPanel>
-                    
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,10,0,0">
-                        <Button Content="Als Admin hinzufügen" Click="MakeAdminButton_Click" Background="#10B981" Foreground="White" />
-                        <Button Content="Admin-Rechte entziehen" Click="RemoveAdminButton_Click" Background="#EF4444" Foreground="White" />
-                    </StackPanel>
+        <!-- Main Content with Sidebar Tabs -->
+        <TabControl Grid.Row="1" Margin="20" TabStripPlacement="Left" Padding="20,0,0,0">
+            
+            <TabItem Header="Dashboard (Admins)">
+                <ScrollViewer>
+                    <StackPanel Spacing="20" MaxWidth="900" HorizontalAlignment="Left">
+                        <Border Classes="card">
+                            <StackPanel Spacing="15">
+                                <TextBlock Text="Find Active Directory Users" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                                    <TextBox x:Name="SearchAdminTextBox" Width="350" Watermark="🔍 Search Active Directory by Name or SID..." CornerRadius="20" Padding="15,8"/>
+                                    <Button Content="Search" Click="SearchAdminButton_Click" Classes="primary" Background="#4B5563" CornerRadius="20" Padding="20,8"/>
+                                </StackPanel>
+                                
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10" Margin="0,10,0,0">
+                                    <TextBlock Text="Selected User:" Foreground="#6B7280" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="SelectedAdminText" Text="None" FontWeight="Bold" Foreground="#3B82F6" VerticalAlignment="Center" FontSize="16"/>
+                                </StackPanel>
+                                
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="15" Margin="0,10,0,0">
+                                    <Button Content="Make Administrator" Click="MakeAdminButton_Click" Background="#10B981" Foreground="White" FontWeight="SemiBold" Padding="15,8"/>
+                                    <Button Content="Revoke Admin Rights" Click="RemoveAdminButton_Click" Background="#EF4444" Foreground="White" FontWeight="SemiBold" Padding="15,8"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
 
-                    <StackPanel Grid.Row="3" Spacing="10" Margin="0,20,0,0">
-                        <TextBlock Text="Aktuelle Administratoren" FontWeight="Bold"/>
-                        <TextBlock Text="Da der Server nach dem Zero-Knowledge-Prinzip nur gehashte SIDs speichert, muss der Client diese Liste über das Active Directory auflösen." Foreground="Gray" TextWrapping="Wrap" FontSize="12"/>
-                        <ListBox x:Name="CurrentAdminsList" Height="100" BorderBrush="#D1D5DB" BorderThickness="1">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate x:CompileBindings="False">
-                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                        <Button Content="Admins aus AD auflösen (kann dauern)" Click="ResolveAdminsButton_Click" HorizontalAlignment="Right" />
+                        <Border Classes="card">
+                            <StackPanel Spacing="15">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Current Administrators" FontWeight="Bold" FontSize="18"/>
+                                        <TextBlock Text="Due to zero-knowledge principles, the server only stores hashed SIDs. The client resolves this list via AD." Foreground="#6B7280" FontSize="13" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Content="↻ Refresh List" Click="ResolveAdminsButton_Click" Background="White" BorderBrush="#D1D5DB" BorderThickness="1" Foreground="#374151" FontWeight="Medium" Padding="15,8"/>
+                                </Grid>
+                                
+                                <ListBox x:Name="CurrentAdminsList" Height="250" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Background="#F9FAFB">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate x:CompileBindings="False">
+                                            <StackPanel Orientation="Horizontal" Spacing="12" Margin="8,4">
+                                                <Border Background="#E0E7FF" CornerRadius="15" Width="30" Height="30" VerticalAlignment="Center">
+                                                    <TextBlock Text="👤" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#111827" FontSize="15"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                </Grid>
+                </ScrollViewer>
             </TabItem>
+
             <TabItem Header="Benutzer Einladen">
                 <ScrollViewer>
-                    <StackPanel Margin="10" Spacing="20">
-                        <Grid RowDefinitions="Auto, Auto, *, Auto">
-                            <StackPanel Grid.Row="0" Spacing="10" Margin="0,0,0,20">
+                    <StackPanel Spacing="20" MaxWidth="900" HorizontalAlignment="Left">
+                        <Border Classes="card">
+                            <StackPanel Spacing="15">
                                 <TextBlock Text="Einzelnen Benutzer aus AD einladen" FontWeight="Bold" FontSize="18"/>
-                                <TextBlock Text="Suchen Sie den Benutzer im Active Directory. Der Server generiert einen Pairing-Code und Ihr Client öffnet Outlook." Foreground="Gray" TextWrapping="Wrap"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,0,0,20">
-                                <TextBlock Text="Benutzer suchen:" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                                <TextBox x:Name="SearchInviteTextBox" Width="250" Watermark="Name oder SID eingeben..."/>
-                                <Button Content="Suchen" Click="SearchInviteButton_Click" Classes="primary" Background="#3B82F6" Foreground="White"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Row="2" VerticalAlignment="Top" Spacing="10">
-                                <TextBlock Text="Ausgewählter Benutzer für Einladung:" FontSize="14" Foreground="Gray"/>
-                                <TextBlock x:Name="SelectedInviteText" Text="Keine Auswahl" FontSize="18" FontWeight="Bold" Foreground="#10B981"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button x:Name="SendInviteButton" Content="Einladung generieren &amp; E-Mail vorbereiten" Click="SendInviteButton_Click" Background="#8B5CF6" Foreground="White" FontWeight="Bold" Padding="15,10" IsEnabled="False"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <Separator Background="#D1D5DB" Height="1"/>
-
-                        <StackPanel Spacing="10">
-                            <TextBlock Text="Mass-Rollout (Bulk SMTP)" FontWeight="Bold" FontSize="18"/>
-                            <TextBlock Text="Wählen Sie eine AD-Gruppe (oder einen Benutzer) aus. Die E-Mails werden im Hintergrund direkt über den angegebenen SMTP-Server an alle Mitglieder der Gruppe versendet. Bereits registrierte User werden automatisch übersprungen." Foreground="Gray" TextWrapping="Wrap"/>
-                            
-                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
-                                <TextBlock Text="Ziel-Gruppe / Benutzer:" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                                <Button Content="Auswählen" Click="BulkInviteTargetButton_Click" />
-                                <TextBlock x:Name="BulkInviteTargetText" Text="Keine Auswahl" VerticalAlignment="Center" Foreground="#8B5CF6" FontWeight="Bold"/>
-                            </StackPanel>
-
-                            <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto, Auto, Auto, Auto" Margin="0,10,0,0">
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="SMTP Server:" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                                <TextBox x:Name="SmtpServerTextBox" Grid.Row="0" Grid.Column="1" Watermark="z.B. mail.firma.local" Margin="0,0,0,10"/>
-
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="SMTP Port:" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                                <TextBox x:Name="SmtpPortTextBox" Grid.Row="1" Grid.Column="1" Text="25" Margin="0,0,0,10"/>
-
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Absender E-Mail:" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                                <TextBox x:Name="SmtpSenderTextBox" Grid.Row="2" Grid.Column="1" Watermark="z.B. ezkpm@firma.local" Margin="0,0,0,10"/>
-
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="E-Mail Betreff:" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                                <TextBox x:Name="EmailSubjectTextBox" Grid.Row="3" Grid.Column="1" Margin="0,0,0,10"/>
-
-                                <TextBlock Grid.Row="4" Grid.Column="0" Text="E-Mail Text:" VerticalAlignment="Top" Margin="0,5,10,10"/>
-                                <StackPanel Grid.Row="4" Grid.Column="1" Spacing="5" Margin="0,0,0,10">
-                                    <TextBlock Text="Platzhalter (Klicken zum Einfügen):" FontSize="12" Foreground="Gray"/>
-                                    <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,0,5">
-                                        <Button Content="{}{DisplayName}" Click="InsertPlaceholder_Click" FontSize="11" Padding="5,2" ToolTip.Tip="Anzeigename des Benutzers"/>
-                                        <Button Content="{}{SamAccountName}" Click="InsertPlaceholder_Click" FontSize="11" Padding="5,2" ToolTip.Tip="Anmeldename (z.B. max.muster)"/>
-                                        <Button Content="{}{ServerUrl}" Click="InsertPlaceholder_Click" FontSize="11" Padding="5,2" ToolTip.Tip="Download-Link des Clients"/>
-                                        <Button Content="{}{PairingCode}" Click="InsertPlaceholder_Click" FontSize="11" Padding="5,2" ToolTip.Tip="Einmal-Code für die Registrierung"/>
-                                    </StackPanel>
-                                    <TextBox x:Name="EmailBodyTextBox" AcceptsReturn="True" TextWrapping="Wrap" Height="150" FontFamily="Consolas"/>
+                                <TextBlock Text="Suchen Sie den Benutzer im Active Directory. Der Server generiert einen Pairing-Code und Ihr Client öffnet Outlook." Foreground="#6B7280" TextWrapping="Wrap"/>
+                                
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+                                    <TextBox x:Name="SearchInviteTextBox" Width="300" Watermark="Name oder SID eingeben..."/>
+                                    <Button Content="Suchen" Click="SearchInviteButton_Click" Classes="primary" Padding="20,8"/>
                                 </StackPanel>
-                            </Grid>
 
-                            <Button x:Name="BulkInviteButton" Content="Alle aktiven AD-User einladen" Click="BulkInviteButton_Click" Background="#EF4444" Foreground="White" FontWeight="Bold" Padding="15,10" HorizontalAlignment="Right"/>
-                        </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
+                                    <TextBlock Text="Ausgewählter Benutzer:" Foreground="#6B7280" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="SelectedInviteText" Text="Keine Auswahl" FontWeight="Bold" Foreground="#10B981" FontSize="16" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <Button x:Name="SendInviteButton" Content="Einladung generieren &amp; E-Mail vorbereiten" Click="SendInviteButton_Click" Background="#8B5CF6" Foreground="White" FontWeight="SemiBold" Padding="20,10" HorizontalAlignment="Left" IsEnabled="False" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="15">
+                                <TextBlock Text="Mass-Rollout (Bulk SMTP)" FontWeight="Bold" FontSize="18"/>
+                                <TextBlock Text="Wählen Sie eine AD-Gruppe aus. E-Mails werden im Hintergrund direkt über den angegebenen SMTP-Server versendet." Foreground="#6B7280" TextWrapping="Wrap"/>
+                                
+                                <StackPanel Orientation="Horizontal" Spacing="15" Margin="0,10,0,0">
+                                    <TextBlock Text="Ziel-Gruppe:" VerticalAlignment="Center" FontWeight="SemiBold" Width="100"/>
+                                    <Button Content="Auswählen..." Click="BulkInviteTargetButton_Click" Padding="15,8" Background="White" BorderBrush="#D1D5DB" BorderThickness="1"/>
+                                    <TextBlock x:Name="BulkInviteTargetText" Text="Keine Auswahl" VerticalAlignment="Center" Foreground="#8B5CF6" FontWeight="Bold" FontSize="15"/>
+                                </StackPanel>
+
+                                <Grid ColumnDefinitions="120, *" RowDefinitions="Auto, Auto, Auto, Auto, Auto" Margin="0,15,0,0">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="SMTP Server:" VerticalAlignment="Center" Margin="0,0,0,12"/>
+                                    <TextBox x:Name="SmtpServerTextBox" Grid.Row="0" Grid.Column="1" Watermark="z.B. mail.firma.local" Margin="0,0,0,12"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="SMTP Port:" VerticalAlignment="Center" Margin="0,0,0,12"/>
+                                    <TextBox x:Name="SmtpPortTextBox" Grid.Row="1" Grid.Column="1" Text="25" Margin="0,0,0,12" Width="100" HorizontalAlignment="Left"/>
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Absender E-Mail:" VerticalAlignment="Center" Margin="0,0,0,12"/>
+                                    <TextBox x:Name="SmtpSenderTextBox" Grid.Row="2" Grid.Column="1" Watermark="z.B. ezkpm@firma.local" Margin="0,0,0,12"/>
+
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="E-Mail Betreff:" VerticalAlignment="Center" Margin="0,0,0,12"/>
+                                    <TextBox x:Name="EmailSubjectTextBox" Grid.Row="3" Grid.Column="1" Margin="0,0,0,12"/>
+
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="E-Mail Text:" VerticalAlignment="Top" Margin="0,8,0,0"/>
+                                    <StackPanel Grid.Row="4" Grid.Column="1" Spacing="8">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Content="{}{DisplayName}" Click="InsertPlaceholder_Click" FontSize="12" Padding="8,4" Background="#F1F5F9"/>
+                                            <Button Content="{}{SamAccountName}" Click="InsertPlaceholder_Click" FontSize="12" Padding="8,4" Background="#F1F5F9"/>
+                                            <Button Content="{}{ServerUrl}" Click="InsertPlaceholder_Click" FontSize="12" Padding="8,4" Background="#F1F5F9"/>
+                                            <Button Content="{}{PairingCode}" Click="InsertPlaceholder_Click" FontSize="12" Padding="8,4" Background="#F1F5F9"/>
+                                        </StackPanel>
+                                        <TextBox x:Name="EmailBodyTextBox" AcceptsReturn="True" TextWrapping="Wrap" Height="180" FontFamily="Consolas" Padding="12"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Button x:Name="BulkInviteButton" Content="Alle aktiven AD-User einladen" Click="BulkInviteButton_Click" Background="#EF4444" Foreground="White" FontWeight="SemiBold" Padding="20,12" HorizontalAlignment="Right" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
             
             <TabItem Header="Recovery-Verwaltung">
-                <Grid RowDefinitions="Auto, *, Auto" Margin="10">
-                    <TextBlock Grid.Row="0" Text="Offene Recovery-Anfragen" FontWeight="Bold" Margin="0,0,0,10"/>
-                    
-                    <ListBox x:Name="PendingRecoveryList" Grid.Row="1" BorderBrush="#D1D5DB" BorderThickness="1">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate x:CompileBindings="False">
-                                <StackPanel Spacing="5" Margin="5">
-                                    <TextBlock Text="{Binding AdSid, StringFormat='Ziel-User SID: {0}'}" FontWeight="Bold"/>
-                                    <TextBlock Text="{Binding RequestedAt, StringFormat='Angefragt am: {0:g}'}"/>
-                                    <TextBlock Text="{Binding ProvidedShares.Count, StringFormat='Freigaben: {0} / 2'}" Foreground="Green"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                <ScrollViewer>
+                    <StackPanel Spacing="20" MaxWidth="900" HorizontalAlignment="Left">
+                        <Border Classes="card">
+                            <StackPanel Spacing="15">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBlock Grid.Column="0" Text="Offene Recovery-Anfragen" FontWeight="Bold" FontSize="18"/>
+                                    <Button Grid.Column="1" Content="↻ Aktualisieren" Click="RefreshRecoveryButton_Click" Background="White" BorderBrush="#D1D5DB" BorderThickness="1" Padding="15,8"/>
+                                </Grid>
+                                
+                                <ListBox x:Name="PendingRecoveryList" Height="300" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Background="#F9FAFB">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate x:CompileBindings="False">
+                                            <Border Background="White" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Padding="15" Margin="0,0,0,8">
+                                                <Grid ColumnDefinitions="*, Auto">
+                                                    <StackPanel Grid.Column="0" Spacing="5">
+                                                        <TextBlock Text="{Binding AdSid, StringFormat='User SID: {0}'}" FontWeight="Bold" FontSize="15" Foreground="#111827"/>
+                                                        <TextBlock Text="{Binding RequestedAt, StringFormat='Angefragt am: {0:g}'}" Foreground="#6B7280" FontSize="13"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" Spacing="15">
+                                                        <TextBlock Text="{Binding ProvidedShares.Count, StringFormat='Freigaben: {0} / 2'}" Foreground="#10B981" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                        <Button Content="Freigeben (Share senden)" Click="ApproveRecoveryButton_Click" Classes="primary" Padding="15,8"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </StackPanel>
+                        </Border>
 
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,10,0,0">
-                        <Button Content="Aktualisieren" Click="RefreshRecoveryButton_Click" />
-                        <Button Content="Freigeben (Share senden)" Click="ApproveRecoveryButton_Click" Background="#3B82F6" Foreground="White" />
+                        <Border Classes="card">
+                            <StackPanel Spacing="15">
+                                <TextBlock Text="Fremd-Recovery initiieren" FontWeight="Bold" FontSize="18"/>
+                                <TextBlock Text="Recovery für anderen User anfordern (z.B. nach Austritt). Hinweis: Sie benötigen die Freigabe von 2 weiteren Administratoren." Foreground="#6B7280" TextWrapping="Wrap"/>
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+                                    <TextBox x:Name="TargetUserSidTextBox" Width="300" Watermark="S-1-5-21-..."/>
+                                    <Button Content="Suchen..." Click="SearchDisabledUserButton_Click" Background="White" BorderBrush="#D1D5DB" BorderThickness="1" Padding="15,8"/>
+                                    <Button Content="Recovery anfordern" Click="InitiateRecoveryButton_Click" Background="#F59E0B" Foreground="White" FontWeight="SemiBold" Padding="15,8" Margin="10,0,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                </Grid>
+                </ScrollViewer>
             </TabItem>
-            
-            <TabItem Header="Fremd-Recovery initiieren">
-                <Grid RowDefinitions="Auto, *, Auto" Margin="10">
-                    <StackPanel Grid.Row="0" Spacing="10" Margin="0,0,0,10">
-                        <TextBlock Text="Recovery für anderen User anfordern (z.B. nach Austritt)" FontWeight="Bold"/>
-                        <TextBlock Text="Hinweis: Sie benötigen die Freigabe von 2 weiteren Administratoren." Foreground="Gray" TextWrapping="Wrap"/>
-                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
-                            <TextBlock Text="Ziel-User SID:" VerticalAlignment="Center"/>
-                            <TextBox x:Name="TargetUserSidTextBox" Width="200" Watermark="S-1-5-21-..."/>
-                            <Button Content="Suchen..." Click="SearchDisabledUserButton_Click" />
-                        </StackPanel>
-                    </StackPanel>
-                    
-                    <Button Grid.Row="2" Content="Recovery anfordern" Click="InitiateRecoveryButton_Click" HorizontalAlignment="Right" Background="#F59E0B" Foreground="White" />
-                </Grid>
-        </TabItem>
 
             <TabItem Header="Identitäten (Mapping)">
-                <Grid RowDefinitions="Auto, *, Auto" Margin="10">
-                    <StackPanel Grid.Row="0" Spacing="10" Margin="0,0,0,10">
-                        <TextBlock Text="Separation of Duties (6-Augen-Prinzip sichern)" FontWeight="Bold"/>
-                        <TextBlock Text="Verknüpfen Sie hier den administrativen AD-Account (z.B. adm-kh) mit dem Standard-Account (z.B. kh) einer Person. Dadurch wird sichergestellt, dass das 6-Augen-Prinzip nicht durch Mehrfach-Accounts derselben Person untergraben werden kann." Foreground="Gray" TextWrapping="Wrap"/>
-                        
-                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,15,0,0">
-                            <TextBlock Text="Quell-Account (Wird verknüpft):" Width="200" VerticalAlignment="Center"/>
-                            <Button Content="Suchen..." Click="PickSourcePersonButton_Click" />
-                            <TextBlock x:Name="SourcePersonText" Text="Keine Auswahl" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#3B82F6"/>
-                        </StackPanel>
+                <ScrollViewer>
+                    <Border Classes="card" MaxWidth="900" HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <StackPanel Spacing="20">
+                            <TextBlock Text="Separation of Duties (6-Augen-Prinzip sichern)" FontWeight="Bold" FontSize="18"/>
+                            <TextBlock Text="Verknüpfen Sie hier den administrativen AD-Account (z.B. adm-kh) mit dem Standard-Account (z.B. kh) einer Person. Dadurch wird sichergestellt, dass das 6-Augen-Prinzip nicht durch Mehrfach-Accounts derselben Person untergraben werden kann." Foreground="#6B7280" TextWrapping="Wrap"/>
+                            
+                            <Grid ColumnDefinitions="250, *, Auto" RowDefinitions="Auto, Auto" Margin="0,15,0,0">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Quell-Account (Wird verknüpft):" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="SourcePersonText" Grid.Row="0" Grid.Column="1" Text="Keine Auswahl" VerticalAlignment="Center" FontWeight="Bold" Foreground="#3B82F6" FontSize="15" Margin="15,0"/>
+                                <Button Grid.Row="0" Grid.Column="2" Content="Suchen..." Click="PickSourcePersonButton_Click" Background="White" BorderBrush="#D1D5DB" BorderThickness="1" Padding="15,8"/>
 
-                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
-                            <TextBlock Text="Ziel-Account (Haupt-Identität):" Width="200" VerticalAlignment="Center"/>
-                            <Button Content="Suchen..." Click="PickTargetPersonButton_Click" />
-                            <TextBlock x:Name="TargetPersonText" Text="Keine Auswahl" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#10B981"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Ziel-Account (Haupt-Identität):" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,20,0,0"/>
+                                <TextBlock x:Name="TargetPersonText" Grid.Row="1" Grid.Column="1" Text="Keine Auswahl" VerticalAlignment="Center" FontWeight="Bold" Foreground="#10B981" FontSize="15" Margin="15,20,15,0"/>
+                                <Button Grid.Row="1" Grid.Column="2" Content="Suchen..." Click="PickTargetPersonButton_Click" Background="White" BorderBrush="#D1D5DB" BorderThickness="1" Padding="15,8" Margin="0,20,0,0"/>
+                            </Grid>
+                            
+                            <Button Content="Accounts zu einer Person zusammenführen" Click="LinkPersonsButton_Click" Background="#8B5CF6" Foreground="White" FontWeight="SemiBold" Padding="20,12" HorizontalAlignment="Right" Margin="0,15,0,0"/>
                         </StackPanel>
-                    </StackPanel>
-                    
-                    <Button Grid.Row="2" Content="Accounts zu einer Person zusammenführen" Click="LinkPersonsButton_Click" HorizontalAlignment="Right" Background="#8B5CF6" Foreground="White" />
-                </Grid>
+                    </Border>
+                </ScrollViewer>
             </TabItem>
+            
             <TabItem Header="Sicherheitswarnungen">
-                <Grid RowDefinitions="Auto, *, Auto" Margin="10">
-                    <StackPanel Grid.Row="0" Spacing="10" Margin="0,0,0,10">
-                        <TextBlock Text="Vulnerability Scanner Berichte" FontWeight="Bold"/>
-                        <TextBlock Text="Diese Liste zeigt alle offenen Sicherheitsprobleme (CVEs/Exploits) an, die von den Admin-Clients in den verwendeten Anwendungspaketen gefunden wurden." Foreground="Gray" TextWrapping="Wrap"/>
-                    </StackPanel>
-                    
-                    <ListBox x:Name="SecurityAlertsList" Grid.Row="1" BorderBrush="#D1D5DB" BorderThickness="1">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate x:CompileBindings="False">
-                                <StackPanel Spacing="5" Margin="5">
-                                    <TextBlock Text="{Binding PackageName}" FontWeight="Bold" Foreground="#EF4444" />
-                                    <TextBlock Text="{Binding Version}" FontWeight="SemiBold" />
-                                    <TextBox Text="{Binding Details}" IsReadOnly="True" BorderThickness="0" Background="Transparent" TextWrapping="Wrap" />
-                                    <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
-                                        <TextBlock Text="{Binding CreatedAt}" Foreground="Gray" FontSize="12" />
-                                        <Button Content="Als erledigt markieren" Tag="{Binding Id}" Click="ResolveAlertButton_Click" Background="#10B981" Foreground="White" Padding="5,2" FontSize="12" />
-                                    </StackPanel>
+                <ScrollViewer>
+                    <Border Classes="card" MaxWidth="900" HorizontalAlignment="Left">
+                        <StackPanel Spacing="15">
+                            <Grid ColumnDefinitions="*, Auto, Auto">
+                                <StackPanel Grid.Column="0" Spacing="5">
+                                    <TextBlock Text="Vulnerability Scanner Berichte" FontWeight="Bold" FontSize="18"/>
+                                    <TextBlock Text="Diese Liste zeigt alle offenen Sicherheitsprobleme (CVEs/Exploits) an, die von den Admin-Clients in den verwendeten Anwendungspaketen gefunden wurden." Foreground="#6B7280" TextWrapping="Wrap"/>
                                 </StackPanel>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,10,0,0">
-                        <Button Content="Sicherheits-Scan jetzt erzwingen" Click="ForceScanButton_Click" Background="#F59E0B" Foreground="White" />
-                        <Button Content="Liste aktualisieren" Click="RefreshAlertsButton_Click" />
-                    </StackPanel>
-                </Grid>
+                                <Button Grid.Column="1" Content="Scan erzwingen" Click="ForceScanButton_Click" Background="#F59E0B" Foreground="White" FontWeight="SemiBold" Padding="15,8" Margin="0,0,10,0"/>
+                                <Button Grid.Column="2" Content="↻ Aktualisieren" Click="RefreshAlertsButton_Click" Background="White" BorderBrush="#D1D5DB" BorderThickness="1" Padding="15,8"/>
+                            </Grid>
+                            
+                            <ListBox x:Name="SecurityAlertsList" Height="400" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Background="#F9FAFB" Margin="0,10,0,0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:CompileBindings="False">
+                                        <Border Background="White" BorderBrush="#EF4444" BorderThickness="1,1,1,1" CornerRadius="6" Padding="15" Margin="0,0,0,8">
+                                            <StackPanel Spacing="8">
+                                                <Grid ColumnDefinitions="*, Auto">
+                                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                                                        <TextBlock Text="⚠️" FontSize="18" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding PackageName}" FontWeight="Bold" Foreground="#EF4444" FontSize="16" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Version}" FontWeight="SemiBold" Foreground="#4B5563" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1" Text="{Binding CreatedAt}" Foreground="#9ca3af" FontSize="12" VerticalAlignment="Center"/>
+                                                </Grid>
+                                                <TextBox Text="{Binding Details}" IsReadOnly="True" BorderThickness="0" Background="#FEE2E2" Foreground="#991B1B" TextWrapping="Wrap" Padding="10" CornerRadius="4" FontSize="13" Margin="0,5,0,0"/>
+                                                <Button Content="Als erledigt markieren" Tag="{Binding Id}" Click="ResolveAlertButton_Click" Background="#10B981" Foreground="White" Padding="15,6" HorizontalAlignment="Right" Margin="0,5,0,0" FontWeight="Medium"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+                    </Border>
+                </ScrollViewer>
             </TabItem>
+            
             <TabItem Header="System Keys &amp; Logs">
                 <ScrollViewer>
-                    <StackPanel Margin="10" Spacing="20">
-                        <Grid RowDefinitions="Auto, Auto">
-                            <StackPanel Grid.Row="0" Spacing="10" Margin="0,0,0,20">
+                    <StackPanel Spacing="20" MaxWidth="900" HorizontalAlignment="Left">
+                        <Border Classes="card">
+                            <StackPanel Spacing="15">
                                 <TextBlock Text="Global Environment Log Key" FontWeight="Bold" FontSize="18"/>
-                                <TextBlock Text="Mit diesem Private Key werden die zentralen Geräte-Logs entschlüsselt. Teilen Sie diesen Schlüssel NICHT außerhalb der IT!" Foreground="#EF4444" TextWrapping="Wrap"/>
-                                <TextBox x:Name="EnvironmentLogKeyTextBox" IsReadOnly="True" Height="60" TextWrapping="Wrap" Background="#F1F5F9" Watermark="Schlüssel nicht verfügbar (fehlende Berechtigung oder noch nicht generiert)"/>
+                                <TextBlock Text="Mit diesem Private Key werden die zentralen Geräte-Logs entschlüsselt. Teilen Sie diesen Schlüssel NICHT außerhalb der IT!" Foreground="#EF4444" TextWrapping="Wrap" FontWeight="SemiBold"/>
+                                <TextBox x:Name="EnvironmentLogKeyTextBox" IsReadOnly="True" Height="80" TextWrapping="Wrap" Background="#F8FAFC" Watermark="Schlüssel nicht verfügbar (fehlende Berechtigung oder noch nicht generiert)" FontFamily="Consolas" FontSize="12"/>
                             </StackPanel>
+                        </Border>
 
-                            <StackPanel Grid.Row="1" Spacing="10">
+                        <Border Classes="card">
+                            <StackPanel Spacing="15">
                                 <TextBlock Text="Geräte-Logs extrahieren" FontWeight="Bold" FontSize="18"/>
-                                <TextBlock Text="Rufen Sie die verschlüsselten Logs eines bestimmten Geräts vom Server ab und entschlüsseln Sie diese lokal mit dem Master Key." Foreground="Gray" TextWrapping="Wrap"/>
+                                <TextBlock Text="Rufen Sie die verschlüsselten Logs eines bestimmten Geräts vom Server ab und entschlüsseln Sie diese lokal mit dem Master Key." Foreground="#6B7280" TextWrapping="Wrap"/>
                                 
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="Machine Name:" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                                    <TextBox x:Name="DeviceLogMachineNameTextBox" Width="200" Watermark="z.B. DESKTOP-123"/>
-                                    <Button Content="Logs abrufen &amp; entschlüsseln" Click="ExtractLogsButton_Click" Background="#3B82F6" Foreground="White"/>
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
+                                    <TextBox x:Name="DeviceLogMachineNameTextBox" Width="300" Watermark="Machine Name (z.B. DESKTOP-123)"/>
+                                    <Button Content="Logs abrufen &amp; entschlüsseln" Click="ExtractLogsButton_Click" Classes="primary" Padding="20,8"/>
                                 </StackPanel>
 
-                                <TextBox x:Name="ExtractedLogsTextBox" IsReadOnly="True" Height="200" AcceptsReturn="True" TextWrapping="Wrap" Background="#1E293B" Foreground="#10B981" FontFamily="Consolas, monospace" Watermark="Extrahierte Logs werden hier angezeigt..."/>
+                                <TextBox x:Name="ExtractedLogsTextBox" IsReadOnly="True" Height="300" AcceptsReturn="True" TextWrapping="Wrap" Background="#0F172A" Foreground="#10B981" FontFamily="Consolas" Padding="15" Margin="0,10,0,0" Watermark="Extrahierte Logs werden hier nach dem Abruf angezeigt..."/>
                             </StackPanel>
-                        </Grid>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

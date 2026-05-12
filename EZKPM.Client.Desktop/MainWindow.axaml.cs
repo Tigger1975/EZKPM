@@ -797,13 +797,13 @@ public partial class MainWindow : Window
             asset.FullPath = pathParts.Count > 0 ? string.Join(" / ", pathParts) : "/ (Wurzelverzeichnis)";
         }
     }
+    private void AssetsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        UpdateRestoreButtonVisibility();
+    }
 
     private void AssetTreeView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (AssetTreeView.SelectedItem is VaultTreeNode node)
-        {
-            MainTabControl.SelectedIndex = 0;
-        }
         UpdateDataGrid();
     }
 
@@ -818,8 +818,7 @@ public partial class MainWindow : Window
         }
 
         string searchText = SearchTextBox?.Text?.ToLower() ?? "";
-        string selectedType = (TypeFilterComboBox?.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() ?? EZKPM.Client.Desktop.Resources.AppStrings.Main_FilterAll;
-
+        string selectedType = _currentTypeFilter ?? "All";
         bool isSearching = !string.IsNullOrWhiteSpace(searchText);
 
         var filtered = _decryptedAssets.AsEnumerable();
@@ -837,18 +836,21 @@ public partial class MainWindow : Window
                 filtered = filtered.Where(a => a.ParentFolderId == parentId);
             }
 
-            if (selectedType == EZKPM.Client.Desktop.Resources.AppStrings.Main_FilterExpired)
+            if (selectedType == "Expired")
             {
                 filtered = filtered.Where(a => a.IsExpired);
             }
-            else if (selectedType != EZKPM.Client.Desktop.Resources.AppStrings.Main_FilterAll)
+            else if (selectedType == "Trash")
+            {
+                // Trashed items
+            }
+            else if (selectedType != "All")
             {
                 filtered = filtered.Where(a => a.AssetType == selectedType);
             }
             else if (!isSearching)
             {
-                // In "Alle Typen" (ohne Suche) zeigen wir standardmäßig Assets UND Ordner des aktuellen Pfads.
-                // Wenn wir allerdings NICHT im Root sind, wollen wir die Verzeichnisse sehen.
+                // Show assets for the current folder
             }
         }
 
@@ -870,6 +872,11 @@ public partial class MainWindow : Window
                              .ToList();
 
         AssetsDataGrid.ItemsSource = sorted;
+
+        if (CurrentFolderItemCount != null)
+        {
+            CurrentFolderItemCount.Text = $"{sorted.Count} item{(sorted.Count != 1 ? "s" : "")}";
+        }
     }
 
     private void SearchTextBox_TextChanged(object sender, Avalonia.Controls.TextChangedEventArgs e)
@@ -877,15 +884,12 @@ public partial class MainWindow : Window
         UpdateDataGrid();
     }
 
-    private void TypeFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void UpdateRestoreButtonVisibility()
     {
-        if (!this.IsInitialized) return;
-        UpdateDataGrid();
-        
-        if (RestoreSelectedAssetsButton != null && TypeFilterComboBox != null)
+        bool hasSelection = AssetsDataGrid?.SelectedItems?.Count > 0;
+        if (MenuRestoreAssets != null)
         {
-            string selectedType = (TypeFilterComboBox.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() ?? EZKPM.Client.Desktop.Resources.AppStrings.Main_FilterAll;
-            RestoreSelectedAssetsButton.IsVisible = selectedType == EZKPM.Client.Desktop.Resources.AppStrings.Main_FilterTrash;
+            MenuRestoreAssets.IsVisible = (_currentTypeFilter == "Trash" && hasSelection);
         }
     }
 
@@ -895,7 +899,7 @@ public partial class MainWindow : Window
         if (!await EnsureUnlockedAndLoadedAsync("Asset löschen")) return;
 
         var items = AssetsDataGrid.SelectedItems.Cast<VaultAssetPayload>().ToList();
-        var isPapierkorb = (TypeFilterComboBox.SelectedItem as Avalonia.Controls.ComboBoxItem)?.Content?.ToString() == EZKPM.Client.Desktop.Resources.AppStrings.Main_FilterTrash;
+        var isPapierkorb = _currentTypeFilter == "Trash";
         string msg = isPapierkorb 
             ? $"Möchten Sie {items.Count} Asset(s) wirklich unwiderruflich löschen?" 
             : $"Möchten Sie {items.Count} Asset(s) wirklich in den Papierkorb verschieben?";
@@ -1396,6 +1400,17 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             Program.LogDebug($"Failed to open help: {ex.Message}");
+        }
+    }
+
+    private string _currentTypeFilter = "All";
+
+    private void MenuFilter_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Avalonia.Controls.MenuItem menuItem && menuItem.Tag is string tag)
+        {
+            _currentTypeFilter = tag;
+            UpdateDataGrid();
         }
     }
 
