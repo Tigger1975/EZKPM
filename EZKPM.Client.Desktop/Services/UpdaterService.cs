@@ -104,7 +104,7 @@ namespace EZKPM.Client.Desktop.Services
             return false;
         }
 
-        public async Task CheckForUpdatesAsync(CancellationToken ct)
+        public async Task CheckForUpdatesAsync(CancellationToken ct, bool forceShow = false)
         {
             var currentVersion = (System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(System.Reflection.Assembly.GetExecutingAssembly())?.InformationalVersion ?? "0.0.0.0").Split('+')[0];
             
@@ -122,13 +122,17 @@ namespace EZKPM.Client.Desktop.Services
                 
                 Dispatcher.UIThread.Post(() =>
                 {
-                    PromptForUpdate(updateInfo);
+                    PromptForUpdate(updateInfo, forceShow);
                 });
             }
         }
 
-        private void PromptForUpdate(UpdateCheckResponseDto updateInfo)
+        private static bool _isUpdatePromptShown = false;
+
+        private void PromptForUpdate(UpdateCheckResponseDto updateInfo, bool forceShow = false)
         {
+            if (_isUpdatePromptShown && !forceShow) return;
+            _isUpdatePromptShown = true;
             var currentDir = AppContext.BaseDirectory;
             bool isMachineWide = currentDir.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), StringComparison.OrdinalIgnoreCase);
             bool isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
@@ -152,6 +156,11 @@ namespace EZKPM.Client.Desktop.Services
                 if (result)
                 {
                     await PerformUpdateAsync(updateInfo.DownloadUrl);
+                }
+                else
+                {
+                    _isUpdatePromptShown = false; // Allow showing again later if needed, or we keep it false so it never annoys them again until restart?
+                    // Actually, if we don't reset it, it won't prompt again during this session, which is usually exactly what the user wants!
                 }
             });
         }

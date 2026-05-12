@@ -1072,7 +1072,7 @@ public partial class MainWindow : Window
         var updaterLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<Services.UpdaterService>.Instance;
         var updaterService = new Services.UpdaterService(updaterLogger);
         ShowStatus("Prüfe auf Updates...");
-        await updaterService.CheckForUpdatesAsync(System.Threading.CancellationToken.None);
+        await updaterService.CheckForUpdatesAsync(System.Threading.CancellationToken.None, true);
     }
 
     private void ShowVersion_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
