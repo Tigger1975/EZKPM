@@ -93,8 +93,8 @@ public partial class AssetEditorWindow : Window
 
     public event EventHandler? AssetSaved;
 
-    public AssetEditorWindow() : this(null, null, null) { }
-    public AssetEditorWindow(VaultAssetPayload? payload = null, List<VaultAssetPayload>? allAssets = null, VaultCryptoService? cryptoService = null)
+    public AssetEditorWindow() : this(null, null, null, null) { }
+    public AssetEditorWindow(VaultAssetPayload? payload = null, List<VaultAssetPayload>? allAssets = null, VaultCryptoService? cryptoService = null, VaultApiClient? apiClient = null)
     {
         InitializeComponent();
         _allAssets = allAssets ?? new List<VaultAssetPayload>();
@@ -103,9 +103,17 @@ public partial class AssetEditorWindow : Window
         _totpTimer.Tick += TotpTimer_Tick;
         _totpTimer.Start();
 
-        var handler = new HttpClientHandler {  };
-        var httpClient = new HttpClient(handler) { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) };
-        _apiClient = new VaultApiClient(httpClient);
+        if (apiClient != null)
+        {
+            _apiClient = apiClient;
+        }
+        else
+        {
+            var handler = new HttpClientHandler {  };
+            var httpClient = new HttpClient(handler) { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) };
+            _apiClient = new VaultApiClient(httpClient);
+        }
+        
         _cryptoService = cryptoService ?? new VaultCryptoService(new HybridPqcKeyWrapper());
 
         AttachmentsListBox.ItemsSource = _attachments;
