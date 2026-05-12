@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using EZKPM.Server.PDP.Data;
 
 namespace EZKPM.Server.PDP.Controllers
@@ -70,6 +72,27 @@ namespace EZKPM.Server.PDP.Controllers
             }
             await _db.SaveChangesAsync();
             return Ok();
+        }
+
+        [HttpGet("{machineName}")]
+        public async Task<IActionResult> GetLogsForMachine(string machineName)
+        {
+            var logs = await _db.ClientLogs
+                .Where(l => l.MachineName.ToLower() == machineName.ToLower())
+                .OrderByDescending(l => l.Timestamp)
+                .Take(100)
+                .ToListAsync();
+
+            var dtos = logs.Select(l => new ClientLogDto
+            {
+                MachineName = l.MachineName,
+                Username = l.Username,
+                Level = l.Level,
+                Message = l.Message,
+                Timestamp = l.Timestamp
+            });
+
+            return Ok(dtos);
         }
     }
 }

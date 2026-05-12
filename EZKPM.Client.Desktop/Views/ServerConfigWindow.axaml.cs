@@ -113,6 +113,13 @@ namespace EZKPM.Client.Desktop.Views
 
             try
             {
+                if (statusText != null)
+                {
+                    statusText.Text = "Prüfe auf Updates...";
+                    statusText.Foreground = Avalonia.Media.Brushes.Gray;
+                    statusText.IsVisible = true;
+                }
+
                 var urlTextBox = this.FindControl<TextBox>("UrlTextBox");
                 var baseUrl = ConfigurationManager.CurrentConfig.ServerUrl;
                 if (urlTextBox != null && !string.IsNullOrWhiteSpace(urlTextBox.Text))
@@ -146,8 +153,12 @@ namespace EZKPM.Client.Desktop.Views
                     }
                     else
                     {
-                        var dialog = new ConfirmationDialog("Sie verwenden bereits die aktuellste Version.");
-                        await dialog.ShowDialogAsync(this);
+                        if (statusText != null)
+                        {
+                            statusText.Text = "Sie verwenden bereits die aktuellste Version.";
+                            statusText.Foreground = Avalonia.Media.Brushes.Green;
+                            statusText.IsVisible = true;
+                        }
                     }
                 }
                 else

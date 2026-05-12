@@ -551,6 +551,15 @@ public partial class MainWindow : Window
 
     private void BuildTree()
     {
+        Guid? selectedId = null;
+        Guid? parentOfSelectedId = null;
+
+        if (AssetTreeView?.SelectedItem is VaultTreeNode sn)
+        {
+            selectedId = sn.Payload.TransientAssetId;
+            parentOfSelectedId = sn.Payload.ParentFolderId;
+        }
+
         // Save expanded state before clearing
         _expandedFolderIds.Clear();
         void Traverse(IEnumerable<VaultTreeNode> nodes)
@@ -593,6 +602,19 @@ public partial class MainWindow : Window
         foreach (var node in sortedRoot)
         {
             _treeNodes.Add(node);
+        }
+        
+        // Restore selected node
+        if (selectedId.HasValue)
+        {
+            if (nodesMap.TryGetValue(selectedId.Value, out var restoredNode))
+            {
+                AssetTreeView.SelectedItem = restoredNode;
+            }
+            else if (parentOfSelectedId.HasValue && nodesMap.TryGetValue(parentOfSelectedId.Value, out var parentNode))
+            {
+                AssetTreeView.SelectedItem = parentNode;
+            }
         }
         
         // Update DataGrid with root assets initially
@@ -683,7 +705,15 @@ public partial class MainWindow : Window
             );
         }
 
-        AssetsDataGrid.ItemsSource = filtered.ToList();
+        // Hide EnvironmentLogKey from the main grid
+        filtered = filtered.Where(a => a.Title != "EnvironmentLogKey");
+
+        // Sort folders first, then alphabetically
+        var sorted = filtered.OrderByDescending(a => a.AssetType == "Folder")
+                             .ThenBy(a => a.Title)
+                             .ToList();
+
+        AssetsDataGrid.ItemsSource = sorted;
     }
 
     private void SearchTextBox_TextChanged(object sender, Avalonia.Controls.TextChangedEventArgs e)
@@ -825,7 +855,7 @@ public partial class MainWindow : Window
     {
         if (!Services.SessionManager.EnsureAuthenticated("Admin Panel öffnen")) return;
 
-        var adminDashboard = new Views.AdminDashboardWindow(_apiClient);
+        var adminDashboard = new Views.AdminDashboardWindow(_apiClient, _decryptedAssets.ToList());
         await adminDashboard.ShowDialog(this);
         
         // Refresh admin button status after closing (in case bootstrap ended or rights changed)

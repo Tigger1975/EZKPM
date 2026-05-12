@@ -203,6 +203,32 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
+            <TabItem Header="System Keys &amp; Logs">
+                <ScrollViewer>
+                    <StackPanel Margin="10" Spacing="20">
+                        <Grid RowDefinitions="Auto, Auto">
+                            <StackPanel Grid.Row="0" Spacing="10" Margin="0,0,0,20">
+                                <TextBlock Text="Global Environment Log Key" FontWeight="Bold" FontSize="18"/>
+                                <TextBlock Text="Mit diesem Private Key werden die zentralen Geräte-Logs entschlüsselt. Teilen Sie diesen Schlüssel NICHT außerhalb der IT!" Foreground="#EF4444" TextWrapping="Wrap"/>
+                                <TextBox x:Name="EnvironmentLogKeyTextBox" IsReadOnly="True" Height="60" TextWrapping="Wrap" Background="#F1F5F9" Watermark="Schlüssel nicht verfügbar (fehlende Berechtigung oder noch nicht generiert)"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Spacing="10">
+                                <TextBlock Text="Geräte-Logs extrahieren" FontWeight="Bold" FontSize="18"/>
+                                <TextBlock Text="Rufen Sie die verschlüsselten Logs eines bestimmten Geräts vom Server ab und entschlüsseln Sie diese lokal mit dem Master Key." Foreground="Gray" TextWrapping="Wrap"/>
+                                
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Machine Name:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                    <TextBox x:Name="DeviceLogMachineNameTextBox" Width="200" Watermark="z.B. DESKTOP-123"/>
+                                    <Button Content="Logs abrufen &amp; entschlüsseln" Click="ExtractLogsButton_Click" Background="#3B82F6" Foreground="White"/>
+                                </StackPanel>
+
+                                <TextBox x:Name="ExtractedLogsTextBox" IsReadOnly="True" Height="200" AcceptsReturn="True" TextWrapping="Wrap" Background="#1E293B" Foreground="#10B981" FontFamily="Consolas, monospace" Watermark="Extrahierte Logs werden hier angezeigt..."/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>

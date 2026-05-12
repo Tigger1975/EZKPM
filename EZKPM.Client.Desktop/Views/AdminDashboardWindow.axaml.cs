@@ -3,6 +3,7 @@ using Avalonia.Interactivity;
 using EZKPM.Client.Core.Services;
 using EZKPM.Shared.Contracts;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -18,11 +19,15 @@ public partial class AdminDashboardWindow : Window
         InitializeComponent();
     }
 
-    public AdminDashboardWindow(VaultApiClient apiClient) : this()
+    private List<EZKPM.Shared.Contracts.VaultAssetPayload> _decryptedAssets;
+
+    public AdminDashboardWindow(VaultApiClient apiClient, List<EZKPM.Shared.Contracts.VaultAssetPayload> decryptedAssets = null) : this()
     {
         _apiClient = apiClient;
+        _decryptedAssets = decryptedAssets;
         LoadAdminStatus();
         _ = LoadAlertsAsync();
+        LoadEnvironmentLogKey();
 
         var config = EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig;
 
@@ -53,6 +58,112 @@ public partial class AdminDashboardWindow : Window
             }
         }
         catch { }
+    }
+
+    private void LoadEnvironmentLogKey()
+    {
+        if (_decryptedAssets == null) return;
+        var logKeyAsset = _decryptedAssets.FirstOrDefault(a => a.Title == "EnvironmentLogKey");
+        var textBox = this.FindControl<TextBox>("EnvironmentLogKeyTextBox");
+        if (textBox != null && logKeyAsset != null && !string.IsNullOrEmpty(logKeyAsset.Password))
+        {
+            textBox.Text = logKeyAsset.Password;
+        }
+    }
+
+    private async void ExtractLogsButton_Click(object sender, RoutedEventArgs e)
+    {
+        var machineBox = this.FindControl<TextBox>("DeviceLogMachineNameTextBox");
+        var outputBox = this.FindControl<TextBox>("ExtractedLogsTextBox");
+        var keyBox = this.FindControl<TextBox>("EnvironmentLogKeyTextBox");
+
+        if (machineBox == null || outputBox == null || keyBox == null) return;
+
+        string machineName = machineBox.Text?.Trim();
+        string privateKeyBase64 = keyBox.Text;
+
+        if (string.IsNullOrEmpty(machineName))
+        {
+            outputBox.Text = "Bitte geben Sie einen Machine Name ein.";
+            return;
+        }
+
+        if (string.IsNullOrEmpty(privateKeyBase64))
+        {
+            outputBox.Text = "EnvironmentLogKey nicht verfügbar. Entschlüsselung nicht möglich.";
+            return;
+        }
+
+        outputBox.Text = $"Lade Logs für {machineName}...\n";
+        
+        try
+        {
+            var response = await _apiClient.HttpClient.GetAsync($"/api/v1/log/{Uri.EscapeDataString(machineName)}");
+            if (response.IsSuccessStatusCode)
+            {
+                var logs = await response.Content.ReadFromJsonAsync<List<EZKPM.Client.Desktop.Services.ClientLogDto>>();
+                if (logs == null || logs.Count == 0)
+                {
+                    outputBox.Text += "Keine Logs gefunden.\n";
+                    return;
+                }
+
+                using var rsa = System.Security.Cryptography.RSA.Create();
+                rsa.ImportPkcs8PrivateKey(Convert.FromBase64String(privateKeyBase64), out _);
+
+                var sb = new System.Text.StringBuilder();
+                foreach (var log in logs)
+                {
+                    sb.Append($"[{log.Timestamp:yyyy-MM-dd HH:mm:ss}] [{log.Level}] {log.Username}: ");
+                    
+                    if (log.Message != null && log.Message.StartsWith("ENV_ENC:"))
+                    {
+                        try
+                        {
+                            var parts = log.Message.Substring(8).Split(':');
+                            if (parts.Length == 4)
+                            {
+                                byte[] encryptedAesKey = Convert.FromBase64String(parts[0]);
+                                byte[] nonce = Convert.FromBase64String(parts[1]);
+                                byte[] cipherText = Convert.FromBase64String(parts[2]);
+                                byte[] tag = Convert.FromBase64String(parts[3]);
+
+                                byte[] aesKey = rsa.Decrypt(encryptedAesKey, System.Security.Cryptography.RSAEncryptionPadding.OaepSHA256);
+                                byte[] plainText = new byte[cipherText.Length];
+
+                                using (var aesGcm = new System.Security.Cryptography.AesGcm(aesKey, 16))
+                                {
+                                    aesGcm.Decrypt(nonce, cipherText, tag, plainText);
+                                }
+                                
+                                sb.AppendLine(System.Text.Encoding.UTF8.GetString(plainText));
+                            }
+                            else
+                            {
+                                sb.AppendLine("[Entschlüsselungsfehler: Ungültiges Format]");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            sb.AppendLine($"[Entschlüsselungsfehler: {ex.Message}]");
+                        }
+                    }
+                    else
+                    {
+                        sb.AppendLine(log.Message ?? "");
+                    }
+                }
+                outputBox.Text = sb.ToString();
+            }
+            else
+            {
+                outputBox.Text += $"Server meldet Fehler: {response.StatusCode}\n";
+            }
+        }
+        catch (Exception ex)
+        {
+            outputBox.Text += $"Ein Fehler ist aufgetreten: {ex.Message}";
+        }
     }
 
     private async void SearchAdminButton_Click(object sender, RoutedEventArgs e)

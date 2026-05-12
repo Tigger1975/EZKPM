@@ -862,7 +862,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Ã¢Å¡Â Ã¯Â¸Â Payment Authorization (FA 22) ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠️-Payment Authorization ähnelt.
         /// </summary>
         public static string AuditDialog_Header {
             get {
@@ -1033,7 +1033,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Ã¢Å¡Â Ã¯Â¸Â Local Application Access ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠️ Local Application Access ähnelt.
         /// </summary>
         public static string LocalApp_Header {
             get {
@@ -1051,7 +1051,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Ã°Å¸â€”â€˜Ã¯Â¸Â Clean Up ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die 🗑️ Clean Up ähnelt.
         /// </summary>
         public static string Main_BtnClean {
             get {
@@ -1069,7 +1069,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Ã°Å¸â€”â€˜Ã¯Â¸Â Delete ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die 🗑️ Delete ähnelt.
         /// </summary>
         public static string Main_BtnDelete {
             get {
@@ -1078,7 +1078,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Ã°Å¸â€œÂ¥ Import ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die 📥 Import ähnelt.
         /// </summary>
         public static string Main_BtnImport {
             get {
@@ -1105,7 +1105,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Ã°Å¸â€â€ž Restore ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die 🔄 Restore ähnelt.
         /// </summary>
         public static string Main_BtnRestore {
             get {
@@ -1231,7 +1231,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Ã°Å¸â€”â€šÃ¯Â¸Â Assets ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die 🗂️ Assets ähnelt.
         /// </summary>
         public static string Main_TabAssets {
             get {
@@ -1393,7 +1393,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Ã¢Å“â€¦ Approve ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die ✅ Approve ähnelt.
         /// </summary>
         public static string SsoDialog_Approve {
             get {
@@ -1402,7 +1402,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Ã¢ÂÅ’ Deny ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die ❌ Deny ähnelt.
         /// </summary>
         public static string SsoDialog_Deny {
             get {
@@ -1429,7 +1429,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Ã°Å¸Å¡Â¨ Web-SSO Login Attempt Detected! ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die 🚨 Web-SSO Login Attempt Detected! ähnelt.
         /// </summary>
         public static string SsoDialog_Header {
             get {
@@ -1591,7 +1591,7 @@ namespace EZKPM.Client.Desktop.Resources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Ã¢Å¡Â Ã¯Â¸Â DPAPI Error: Windows password may have been reset. ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die ⚠️ DPAPI Error: Windows password may have been reset. ähnelt.
         /// </summary>
         public static string Startup_RecoveryError {
             get {

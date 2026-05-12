@@ -54,6 +54,21 @@ namespace EZKPM.Client.Desktop.Services
             }
         }
 
+        private static bool HasAdminRights()
+        {
+            var identity = WindowsIdentity.GetCurrent();
+            if (new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator)) return true;
+            
+            if (identity.Groups != null)
+            {
+                foreach (var group in identity.Groups)
+                {
+                    if (group.Value == "S-1-5-32-544") return true;
+                }
+            }
+            return false;
+        }
+
         public static async Task<bool> CheckAndPromptForUpdateAtStartupAsync(Avalonia.Controls.Window parentWindow)
         {
             var serverUrl = ConfigurationManager.CurrentConfig.ServerUrl;
@@ -80,11 +95,11 @@ namespace EZKPM.Client.Desktop.Services
                 if (updateInfo != null && updateInfo.UpdateAvailable)
                 {
                     bool isMachineWide = AppContext.BaseDirectory.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), StringComparison.OrdinalIgnoreCase);
-                    bool isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+                    bool hasAdmin = HasAdminRights();
 
-                    if (isMachineWide && !isAdmin)
+                    if (isMachineWide && !hasAdmin)
                     {
-                        var msgBox = new ConfirmationDialog($"Ein kritisches Update (v{updateInfo.LatestVersion}) ist verfügbar.\n\nDa EZKPM zentral installiert wurde, kontaktieren Sie bitte Ihre IT zur Softwareverteilung.");
+                        var msgBox = new ConfirmationDialog($"Ein kritisches Update (v{updateInfo.LatestVersion}) ist verfügbar.\n\nDa EZKPM unter Programme installiert ist, fehlen Ihnen die Administrator-Rechte für ein Auto-Update. Bitte kontaktieren Sie Ihre IT.");
                         await msgBox.ShowDialogAsync(parentWindow);
                         return false; 
                     }
@@ -135,15 +150,15 @@ namespace EZKPM.Client.Desktop.Services
             _isUpdatePromptShown = true;
             var currentDir = AppContext.BaseDirectory;
             bool isMachineWide = currentDir.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), StringComparison.OrdinalIgnoreCase);
-            bool isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+            bool hasAdmin = HasAdminRights();
 
             var app = (App)Avalonia.Application.Current;
             var mainWindow = (Avalonia.Controls.Window)((Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)app.ApplicationLifetime).MainWindow;
 
             // Scneario B & C: Machine Wide without admin rights
-            if (isMachineWide && !isAdmin)
+            if (isMachineWide && !hasAdmin)
             {
-                var msgBox = new ConfirmationDialog($"Ein kritisches Update (v{updateInfo.LatestVersion}) ist verfügbar.\n\nDa EZKPM zentral installiert wurde, kontaktieren Sie bitte Ihre IT zur Softwareverteilung.");
+                var msgBox = new ConfirmationDialog($"Ein kritisches Update (v{updateInfo.LatestVersion}) ist verfügbar.\n\nDa EZKPM unter Programme installiert ist, fehlen Ihnen die Administrator-Rechte für ein Auto-Update. Bitte kontaktieren Sie Ihre IT.");
                 _ = msgBox.ShowDialogAsync(mainWindow);
                 return;
             }
@@ -210,6 +225,13 @@ Start-Process -FilePath '{currentExe}'
                     UseShellExecute = true,
                     CreateNoWindow = true
                 };
+                
+                bool isMachineWide = AppContext.BaseDirectory.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), StringComparison.OrdinalIgnoreCase);
+                if (isMachineWide)
+                {
+                    psInfo.Verb = "runas";
+                }
+                
                 Process.Start(psInfo);
 
                 // Exit current process so files can be overwritten

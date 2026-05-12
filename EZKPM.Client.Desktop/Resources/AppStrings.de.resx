@@ -121,7 +121,7 @@
     <value>EZK-PM-Sicherheitsaudit</value>
   </data>
   <data name="AuditDialog_Header" xml:space="preserve">
-    <value>⚠️ Zahlungsautorisierung (FA 22)</value>
+    <value>⚠️ Zahlungsautorisierung</value>
   </data>
   <data name="AuditDialog_Description" xml:space="preserve">
     <value>Der Browser fordert Zahlungsanmeldeinformationen an. Die Unternehmensrichtlinien erfordern ein manipulationssicheres Prüfprotokoll des Betrags und der Referenz, bevor das automatische Ausfüllen autorisiert wird.</value>
@@ -534,7 +534,7 @@ Bitte schreiben Sie es auf! Einloggen in 8 Sekunden...</value>
     <value>Symbole (!@#$)</value>
   </data>
   <data name="AssetEditor_PhNextSel" xml:space="preserve">
-    <value>Schaltflächenauswahl „Weiter“.</value>
+    <value>Schaltflächenauswahl (Weiter).</value>
   </data>
   <data name="AssetEditor_TipAddFile" xml:space="preserve">
     <value>Datei(en) hinzufügen...</value>
@@ -561,7 +561,7 @@ Bitte schreiben Sie es auf! Einloggen in 8 Sekunden...</value>
     <value>user@example.com</value>
   </data>
   <data name="AssetEditor_PhSubSel" xml:space="preserve">
-    <value>Schaltflächenauswahl „Senden“.</value>
+    <value>Schaltflächenauswahl (Senden).</value>
   </data>
   <data name="AssetEditor_AclDeny" xml:space="preserve">
     <value>Ablehnen (-1)</value>

@@ -63,7 +63,7 @@
     <value>EZK-PM Security Audit</value>
   </data>
   <data name="AuditDialog_Header" xml:space="preserve">
-    <value>Ã¢Å¡Â Ã¯Â¸Â Payment Authorization (FA 22)</value>
+    <value>⚠️-Payment Authorization</value>
   </data>
   <data name="AuditDialog_Description" xml:space="preserve">
     <value>The browser is requesting payment credentials. Enterprise policy requires a tamper-proof audit log of the amount and reference before autofill is authorized.</value>
@@ -84,7 +84,7 @@
     <value>Ironclad Vault - SSO Login Request</value>
   </data>
   <data name="SsoDialog_Header" xml:space="preserve">
-    <value>Ã°Å¸Å¡Â¨ Web-SSO Login Attempt Detected!</value>
+    <value>🚨 Web-SSO Login Attempt Detected!</value>
   </data>
   <data name="SsoDialog_Desc1" xml:space="preserve">
     <value>An application is requesting to login via your Ironclad Vault account.</value>
@@ -99,16 +99,16 @@
     <value>Do you want to approve this login?</value>
   </data>
   <data name="SsoDialog_Deny" xml:space="preserve">
-    <value>Ã¢ÂÅ’ Deny</value>
+    <value>❌ Deny</value>
   </data>
   <data name="SsoDialog_Approve" xml:space="preserve">
-    <value>Ã¢Å“â€¦ Approve</value>
+    <value>✅ Approve</value>
   </data>
   <data name="LocalApp_Title" xml:space="preserve">
     <value>Local App Authorization</value>
   </data>
   <data name="LocalApp_Header" xml:space="preserve">
-    <value>Ã¢Å¡Â Ã¯Â¸Â Local Application Access</value>
+    <value>⚠️ Local Application Access</value>
   </data>
   <data name="LocalApp_AllowOnce" xml:space="preserve">
     <value>Allow Once</value>
@@ -180,7 +180,7 @@
     <value>Migrate password &amp; Unlock</value>
   </data>
   <data name="Startup_RecoveryError" xml:space="preserve">
-    <value>Ã¢Å¡Â Ã¯Â¸Â DPAPI Error: Windows password may have been reset.</value>
+    <value>⚠️ DPAPI Error: Windows password may have been reset.</value>
   </data>
   <data name="Startup_BtnRecovery" xml:space="preserve">
     <value>Request 4-Eyes Recovery</value>
@@ -291,7 +291,7 @@
     <value>Settings &amp; Change Server</value>
   </data>
   <data name="Main_TabAssets" xml:space="preserve">
-    <value>Ã°Å¸â€”â€šÃ¯Â¸Â Assets</value>
+    <value>🗂️ Assets</value>
   </data>
   <data name="Main_SearchWatermark" xml:space="preserve">
     <value>Search...</value>
@@ -306,19 +306,19 @@
     <value>Recycle Bin</value>
   </data>
   <data name="Main_BtnImport" xml:space="preserve">
-    <value>Ã°Å¸â€œÂ¥ Import</value>
+    <value>📥 Import</value>
   </data>
   <data name="Main_BtnClean" xml:space="preserve">
-    <value>Ã°Å¸â€”â€˜Ã¯Â¸Â Clean Up</value>
+    <value>🗑️ Clean Up</value>
   </data>
   <data name="Main_BtnCleanTooltip" xml:space="preserve">
     <value>Permanently deletes all orphaned assets</value>
   </data>
   <data name="Main_BtnRestore" xml:space="preserve">
-    <value>Ã°Å¸â€â€ž Restore</value>
+    <value>🔄 Restore</value>
   </data>
   <data name="Main_BtnDelete" xml:space="preserve">
-    <value>Ã°Å¸â€”â€˜Ã¯Â¸Â Delete</value>
+    <value>🗑️ Delete</value>
   </data>
   <data name="Main_ColType" xml:space="preserve">
     <value>Type</value>
