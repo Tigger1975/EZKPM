@@ -20,14 +20,20 @@ namespace EZKPM.Client.Desktop
         private static readonly string LockFileDir = Path.GetTempPath();
         private static FileSystemWatcher _killSwitchWatcher;
 
+        public static bool IsLocalLoggingEnabled = false;
+        public static bool IsAutoStart = false;
+
         public static void LogDebug(string message, string level = "INFO")
         {
             try 
             { 
-                Directory.CreateDirectory(Path.GetDirectoryName(LogFilePath));
-                File.AppendAllText(LogFilePath, $"[{DateTime.UtcNow:O}] [{level}] {message}\n"); 
+                if (IsLocalLoggingEnabled)
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(LogFilePath));
+                    File.AppendAllText(LogFilePath, $"[{DateTime.UtcNow:O}] [{level}] {message}\n"); 
+                }
                 
-                // Enqueue to server buffer
+                // Enqueue to server buffer (always)
                 Services.ClientLogService.EnqueueLog(level, message);
             } 
             catch { }
@@ -37,14 +43,15 @@ namespace EZKPM.Client.Desktop
         {
             try 
             { 
-                var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EZKPM");
-                Directory.CreateDirectory(logDir);
-                File.AppendAllText(Path.Combine(logDir, "ezkpm_nativehost.log"), $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}\n"); 
+                if (IsLocalLoggingEnabled)
+                {
+                    var logDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EZKPM");
+                    Directory.CreateDirectory(logDir);
+                    File.AppendAllText(Path.Combine(logDir, "ezkpm_nativehost.log"), $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}\n"); 
+                }
             } 
             catch { }
         }
-
-        public static bool IsAutoStart = false;
 
         [STAThread]
         public static void Main(string[] args)
@@ -52,11 +59,22 @@ namespace EZKPM.Client.Desktop
             string bootstrapLogPath = Path.Combine(Path.GetTempPath(), "ezkpm_bootstrap.log");
             try 
             {
-                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] --- APP STARTING ---\n");
+                if (IsLocalLoggingEnabled)
+                {
+                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] --- APP STARTING ---\n");
+                }
                 
                 InitializeKillSwitch();
-                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] KillSwitch initialized.\n");
+                if (IsLocalLoggingEnabled)
+                {
+                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] KillSwitch initialized.\n");
+                }
                 
+                if (args.Any(a => a.Equals("--verbose", StringComparison.OrdinalIgnoreCase) || a.Equals("--local-logs", StringComparison.OrdinalIgnoreCase)))
+                {
+                    IsLocalLoggingEnabled = true;
+                }
+
                 Services.ClientLogService.Initialize();
 
                 LogDebug($"App started. Arguments: {string.Join(" ", args)}", "INFO");
@@ -65,45 +83,72 @@ namespace EZKPM.Client.Desktop
                 {
                     IsAutoStart = true;
                     RegisterSystemIntegration();
-                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] System integration (Autostart, URI Scheme) registered.\n");
+                    if (IsLocalLoggingEnabled)
+                    {
+                        File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] System integration (Autostart, URI Scheme) registered.\n");
+                    }
                     LogDebug("Running in autostart mode.");
                 }
 
                 if (args.Any(a => a.StartsWith("chrome-extension://") || a.StartsWith("ms-browser-extension://")))
                 {
                     LogNativeHost("EZKPM Native Messaging Host proxy started.");
-                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Native Messaging Proxy started.\n");
+                    if (IsLocalLoggingEnabled)
+                    {
+                        File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Native Messaging Proxy started.\n");
+                    }
                     try
                     {
                         Task.Run(() => RunNativeHostProxyAsync()).Wait();
                     }
                     catch (Exception ex)
                     {
-                        File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] FATAL NATIVE HOST ERROR: {ex}\n");
+                        if (IsLocalLoggingEnabled)
+                        {
+                            File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] FATAL NATIVE HOST ERROR: {ex}\n");
+                        }
                         LogDebug($"FATAL STARTUP ERROR: {ex}");
                     }
                     return;
                 }
 
-                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Normal desktop startup sequence starting.\n");
+                if (IsLocalLoggingEnabled)
+                {
+                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Normal desktop startup sequence starting.\n");
+                }
                 LogDebug("Normal desktop startup...");
                 
-                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Registering Native Messaging Host...\n");
+                if (IsLocalLoggingEnabled)
+                {
+                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Registering Native Messaging Host...\n");
+                }
                 RegisterNativeMessagingHost();
-                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Native Messaging Host registered.\n");
+                if (IsLocalLoggingEnabled)
+                {
+                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Native Messaging Host registered.\n");
                 
-                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Registering System Integrations (URI Scheme)...\n");
+                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Registering System Integrations (URI Scheme)...\n");
+                }
                 RegisterSystemIntegration();
 
-                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Building Avalonia App...\n");
+                if (IsLocalLoggingEnabled)
+                {
+                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Building Avalonia App...\n");
+                }
                 BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
-                File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Avalonia App Exited gracefully.\n");
+                if (IsLocalLoggingEnabled)
+                {
+                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] Avalonia App Exited gracefully.\n");
+                }
             }
             catch (Exception ex)
             {
                 try 
                 {
-                    File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] FATAL BOOTSTRAP ERROR: {ex}\n");
+                    if (IsLocalLoggingEnabled)
+                    {
+                        File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] FATAL BOOTSTRAP ERROR: {ex}\n");
+                    }
                 } 
                 catch { }
                 throw;
