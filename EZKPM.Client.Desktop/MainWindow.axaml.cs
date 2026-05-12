@@ -38,6 +38,7 @@ public partial class MainWindow : Window
     private readonly BrowserBridgeServer _bridgeServer;
     private readonly LocalCredentialsBroker _localBroker;
     private readonly SsoSyncClient _ssoSyncClient;
+    private readonly EZKPM.Client.Desktop.Services.LocalAdminApiHost _adminApiHost;
     
     public MainWindow(VaultCryptoService cryptoService, Views.StartupWindow? splash = null)
     {
@@ -47,6 +48,7 @@ public partial class MainWindow : Window
         var httpClient = new HttpClient(handler) { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) };
         _apiClient = new VaultApiClient(httpClient);
         _cryptoService = cryptoService;
+        _adminApiHost = new EZKPM.Client.Desktop.Services.LocalAdminApiHost();
 
         AssetTreeView.ItemsSource = _treeNodes;
 
@@ -535,6 +537,12 @@ public partial class MainWindow : Window
 
             // Enforce group membership changes
             await EnforceGroupMembershipsAsync();
+
+            var config = EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig;
+            if (!string.IsNullOrEmpty(config.LocalApiAllowedSid))
+            {
+                _ = _adminApiHost.StartAsync(config.LocalApiPort, config.LocalApiAllowedSid);
+            }
 
             BuildTree();
             
