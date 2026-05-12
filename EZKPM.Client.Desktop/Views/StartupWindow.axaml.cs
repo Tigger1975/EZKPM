@@ -424,7 +424,7 @@ namespace EZKPM.Client.Desktop.Views
                 var sid = System.Security.Principal.WindowsIdentity.GetCurrent().User.Value;
                 string ephemeralPubKey = "mock-ephemeral-pub-key-base64";
 
-                var handler = new System.Net.Http.HttpClientHandler { UseDefaultCredentials = true };
+                var handler = new System.Net.Http.HttpClientHandler {  };
                 var client = new EZKPM.Client.Core.Services.VaultApiClient(new System.Net.Http.HttpClient(handler) { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) });
                 
                 using var sha256 = System.Security.Cryptography.SHA256.Create();
@@ -478,7 +478,7 @@ namespace EZKPM.Client.Desktop.Views
             var btn = this.FindControl<Button>("SimulateAdminButton");
             if (btn != null) btn.IsEnabled = false;
 
-            var handler = new System.Net.Http.HttpClientHandler { UseDefaultCredentials = true };
+            var handler = new System.Net.Http.HttpClientHandler {  };
             var client = new EZKPM.Client.Core.Services.VaultApiClient(new System.Net.Http.HttpClient(handler) { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) });
             var sid = System.Security.Principal.WindowsIdentity.GetCurrent().User.Value;
             var statusResp = await client.GetRecoveryStatusAsync(sid);

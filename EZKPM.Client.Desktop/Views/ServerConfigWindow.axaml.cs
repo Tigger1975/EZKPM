@@ -126,7 +126,7 @@ namespace EZKPM.Client.Desktop.Views
                 
                 var handler = new System.Net.Http.HttpClientHandler 
                 { 
-                    UseDefaultCredentials = true,
+                    
                     ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
                 };
                 using var client = new System.Net.Http.HttpClient(handler);
@@ -193,7 +193,7 @@ namespace EZKPM.Client.Desktop.Views
                 var tempZipPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "EZKPM_Update.zip");
                 var handler = new System.Net.Http.HttpClientHandler 
                 { 
-                    UseDefaultCredentials = true,
+                    
                     ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
                 };
                 using var client = new System.Net.Http.HttpClient(handler);

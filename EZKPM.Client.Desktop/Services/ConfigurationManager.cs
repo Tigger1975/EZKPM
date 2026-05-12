@@ -83,7 +83,7 @@ namespace EZKPM.Client.Desktop.Services
             try
             {
                 // Simple health check endpoint. If not implemented on server, just hitting root / or catching 404 is enough to prove the server is answering.
-                var handler = new HttpClientHandler { UseDefaultCredentials = true };
+                var handler = new HttpClientHandler {  };
                 using var client = new HttpClient(handler);
                 client.Timeout = TimeSpan.FromSeconds(3); // Fast timeout
                 

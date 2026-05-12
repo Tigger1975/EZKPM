@@ -27,7 +27,7 @@ namespace EZKPM.Client.Desktop.Services
             _logger = logger;
             var handler = new HttpClientHandler 
             { 
-                UseDefaultCredentials = true,
+                
                 ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
             };
             _httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };
@@ -63,7 +63,7 @@ namespace EZKPM.Client.Desktop.Services
             
             var handler = new HttpClientHandler 
             { 
-                UseDefaultCredentials = true,
+                
                 ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
             };
             using var httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };

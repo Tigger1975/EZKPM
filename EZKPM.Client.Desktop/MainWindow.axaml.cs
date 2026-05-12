@@ -42,7 +42,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        var handler = new HttpClientHandler { UseDefaultCredentials = true };
+        var handler = new HttpClientHandler {  };
         var httpClient = new HttpClient(handler) { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) };
         _apiClient = new VaultApiClient(httpClient);
         _cryptoService = cryptoService;
@@ -981,7 +981,7 @@ public partial class MainWindow : Window
             Services.ConfigurationManager.SaveConfig();
             
             // Re-instantiate the API client with the new URL
-            var handler = new HttpClientHandler { UseDefaultCredentials = true };
+            var handler = new HttpClientHandler {  };
             var httpClient = new HttpClient(handler) { BaseAddress = new Uri(Services.ConfigurationManager.CurrentConfig.ServerUrl) };
             var newApiClient = new VaultApiClient(httpClient);
             

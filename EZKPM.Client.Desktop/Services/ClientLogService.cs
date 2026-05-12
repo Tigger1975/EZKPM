@@ -28,7 +28,7 @@ namespace EZKPM.Client.Desktop.Services
 
         public static void Initialize()
         {
-            var handler = new HttpClientHandler { UseDefaultCredentials = true, ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true };
+            var handler = new HttpClientHandler {  ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true };
             _httpClient = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };
             
             _flushTimer = new Timer(async _ => await FlushLogsAsync(), null, TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(5));
