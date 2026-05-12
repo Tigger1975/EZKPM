@@ -41,9 +41,15 @@ namespace EZKPM.Client.Core.Services
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-                var token = result.GetProperty("Token").GetString();
-                _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-                return true;
+                string token = null;
+                if (result.TryGetProperty("token", out var tokenProp)) token = tokenProp.GetString();
+                else if (result.TryGetProperty("Token", out var tProp)) token = tProp.GetString();
+
+                if (!string.IsNullOrEmpty(token))
+                {
+                    _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                    return true;
+                }
             }
             return false;
         }
@@ -61,11 +67,16 @@ namespace EZKPM.Client.Core.Services
             if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
             {
                 var err = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-                throw new Exception(err.GetProperty("error").GetString());
+                string errorMsg = "Conflict";
+                if (err.TryGetProperty("error", out var eProp)) errorMsg = eProp.GetString();
+                else if (err.TryGetProperty("Error", out var eProp2)) errorMsg = eProp2.GetString();
+                throw new Exception(errorMsg);
             }
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-            return result.GetProperty("assetId").GetGuid();
+            if (result.TryGetProperty("assetId", out var idProp)) return idProp.GetGuid();
+            if (result.TryGetProperty("AssetId", out var idProp2)) return idProp2.GetGuid();
+            return Guid.Empty;
         }
 
         public async Task UpdateAssetAsync(Guid id, CreateAssetRequestDto request)

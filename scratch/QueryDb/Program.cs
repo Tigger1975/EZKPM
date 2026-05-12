@@ -15,18 +15,11 @@ namespace QueryDb
 
             using (var db = new EzkpmDbContext(options))
             {
-                var profiles = db.UserProfiles.ToList();
-                Console.WriteLine("--- User Profiles ---");
-                foreach (var profile in profiles)
+                var logs = db.ClientLogs.OrderByDescending(l => l.Timestamp).Take(30).ToList();
+                Console.WriteLine("--- Client Logs ---");
+                foreach (var log in logs)
                 {
-                    Console.WriteLine($"SID: {profile.HashedSid}, HasKey: {!string.IsNullOrEmpty(profile.IdentityPublicKey)}");
-                }
-                
-                var audits = db.AuditLogs.OrderByDescending(a => a.Timestamp).Take(5).ToList();
-                Console.WriteLine("--- Audit Logs ---");
-                foreach (var a in audits)
-                {
-                    Console.WriteLine($"[{a.Timestamp}] {a.ActionType} on {a.TargetHashedSid}");
+                    Console.WriteLine($"[{log.Timestamp}] {log.Level} - {log.Message}");
                 }
             }
         }
