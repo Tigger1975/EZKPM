@@ -103,12 +103,21 @@
                                 <ListBox x:Name="CurrentAdminsList" Height="250" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Background="#F9FAFB">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate x:CompileBindings="False">
-                                            <StackPanel Orientation="Horizontal" Spacing="12" Margin="8,4">
-                                                <Border Background="#E0E7FF" CornerRadius="15" Width="30" Height="30" VerticalAlignment="Center">
+                                            <Grid ColumnDefinitions="Auto, *, Auto" Margin="8,4">
+                                                <Border Grid.Column="0" Background="#E0E7FF" CornerRadius="15" Width="30" Height="30" VerticalAlignment="Center" Margin="0,0,12,0">
                                                     <TextBlock Text="👤" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16"/>
                                                 </Border>
-                                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#111827" FontSize="15"/>
-                                            </StackPanel>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" Foreground="#111827" FontSize="15"/>
+                                                    <TextBlock Text="{Binding SamAccountName}" Foreground="#6B7280" FontSize="12"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                                    <Border Background="{Binding StatusColor}" CornerRadius="4" Padding="6,2">
+                                                        <TextBlock Text="{Binding StatusText}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                                    </Border>
+                                                    <Button Content="🗑️ Entziehen" Tag="{Binding Sid}" Click="RevokeAdminFromList_Click" Background="#FEE2E2" Foreground="#EF4444" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="4" Padding="8,4" FontSize="12"/>
+                                                </StackPanel>
+                                            </Grid>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>

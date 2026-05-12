@@ -35,8 +35,12 @@ public partial class AdminDashboardWindow : Window
 
     private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (e.Source is TabControl)
+        if (e.Source is TabControl tc)
         {
+            if (tc.SelectedIndex == 0)
+            {
+                _ = LoadAdminsAsync();
+            }
             LoadEnvironmentLogKey();
             
             var config = EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig;
@@ -551,9 +555,9 @@ public partial class AdminDashboardWindow : Window
                 var dialog = new ConfirmationDialog($"{_selectedUserForAdmin.DisplayName} ist nun Admin.");
                 await dialog.ShowDialogAsync(this);
                 LoadAdminStatus(); // Refresh status (might disable bootstrap mode)
-                
                 _selectedUserForAdmin = null;
                 SelectedAdminText.Text = "Keine Auswahl";
+                _ = LoadAdminsAsync();
             }
             else
             {
@@ -583,9 +587,9 @@ public partial class AdminDashboardWindow : Window
             {
                 var dialog = new ConfirmationDialog($"{_selectedUserForAdmin.DisplayName} ist nun KEIN Admin mehr.");
                 await dialog.ShowDialogAsync(this);
-                
                 _selectedUserForAdmin = null;
                 SelectedAdminText.Text = "Keine Auswahl";
+                _ = LoadAdminsAsync();
             }
             else
             {
@@ -601,29 +605,88 @@ public partial class AdminDashboardWindow : Window
         }
     }
 
-    private async void ResolveAdminsButton_Click(object sender, RoutedEventArgs e)
+    private async void RevokeAdminFromList_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string sid)
+        {
+            try
+            {
+                using var sha256 = System.Security.Cryptography.SHA256.Create();
+                var targetHash = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(sid)));
+                var req = new SetAdminRequestDto { TargetHashedSid = targetHash, IsAdmin = false };
+                var response = await _apiClient.HttpClient.PostAsJsonAsync("/api/v1/recovery/set-admin", req);
+                if (response.IsSuccessStatusCode)
+                {
+                    var dialog = new ConfirmationDialog($"Admin-Rechte wurden erfolgreich entzogen.");
+                    await dialog.ShowDialogAsync(this);
+                    _ = LoadAdminsAsync();
+                }
+                else
+                {
+                    string err = await response.Content.ReadAsStringAsync();
+                    var dialog = new ConfirmationDialog($"Fehler: {err}");
+                    await dialog.ShowDialogAsync(this);
+                }
+            }
+            catch (Exception ex)
+            {
+                var dialog = new ConfirmationDialog($"Fehler: {ex.Message}");
+                await dialog.ShowDialogAsync(this);
+            }
+        }
+    }
+
+    private async Task LoadAdminsAsync()
     {
         try
         {
-            // 1. Hole alle AD User SIDs
-            var allUsers = await Task.Run(() => 
+            var adminHashes = await _apiClient.HttpClient.GetFromJsonAsync<System.Collections.Generic.List<string>>("/api/v1/recovery/admins");
+            if (adminHashes == null || adminHashes.Count == 0)
             {
-                var list = new System.Collections.Generic.List<EZKPM.Client.Desktop.Services.AdPrincipal>();
+                CurrentAdminsList.ItemsSource = null;
+                return;
+            }
+
+            var resolvedAdmins = await Task.Run(() => 
+            {
+                var list = new System.Collections.Generic.List<AdminUserViewModel>();
                 try
                 {
-                    var ctx = new System.DirectoryServices.AccountManagement.PrincipalContext(System.DirectoryServices.AccountManagement.ContextType.Domain);
-                    var searcher = new System.DirectoryServices.AccountManagement.PrincipalSearcher(new System.DirectoryServices.AccountManagement.UserPrincipal(ctx));
-                    foreach (var result in searcher.FindAll())
+                    using var sha256 = System.Security.Cryptography.SHA256.Create();
+                    
+                    var entry = new System.DirectoryServices.DirectoryEntry();
+                    using var searcher = new System.DirectoryServices.DirectorySearcher(entry)
                     {
-                        if (result.Sid != null)
+                        Filter = "(&(objectCategory=person)(objectClass=user))",
+                        PageSize = 1000
+                    };
+                    searcher.PropertiesToLoad.Add("objectSid");
+                    searcher.PropertiesToLoad.Add("displayName");
+                    searcher.PropertiesToLoad.Add("sAMAccountName");
+                    searcher.PropertiesToLoad.Add("userAccountControl");
+
+                    using var results = searcher.FindAll();
+                    foreach (System.DirectoryServices.SearchResult result in results)
+                    {
+                        if (result.Properties["objectSid"].Count > 0)
                         {
-                            list.Add(new EZKPM.Client.Desktop.Services.AdPrincipal
+                            var sidBytes = (byte[])result.Properties["objectSid"][0];
+                            var sid = new System.Security.Principal.SecurityIdentifier(sidBytes, 0).ToString();
+                            var hash = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(sid)));
+                            
+                            if (adminHashes.Contains(hash))
                             {
-                                Sid = result.Sid.Value,
-                                DisplayName = result.DisplayName ?? result.SamAccountName,
-                                SamAccountName = result.SamAccountName,
-                                IsAccountDisabled = result is System.DirectoryServices.AccountManagement.UserPrincipal u && (u.Enabled == false)
-                            });
+                                int uac = result.Properties["userAccountControl"].Count > 0 ? (int)result.Properties["userAccountControl"][0] : 0;
+                                bool disabled = (uac & 2) == 2; // ADS_UF_ACCOUNTDISABLE
+                                
+                                list.Add(new AdminUserViewModel
+                                {
+                                    Sid = sid,
+                                    DisplayName = result.Properties["displayName"].Count > 0 ? result.Properties["displayName"][0].ToString() : sid,
+                                    SamAccountName = result.Properties["sAMAccountName"].Count > 0 ? result.Properties["sAMAccountName"][0].ToString() : "",
+                                    IsAccountDisabled = disabled
+                                });
+                            }
                         }
                     }
                 }
@@ -631,35 +694,18 @@ public partial class AdminDashboardWindow : Window
                 return list;
             });
 
-            if (allUsers.Any())
-            {
-                // 2. Sende Liste an Server zum Filtern (Server hasht lokal und vergleicht)
-                var sidsOnly = allUsers.Select(u => u.Sid).ToList();
-                var response = await _apiClient.HttpClient.PostAsJsonAsync("/api/v1/recovery/filter-admins", sidsOnly);
-                
-                if (response.IsSuccessStatusCode)
-                {
-                    var adminSids = await response.Content.ReadFromJsonAsync<System.Collections.Generic.List<string>>();
-                    if (adminSids != null)
-                    {
-                        // 3. Zeige die echten Admins an
-                        var resolvedAdmins = allUsers.Where(u => adminSids.Contains(u.Sid)).ToList();
-                        CurrentAdminsList.ItemsSource = resolvedAdmins;
-                    }
-                }
-                else
-                {
-                    string err = await response.Content.ReadAsStringAsync();
-                    var dialog = new ConfirmationDialog($"Fehler vom Server: {err}");
-                    await dialog.ShowDialogAsync(this);
-                }
-            }
+            CurrentAdminsList.ItemsSource = resolvedAdmins;
         }
         catch (Exception ex)
         {
-            var dialog = new ConfirmationDialog($"Fehler: {ex.Message}");
+            var dialog = new ConfirmationDialog($"Fehler beim Laden der Admins: {ex.Message}");
             await dialog.ShowDialogAsync(this);
         }
+    }
+
+    private void ResolveAdminsButton_Click(object sender, RoutedEventArgs e)
+    {
+        _ = LoadAdminsAsync();
     }
 
     private async void RefreshRecoveryButton_Click(object sender, RoutedEventArgs e)
@@ -838,4 +884,14 @@ public partial class AdminDashboardWindow : Window
             }
         }
     }
+}
+
+public class AdminUserViewModel
+{
+    public string Sid { get; set; }
+    public string DisplayName { get; set; }
+    public string SamAccountName { get; set; }
+    public bool IsAccountDisabled { get; set; }
+    public string StatusText => IsAccountDisabled ? "Deaktiviert" : "Aktiv";
+    public string StatusColor => IsAccountDisabled ? "#EF4444" : "#10B981";
 }
