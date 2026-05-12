@@ -171,12 +171,17 @@ app.UseHttpsRedirection();
 // wir setzen stattdessen in den Controllern eine Dummy-SID, falls keine Auth da ist.
 app.UseDefaultFiles();
 app.UseStaticFiles();
+
+var localDocsPath = System.IO.Path.Combine(builder.Environment.ContentRootPath, "..", "docs", "wiki");
+var prodDocsPath = System.IO.Path.Combine(builder.Environment.ContentRootPath, "docs", "wiki");
+var actualDocsPath = System.IO.Directory.Exists(prodDocsPath) ? prodDocsPath : localDocsPath;
+
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
-        System.IO.Path.Combine(builder.Environment.ContentRootPath, "..", "docs", "wiki")),
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(actualDocsPath),
     RequestPath = "/docs"
 });
+
 app.UseAuthentication();
 app.UseAuthorization();
 

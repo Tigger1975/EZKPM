@@ -22,6 +22,10 @@ Write-Host "`n[2/7] Kompiliere Server (PDP)..." -ForegroundColor Yellow
 if (Test-Path $PublishServerPath) { Remove-Item -Path "$PublishServerPath\*" -Recurse -Force -ErrorAction SilentlyContinue }
 dotnet publish "$RepoPath\EZKPM.Server.PDP\EZKPM.Server.PDP.csproj" -c Release -o $PublishServerPath -p:BuildDate=$BuildDate
 
+Write-Host "      Kopiere Wiki/Help System in das Release-Verzeichnis..." -ForegroundColor Yellow
+if (!(Test-Path "$PublishServerPath\docs")) { New-Item -ItemType Directory -Force -Path "$PublishServerPath\docs" | Out-Null }
+Copy-Item -Path "$RepoPath\docs\wiki" -Destination "$PublishServerPath\docs\wiki" -Recurse -Force
+
 Write-Host "`n[3/7] Kompiliere Client (Desktop & Extension Bridge)..." -ForegroundColor Yellow
 if (Test-Path $PublishClientPath) { Remove-Item -Path "$PublishClientPath\*" -Recurse -Force -ErrorAction SilentlyContinue }
 dotnet publish "$RepoPath\EZKPM.Client.Desktop\EZKPM.Client.Desktop.csproj" -c Release -o $PublishClientPath -p:BuildDate=$BuildDate
