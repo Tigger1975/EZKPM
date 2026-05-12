@@ -138,12 +138,8 @@ namespace EZKPM.Client.Desktop.Services
 
                     if (apiResp.IsSuccessStatusCode)
                     {
-                        var result = await apiResp.Content.ReadFromJsonAsync<JsonElement>();
-                        if (result.TryGetProperty("pairingCode", out var codeElement))
-                        {
-                            await SendJsonResponseAsync(response, 200, new { PairingCode = codeElement.GetString() });
-                            return;
-                        }
+                        await SendJsonResponseAsync(response, 200, new { Status = "Success", Message = "User invited successfully." });
+                        return;
                     }
                     else if (apiResp.StatusCode == HttpStatusCode.Conflict)
                     {
