@@ -541,7 +541,7 @@ public partial class MainWindow : Window
             var config = EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig;
             if (!string.IsNullOrEmpty(config.LocalApiAllowedSid))
             {
-                _ = _adminApiHost.StartAsync(config.LocalApiPort, config.LocalApiAllowedSid);
+                _ = _adminApiHost.StartAsync(config.LocalApiPort, config.LocalApiAllowedSid, _apiClient);
             }
 
             BuildTree();
