@@ -11,7 +11,7 @@ using EZKPM.Shared.Contracts;
 
 namespace EZKPM.Client.Desktop.Services
 {
-    public class BrowserBridgeServer(Func<IEnumerable<VaultAssetPayload>> getDecryptedAssetsFunc, Func<Guid, bool, string, Task<bool>> requestAuditFunc, Func<Task<bool>> requestUnlockFunc, Action requestLockFunc)
+    public class BrowserBridgeServer(Func<IEnumerable<VaultAssetPayload>> getDecryptedAssetsFunc, Func<Guid, VaultAssetPayload> getAssetOnDemandFunc, Func<Guid, bool, string, Task<bool>> requestAuditFunc, Func<Task<bool>> requestUnlockFunc, Action requestLockFunc)
     {
         private static void Log(string msg)
         {
@@ -24,6 +24,7 @@ namespace EZKPM.Client.Desktop.Services
             catch { }
         }
         private readonly Func<IEnumerable<VaultAssetPayload>> _getDecryptedAssetsFunc = getDecryptedAssetsFunc;
+        private readonly Func<Guid, VaultAssetPayload> _getAssetOnDemandFunc = getAssetOnDemandFunc;
         private readonly Func<Guid, bool, string, Task<bool>> _requestAuditFunc = requestAuditFunc;
         private readonly Func<Task<bool>> _requestUnlockFunc = requestUnlockFunc;
         private readonly Action _requestLockFunc = requestLockFunc;
@@ -188,35 +189,39 @@ namespace EZKPM.Client.Desktop.Services
 
                     if (root.TryGetProperty("AssetId", out var idProp) && Guid.TryParse(idProp.GetString(), out Guid assetId))
                     {
-                        var asset = _getDecryptedAssetsFunc().FirstOrDefault(a => a.TransientAssetId == assetId);
-                        if (asset != null)
+                        var assetMetadata = _getDecryptedAssetsFunc().FirstOrDefault(a => a.TransientAssetId == assetId);
+                        if (assetMetadata != null)
                         {
                             bool isApproved = true;
 
                             // FA 22: Audit Log enforcing ONLY for Payment assets!
                             // New: Silent Audit Logging for assets flagged with RequiresAuditLog
-                            if (asset.AssetType == "Payment")
+                            if (assetMetadata.AssetType == "Payment")
                             {
                                 isApproved = await _requestAuditFunc(assetId, true, null);
                             }
-                            else if (asset.RequiresAuditLog)
+                            else if (assetMetadata.RequiresAuditLog)
                             {
                                 isApproved = await _requestAuditFunc(assetId, false, "Autofill / Password fetch via Browser Extension");
                             }
                             
                             if (isApproved)
                             {
-                                OnCredentialProvided?.Invoke(asset.Title);
-                                return JsonSerializer.Serialize(new {
-                                    Type = "CREDENTIAL_DATA_RESPONSE",
-                                    Password = asset.Password,
-                                    TotpCode = !string.IsNullOrEmpty(asset.TotpSecret) ? EZKPM.Client.Desktop.Views.AssetEditorWindow.GetTotpCode(asset.TotpSecret) : null,
-                                    asset.LoginFlow,
-                                    CustomFields = asset.CustomFields?.Select(cf => new {
-                                        cf.Name,
-                                        cf.Value
-                                    }).ToList()
-                                });
+                                var fullAsset = _getAssetOnDemandFunc(assetId);
+                                if (fullAsset != null)
+                                {
+                                    OnCredentialProvided?.Invoke(fullAsset.Title);
+                                    return JsonSerializer.Serialize(new {
+                                        Type = "CREDENTIAL_DATA_RESPONSE",
+                                        Password = fullAsset.Password,
+                                        TotpCode = !string.IsNullOrEmpty(fullAsset.TotpSecret) ? EZKPM.Client.Desktop.Views.AssetEditorWindow.GetTotpCode(fullAsset.TotpSecret) : null,
+                                        fullAsset.LoginFlow,
+                                        CustomFields = fullAsset.CustomFields?.Select(cf => new {
+                                            cf.Name,
+                                            cf.Value
+                                        }).ToList()
+                                    });
+                                }
                             }
                         }
                         return JsonSerializer.Serialize(new { Type = "AUDIT_REJECTED" });

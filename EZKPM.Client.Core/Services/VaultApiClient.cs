@@ -207,5 +207,19 @@ namespace EZKPM.Client.Core.Services
             catch { }
             return null;
         }
+
+        public async Task<List<string>?> GetAdminSidsAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync("/api/v1/recovery/admins");
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<List<string>>();
+                }
+            }
+            catch { }
+            return null;
+        }
     }
 }

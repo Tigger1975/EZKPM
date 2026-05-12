@@ -31,6 +31,7 @@ public partial class MainWindow : Window
     private readonly VaultApiClient _apiClient;
     private readonly VaultCryptoService _cryptoService;
     private readonly ObservableCollection<VaultAssetPayload> _decryptedAssets = new();
+    private readonly Dictionary<Guid, VaultAssetResponseDto> _encryptedAssetsCache = new();
     private readonly ObservableCollection<VaultTreeNode> _treeNodes = new();
     private readonly HashSet<Guid> _expandedFolderIds = new();
     private readonly HashSet<Guid> _failedDecryptionIds = new();
@@ -49,7 +50,7 @@ public partial class MainWindow : Window
 
         AssetTreeView.ItemsSource = _treeNodes;
 
-        _bridgeServer = new BrowserBridgeServer(() => _decryptedAssets, RequestAuditAsync, async () => {
+        _bridgeServer = new BrowserBridgeServer(() => _decryptedAssets, GetDecryptedAssetOnDemand, RequestAuditAsync, async () => {
             if (!Services.SessionManager.IsLocked) return true;
             
             // SILENT JIT DECRYPTION for Browser Extension
@@ -140,6 +141,15 @@ public partial class MainWindow : Window
         StartVulnerabilityScanner();
 
         this.Closing += MainWindow_Closing;
+    }
+
+    private VaultAssetPayload? GetDecryptedAssetOnDemand(Guid assetId)
+    {
+        if (_encryptedAssetsCache.TryGetValue(assetId, out var dto))
+        {
+            return _cryptoService.DecryptAsset(dto);
+        }
+        return null;
     }
 
     private void ScrubSensitiveData()
@@ -427,18 +437,20 @@ public partial class MainWindow : Window
         {
             if (!Services.SessionManager.EnsureAuthenticated("Auto-Type ausführen")) return;
 
-            string pattern = result.AutoType?.Pattern ?? "{USERNAME}{TAB}{PASSWORD}{ENTER}";
-            int mode = result.AutoType?.Mode ?? 1;
-            string username = result.Username ?? "";
-            string password = result.Password ?? "";
-            string title = result.Title ?? "";
+            var fullPayload = GetDecryptedAssetOnDemand(result.TransientAssetId.GetValueOrDefault()) ?? result;
+
+            string pattern = fullPayload.AutoType?.Pattern ?? "{USERNAME}{TAB}{PASSWORD}{ENTER}";
+            int mode = fullPayload.AutoType?.Mode ?? 1;
+            string username = fullPayload.Username ?? "";
+            string password = fullPayload.Password ?? "";
+            string title = fullPayload.Title ?? "";
 
             var clipboard = Avalonia.Controls.TopLevel.GetTopLevel(this)?.Clipboard;
             if (clipboard == null) return;
 
             try
             {
-                await EZKPM.Client.Desktop.Services.AutoTypeService.PerformAutoType(pattern, username, password, title, mode, clipboard, result.CustomFields);
+                await EZKPM.Client.Desktop.Services.AutoTypeService.PerformAutoType(pattern, username, password, title, mode, clipboard, fullPayload.CustomFields);
             }
             catch (Exception ex)
             {
@@ -453,6 +465,7 @@ public partial class MainWindow : Window
         {
             var serverAssets = await _apiClient.GetAllAssetsAsync();
             _decryptedAssets.Clear();
+            _encryptedAssetsCache.Clear();
             _failedDecryptionIds.Clear();
 
             int total = serverAssets.Count;
@@ -469,7 +482,11 @@ public partial class MainWindow : Window
                 try
                 {
                     var payload = _cryptoService.DecryptAsset(dto);
-                    if (payload != null) _decryptedAssets.Add(payload);
+                    if (payload != null) 
+                    {
+                        _encryptedAssetsCache[dto.AssetId] = dto;
+                        _decryptedAssets.Add(payload);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -516,7 +533,13 @@ public partial class MainWindow : Window
             // Ensure Environment Log Key exists (for encrypting client logs)
             await EnsureEnvironmentLogKeyAsync();
 
+            // Enforce group membership changes
+            await EnforceGroupMembershipsAsync();
+
             BuildTree();
+            
+            // WICHTIG: Delete all secrets from RAM after building the UI tree!
+            ScrubSensitiveData();
         }
         catch (Exception ex)
         {
@@ -574,6 +597,111 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             Program.LogDebug($"Failed to initialize Environment Log Key: {ex.Message}");
+        }
+    }
+
+    private async Task EnforceGroupMembershipsAsync()
+    {
+        bool anyChanged = false;
+        var currentUserSid = EZKPM.Client.Desktop.Services.AdSearchService.GetCurrentUser()?.Sid ?? "S-1-5-21-DUMMY-TEST-USER";
+        var hashedCurrentUserSid = HashSid(currentUserSid);
+
+        foreach (var asset in _decryptedAssets)
+        {
+            var myAcl = asset.Acls?.FirstOrDefault(a => a.HashedSid == hashedCurrentUserSid);
+            if (myAcl == null || myAcl.PermissionLevel < 3) continue;
+
+            bool aclChanged = false;
+            var newAcls = new System.Collections.Generic.List<EZKPM.Shared.Contracts.AclEntryDto>();
+
+            if (asset.Title == "EnvironmentLogKey")
+            {
+                var adminSids = await _apiClient.GetAdminSidsAsync();
+                if (adminSids != null && adminSids.Count > 0)
+                {
+                    foreach (var adminHashedSid in adminSids)
+                    {
+                        var existing = asset.Acls.FirstOrDefault(a => a.HashedSid == adminHashedSid);
+                        if (existing != null)
+                        {
+                            newAcls.Add(existing);
+                        }
+                        else
+                        {
+                            newAcls.Add(new EZKPM.Shared.Contracts.AclEntryDto 
+                            { 
+                                HashedSid = adminHashedSid, 
+                                DisplayName = "Admin", 
+                                PermissionLevel = 2,
+                                EncryptedKeyShare = ""
+                            });
+                            aclChanged = true;
+                        }
+                    }
+
+                    if (!newAcls.Any(a => a.HashedSid == hashedCurrentUserSid))
+                    {
+                        newAcls.Add(myAcl);
+                    }
+
+                    if (asset.Acls.Count != newAcls.Count) aclChanged = true;
+                }
+            }
+            else
+            {
+                if (asset.Acls == null) continue;
+                
+                var groupAcls = asset.Acls.Where(a => !string.IsNullOrEmpty(a.SourceGroupSid)).GroupBy(a => a.SourceGroupSid).ToList();
+                var individualAcls = asset.Acls.Where(a => string.IsNullOrEmpty(a.SourceGroupSid)).ToList();
+                
+                newAcls.AddRange(individualAcls);
+
+                foreach (var group in groupAcls)
+                {
+                    var groupSid = group.Key;
+                    var members = await EZKPM.Client.Desktop.Services.AdSearchService.GetGroupMembersAsync(groupSid);
+                    var groupLevel = group.Max(a => a.PermissionLevel);
+                    var groupName = group.First().SourceGroupName;
+
+                    foreach (var member in members)
+                    {
+                        var memberHashedSid = HashSid(member.Sid);
+                        var existing = asset.Acls.FirstOrDefault(a => a.HashedSid == memberHashedSid && a.SourceGroupSid == groupSid);
+                        if (existing != null)
+                        {
+                            newAcls.Add(existing);
+                        }
+                        else
+                        {
+                            newAcls.Add(new EZKPM.Shared.Contracts.AclEntryDto
+                            {
+                                HashedSid = memberHashedSid,
+                                DisplayName = member.DisplayName,
+                                PermissionLevel = groupLevel,
+                                SourceGroupSid = groupSid,
+                                SourceGroupName = groupName,
+                                EncryptedKeyShare = ""
+                            });
+                            aclChanged = true;
+                        }
+                    }
+                }
+
+                if (asset.Acls.Count != newAcls.Count) aclChanged = true;
+            }
+
+            if (aclChanged)
+            {
+                asset.Acls = newAcls;
+                var updateRequest = _cryptoService.EncryptAsset(asset);
+                await _apiClient.UpdateAssetAsync(asset.TransientAssetId.GetValueOrDefault(), updateRequest);
+                anyChanged = true;
+            }
+        }
+
+        if (anyChanged)
+        {
+            ShowStatus("Gruppen-Zugehörigkeiten wurden geprüft und ACLs aktualisiert.", isError: false);
         }
     }
 
@@ -1101,8 +1229,8 @@ public partial class MainWindow : Window
             {
                 if (!await EnsureUnlockedAndLoadedAsync("Asset ansehen")) return;
                 
-                var newPayload = _decryptedAssets.FirstOrDefault(a => a.TransientAssetId == payload.TransientAssetId) ?? payload;
-                var editor = new Views.AssetEditorWindow(newPayload, _decryptedAssets.ToList(), _cryptoService, _apiClient);
+                var fullPayload = GetDecryptedAssetOnDemand(payload.TransientAssetId.GetValueOrDefault()) ?? payload;
+                var editor = new Views.AssetEditorWindow(fullPayload, _decryptedAssets.ToList(), _cryptoService, _apiClient);
                 editor.AssetSaved += async (s, args) => await LoadAssetsAsync();
                 editor.Show();
             }
@@ -1125,8 +1253,8 @@ public partial class MainWindow : Window
         if (sender is MenuItem menuItem && menuItem.DataContext is VaultTreeNode node)
         {
             if (!await EnsureUnlockedAndLoadedAsync("Ordner bearbeiten")) return;
-            var newPayload = _decryptedAssets.FirstOrDefault(a => a.TransientAssetId == node.Payload.TransientAssetId) ?? node.Payload;
-            var editor = new Views.AssetEditorWindow(newPayload, _decryptedAssets.ToList(), _cryptoService, _apiClient);
+            var fullPayload = GetDecryptedAssetOnDemand(node.Payload.TransientAssetId.GetValueOrDefault()) ?? node.Payload;
+            var editor = new Views.AssetEditorWindow(fullPayload, _decryptedAssets.ToList(), _cryptoService, _apiClient);
             editor.AssetSaved += async (s, ev) => await LoadAssetsAsync();
             editor.Show();
         }

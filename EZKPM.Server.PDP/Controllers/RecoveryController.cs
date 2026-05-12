@@ -268,6 +268,23 @@ namespace EZKPM.Server.PDP.Controllers
             });
         }
 
+        [HttpGet("admins")]
+        public async Task<IActionResult> GetAdmins()
+        {
+            var callerHashedSid = GetUserSid();
+            var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == callerHashedSid);
+            bool isCallerAdmin = callerProfile != null && await _db.UserProfiles.AnyAsync(u => u.PersonId == callerProfile.PersonId && u.IsAdmin);
+
+            if (!isCallerAdmin) return Forbid();
+
+            var adminSids = await _db.UserProfiles
+                .Where(u => u.IsAdmin)
+                .Select(u => u.HashedSid)
+                .ToListAsync();
+
+            return Ok(adminSids);
+        }
+
         [HttpPost("filter-admins")]
         public async Task<IActionResult> FilterAdmins([FromBody] System.Collections.Generic.List<string> candidateSids)
         {
