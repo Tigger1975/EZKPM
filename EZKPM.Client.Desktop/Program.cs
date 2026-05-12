@@ -79,6 +79,37 @@ namespace EZKPM.Client.Desktop
 
                 LogDebug($"App started. Arguments: {string.Join(" ", args)}", "INFO");
 
+                // Parse --server parameter
+                for (int i = 0; i < args.Length; i++)
+                {
+                    string arg = args[i];
+                    string serverUrl = null;
+
+                    if (arg.StartsWith("--server=", StringComparison.OrdinalIgnoreCase))
+                    {
+                        serverUrl = arg.Substring("--server=".Length);
+                    }
+                    else if (arg.Equals("--server", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+                    {
+                        serverUrl = args[++i];
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(serverUrl))
+                    {
+                        try
+                        {
+                            var config = Services.ConfigurationManager.CurrentConfig;
+                            config.ServerUrl = serverUrl;
+                            Services.ConfigurationManager.SaveConfig();
+                            LogDebug($"Server URL updated from command line to: {serverUrl}");
+                        }
+                        catch (Exception ex)
+                        {
+                            LogDebug($"Failed to save server URL from command line: {ex.Message}");
+                        }
+                    }
+                }
+
                 if (args.Any(a => a.Equals("autostart", StringComparison.OrdinalIgnoreCase) || a.Equals("--autostart", StringComparison.OrdinalIgnoreCase)))
                 {
                     IsAutoStart = true;
