@@ -74,8 +74,14 @@
 
                         <StackPanel Spacing="10">
                             <TextBlock Text="Mass-Rollout (Bulk SMTP)" FontWeight="Bold" FontSize="18"/>
-                            <TextBlock Text="Lädt ALLE aktiven Benutzer aus dem Active Directory ein. Die E-Mails werden direkt über den angegebenen SMTP-Server versendet." Foreground="Gray" TextWrapping="Wrap"/>
+                            <TextBlock Text="Wählen Sie eine AD-Gruppe (oder einen Benutzer) aus. Die E-Mails werden im Hintergrund direkt über den angegebenen SMTP-Server an alle Mitglieder der Gruppe versendet. Bereits registrierte User werden automatisch übersprungen." Foreground="Gray" TextWrapping="Wrap"/>
                             
+                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+                                <TextBlock Text="Ziel-Gruppe / Benutzer:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <Button Content="Auswählen" Click="BulkInviteTargetButton_Click" />
+                                <TextBlock x:Name="BulkInviteTargetText" Text="Keine Auswahl" VerticalAlignment="Center" Foreground="#8B5CF6" FontWeight="Bold"/>
+                            </StackPanel>
+
                             <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto, Auto" Margin="0,10,0,0">
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="SMTP Server:" VerticalAlignment="Center" Margin="0,0,10,10"/>
                                 <TextBox x:Name="SmtpServerTextBox" Grid.Row="0" Grid.Column="1" Watermark="z.B. mail.firma.local" Margin="0,0,0,10"/>

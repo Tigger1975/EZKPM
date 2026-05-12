@@ -141,8 +141,30 @@ public partial class AdminDashboardWindow : Window
         }
     }
 
+    private EZKPM.Client.Desktop.Services.AdPrincipal _bulkInviteTarget;
+
+    private async void BulkInviteTargetButton_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new AdPickerWindow(EZKPM.Client.Desktop.Services.AdPickerFilterMode.ActiveOnly);
+        await picker.ShowDialog(this);
+
+        if (picker.SelectedPrincipal != null)
+        {
+            _bulkInviteTarget = picker.SelectedPrincipal;
+            var textBlock = this.FindControl<TextBlock>("BulkInviteTargetText");
+            if (textBlock != null) textBlock.Text = $"{_bulkInviteTarget.DisplayName} ({_bulkInviteTarget.Type})";
+        }
+    }
+
     private async void BulkInviteButton_Click(object sender, RoutedEventArgs e)
     {
+        if (_bulkInviteTarget == null)
+        {
+            var dialog = new ConfirmationDialog("Bitte wählen Sie zuerst eine Ziel-Gruppe oder einen Benutzer aus.");
+            await dialog.ShowDialogAsync(this);
+            return;
+        }
+
         string smtpServer = this.FindControl<TextBox>("SmtpServerTextBox")?.Text;
         string smtpPortStr = this.FindControl<TextBox>("SmtpPortTextBox")?.Text;
         string smtpSender = this.FindControl<TextBox>("SmtpSenderTextBox")?.Text;
@@ -156,17 +178,38 @@ public partial class AdminDashboardWindow : Window
 
         if (!int.TryParse(smtpPortStr, out int smtpPort)) smtpPort = 25;
 
-        // Fetch all active AD Users
+        // Fetch target users
         var allUsers = await Task.Run(() => 
         {
             var list = new System.Collections.Generic.List<EZKPM.Client.Desktop.Services.AdPrincipal>();
             try
             {
-                var ctx = new System.DirectoryServices.AccountManagement.PrincipalContext(System.DirectoryServices.AccountManagement.ContextType.Domain);
-                var searcher = new System.DirectoryServices.AccountManagement.PrincipalSearcher(new System.DirectoryServices.AccountManagement.UserPrincipal(ctx));
-                foreach (var result in searcher.FindAll())
+                using var ctx = new System.DirectoryServices.AccountManagement.PrincipalContext(System.DirectoryServices.AccountManagement.ContextType.Domain);
+                
+                if (_bulkInviteTarget.Type == "Group")
                 {
-                    if (result is System.DirectoryServices.AccountManagement.UserPrincipal u && u.Enabled == true && u.Sid != null && !string.IsNullOrEmpty(u.EmailAddress))
+                    using var group = System.DirectoryServices.AccountManagement.GroupPrincipal.FindByIdentity(ctx, _bulkInviteTarget.Sid);
+                    if (group != null)
+                    {
+                        foreach (var result in group.GetMembers(true))
+                        {
+                            if (result is System.DirectoryServices.AccountManagement.UserPrincipal u && u.Enabled == true && u.Sid != null && !string.IsNullOrEmpty(u.EmailAddress))
+                            {
+                                list.Add(new EZKPM.Client.Desktop.Services.AdPrincipal
+                                {
+                                    Sid = u.Sid.Value,
+                                    DisplayName = u.DisplayName ?? u.SamAccountName,
+                                    SamAccountName = u.SamAccountName,
+                                    IsAccountDisabled = false
+                                });
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    using var u = System.DirectoryServices.AccountManagement.UserPrincipal.FindByIdentity(ctx, _bulkInviteTarget.Sid);
+                    if (u != null && u.Enabled == true && u.Sid != null && !string.IsNullOrEmpty(u.EmailAddress))
                     {
                         list.Add(new EZKPM.Client.Desktop.Services.AdPrincipal
                         {
@@ -198,6 +241,7 @@ public partial class AdminDashboardWindow : Window
         string serverUrl = EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl;
         int successCount = 0;
         int errorCount = 0;
+        int skippedCount = 0;
 
         await Task.Run(async () =>
         {
@@ -242,6 +286,10 @@ public partial class AdminDashboardWindow : Window
                         await smtpClient.SendMailAsync(mailMessage);
                         successCount++;
                     }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                    {
+                        skippedCount++;
+                    }
                     else
                     {
                         errorCount++;
@@ -257,7 +305,7 @@ public partial class AdminDashboardWindow : Window
         Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
         {
             if (btn != null) btn.IsEnabled = true;
-            var dialog = new ConfirmationDialog($"Bulk Invite abgeschlossen.\nErfolgreich gesendet: {successCount}\nFehler: {errorCount}");
+            var dialog = new ConfirmationDialog($"Bulk Invite abgeschlossen.\nErfolgreich gesendet: {successCount}\nÜbersprungen (bereits aktiv): {skippedCount}\nFehler: {errorCount}");
             await dialog.ShowDialogAsync(this);
         });
     }
