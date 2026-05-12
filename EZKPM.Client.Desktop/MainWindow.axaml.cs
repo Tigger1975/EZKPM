@@ -592,6 +592,14 @@ public partial class MainWindow : Window
                 Guid realId = await _apiClient.CreateAssetAsync(requestDto);
                 newKeyAsset.TransientAssetId = realId;
                 _decryptedAssets.Add(newKeyAsset);
+                
+                var responseDto = new EZKPM.Shared.Contracts.VaultAssetResponseDto {
+                    AssetId = realId,
+                    CipherBlob = requestDto.CipherBlob,
+                    Nonce = requestDto.Nonce,
+                    EncryptedKeyShare = requestDto.EncryptedKeyShare
+                };
+                _encryptedAssetsCache[realId] = responseDto;
             }
         }
         catch (Exception ex)
@@ -694,7 +702,15 @@ public partial class MainWindow : Window
             {
                 asset.Acls = newAcls;
                 var updateRequest = _cryptoService.EncryptAsset(asset);
-                await _apiClient.UpdateAssetAsync(asset.TransientAssetId.GetValueOrDefault(), updateRequest);
+                Guid assetId = asset.TransientAssetId.GetValueOrDefault();
+                await _apiClient.UpdateAssetAsync(assetId, updateRequest);
+                
+                if (_encryptedAssetsCache.TryGetValue(assetId, out var existingResponse))
+                {
+                    existingResponse.CipherBlob = updateRequest.CipherBlob;
+                    existingResponse.Nonce = updateRequest.Nonce;
+                    existingResponse.EncryptedKeyShare = updateRequest.EncryptedKeyShare;
+                }
                 anyChanged = true;
             }
         }
