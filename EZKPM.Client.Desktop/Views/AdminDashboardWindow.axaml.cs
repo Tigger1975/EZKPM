@@ -287,6 +287,7 @@ public partial class AdminDashboardWindow : Window
         int successCount = 0;
         int errorCount = 0;
         int skippedCount = 0;
+        var errorMessages = new System.Collections.Concurrent.ConcurrentDictionary<string, int>();
 
         await Task.Run(async () =>
         {
@@ -334,11 +335,14 @@ public partial class AdminDashboardWindow : Window
                     else
                     {
                         errorCount++;
+                        string errorStr = $"HTTP {(int)response.StatusCode}: {await response.Content.ReadAsStringAsync()}";
+                        errorMessages.AddOrUpdate(errorStr, 1, (k, v) => v + 1);
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
                     errorCount++;
+                    errorMessages.AddOrUpdate(ex.Message, 1, (k, v) => v + 1);
                 }
             }
         });
@@ -346,7 +350,22 @@ public partial class AdminDashboardWindow : Window
         Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
         {
             if (btn != null) btn.IsEnabled = true;
-            var dialog = new ConfirmationDialog($"Bulk Invite abgeschlossen.\nErfolgreich gesendet: {successCount}\nÜbersprungen (bereits aktiv): {skippedCount}\nFehler: {errorCount}");
+            
+            string finalMessage = $"Bulk Invite abgeschlossen.\nErfolgreich gesendet: {successCount}\nÜbersprungen (bereits aktiv): {skippedCount}\nFehler: {errorCount}";
+            if (errorCount > 0)
+            {
+                finalMessage += "\n\nFehlerdetails:\n";
+                foreach (var kvp in errorMessages.Take(5))
+                {
+                    finalMessage += $"- {kvp.Value}x: {kvp.Key}\n";
+                }
+                if (errorMessages.Count > 5)
+                {
+                    finalMessage += $"- ... und {errorMessages.Count - 5} weitere Fehlerarten.";
+                }
+            }
+
+            var dialog = new ConfirmationDialog(finalMessage);
             await dialog.ShowDialogAsync(this);
         });
     }
