@@ -74,6 +74,17 @@ namespace EZKPM.Server.PDP.Controllers
             return Ok();
         }
 
+        [HttpGet("machines")]
+        public async Task<IActionResult> GetMachines()
+        {
+            var machines = await _db.ClientLogs
+                .Select(l => l.MachineName)
+                .Distinct()
+                .OrderBy(m => m)
+                .ToListAsync();
+            return Ok(machines);
+        }
+
         [HttpGet("{machineName}")]
         public async Task<IActionResult> GetLogsForMachine(string machineName)
         {

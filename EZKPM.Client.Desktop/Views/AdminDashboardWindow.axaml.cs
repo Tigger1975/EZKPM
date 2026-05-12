@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using Avalonia.Input.Platform;
 
 namespace EZKPM.Client.Desktop.Views;
 
@@ -46,7 +47,10 @@ public partial class AdminDashboardWindow : Window
             {
                 _ = LoadAdminsAsync();
             }
-            LoadEnvironmentLogKey();
+            else if (tc.SelectedIndex == 6)
+            {
+                _ = LoadMachinesForLogsAsync();
+            }
             
             var config = EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig;
 
@@ -80,33 +84,65 @@ public partial class AdminDashboardWindow : Window
         catch { }
     }
 
-    private void LoadEnvironmentLogKey()
+    private async Task LoadMachinesForLogsAsync()
+    {
+        try
+        {
+            var machines = await _apiClient.HttpClient.GetFromJsonAsync<System.Collections.Generic.List<string>>("/api/v1/log/machines");
+            if (machines != null)
+            {
+                var autoComplete = this.FindControl<AutoCompleteBox>("DeviceLogMachineNameAutoCompleteBox");
+                if (autoComplete != null)
+                {
+                    autoComplete.ItemsSource = machines;
+                }
+            }
+        }
+        catch { }
+    }
+
+    private async void CopyLogKeyButton_Click(object sender, RoutedEventArgs e)
     {
         if (_decryptedAssets == null) return;
         var logKeyAsset = _decryptedAssets.FirstOrDefault(a => a.Title == "EnvironmentLogKey");
-        var textBox = this.FindControl<TextBox>("EnvironmentLogKeyTextBox");
-        if (textBox != null && logKeyAsset != null && !string.IsNullOrEmpty(logKeyAsset.Password))
+        if (logKeyAsset != null && !string.IsNullOrEmpty(logKeyAsset.Password))
         {
-            textBox.Text = logKeyAsset.Password;
+            var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+            if (clipboard != null)
+            {
+                await clipboard.SetTextAsync(logKeyAsset.Password);
+                var dialog = new ConfirmationDialog("Environment Log Key wurde in die Zwischenablage kopiert.");
+                await dialog.ShowDialogAsync(this);
+            }
         }
+        else
+        {
+            var dialog = new ConfirmationDialog("Log Key nicht verfügbar (fehlende Berechtigung oder noch nicht generiert).");
+            await dialog.ShowDialogAsync(this);
+        }
+    }
+
+    private void LoadEnvironmentLogKey()
+    {
+        // No longer updates UI. Log Key is accessed directly via copy button or log extraction.
     }
 
     private async void ExtractLogsButton_Click(object sender, RoutedEventArgs e)
     {
-        var machineBox = this.FindControl<TextBox>("DeviceLogMachineNameTextBox");
+        var autoComplete = this.FindControl<AutoCompleteBox>("DeviceLogMachineNameAutoCompleteBox");
+        string machineName = autoComplete?.Text?.Trim();
+        
         var outputBox = this.FindControl<TextBox>("ExtractedLogsTextBox");
-        var keyBox = this.FindControl<TextBox>("EnvironmentLogKeyTextBox");
-
-        if (machineBox == null || outputBox == null || keyBox == null) return;
-
-        string machineName = machineBox.Text?.Trim();
-        string privateKeyBase64 = keyBox.Text;
+        if (outputBox == null) return;
 
         if (string.IsNullOrEmpty(machineName))
         {
             outputBox.Text = "Bitte geben Sie einen Machine Name ein.";
             return;
         }
+
+        var logKeyAsset = _decryptedAssets?.FirstOrDefault(a => a.Title == "EnvironmentLogKey");
+        string privateKeyBase64 = logKeyAsset?.Password;
 
         if (string.IsNullOrEmpty(privateKeyBase64))
         {

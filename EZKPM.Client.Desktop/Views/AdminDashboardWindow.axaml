@@ -306,7 +306,7 @@
                             <StackPanel Spacing="15">
                                 <TextBlock Text="Global Environment Log Key" FontWeight="Bold" FontSize="18"/>
                                 <TextBlock Text="Mit diesem Private Key werden die zentralen Geräte-Logs entschlüsselt. Teilen Sie diesen Schlüssel NICHT außerhalb der IT!" Foreground="#EF4444" TextWrapping="Wrap" FontWeight="SemiBold"/>
-                                <TextBox x:Name="EnvironmentLogKeyTextBox" IsReadOnly="True" Height="80" TextWrapping="Wrap" Background="#F8FAFC" Watermark="Schlüssel nicht verfügbar (fehlende Berechtigung oder noch nicht generiert)" FontFamily="Consolas" FontSize="12"/>
+                                <Button Content="📋 Log Key in die Zwischenablage kopieren" Click="CopyLogKeyButton_Click" Background="#3B82F6" Foreground="White" FontWeight="Medium" Padding="15,8" HorizontalAlignment="Left"/>
                             </StackPanel>
                         </Border>
 
@@ -316,7 +316,7 @@
                                 <TextBlock Text="Rufen Sie die verschlüsselten Logs eines bestimmten Geräts vom Server ab und entschlüsseln Sie diese lokal mit dem Master Key." Foreground="#6B7280" TextWrapping="Wrap"/>
                                 
                                 <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
-                                    <TextBox x:Name="DeviceLogMachineNameTextBox" Width="300" Watermark="Machine Name (z.B. DESKTOP-123)"/>
+                                    <AutoCompleteBox x:Name="DeviceLogMachineNameAutoCompleteBox" Width="300" Watermark="Machine Name (z.B. DESKTOP-123)" FilterMode="Contains"/>
                                     <Button Content="Logs abrufen &amp; entschlüsseln" Click="ExtractLogsButton_Click" Classes="primary" Padding="20,8"/>
                                 </StackPanel>
 
