@@ -195,6 +195,7 @@ namespace EZKPM.Server.PDP.Controllers
             public string HashedSid { get; set; }
             public long Timestamp { get; set; }
             public string Signature { get; set; } // Base64 ECDSA Signature
+            public List<string> HashedGroupSids { get; set; }
         }
 
         [HttpPost("login")]
@@ -250,9 +251,17 @@ namespace EZKPM.Server.PDP.Controllers
             // Generate JWT
             var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
             var key = System.Text.Encoding.UTF8.GetBytes(config["Jwt:Key"] ?? "EZKPM_Fallback_Secret_Key_32_Bytes_Long_Minimum");
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, request.HashedSid), new Claim(ClaimTypes.PrimarySid, request.HashedSid) };
+            if (request.HashedGroupSids != null)
+            {
+                foreach (var gSid in request.HashedGroupSids)
+                {
+                    claims.Add(new Claim(ClaimTypes.GroupSid, gSid));
+                }
+            }
             var tokenDescriptor = new Microsoft.IdentityModel.Tokens.SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, request.HashedSid), new Claim(ClaimTypes.PrimarySid, request.HashedSid) }),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddDays(1),
                 Issuer = "EZKPM_Server",
                 Audience = "EZKPM_Client",

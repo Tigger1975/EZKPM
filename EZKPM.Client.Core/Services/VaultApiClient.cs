@@ -24,7 +24,7 @@ namespace EZKPM.Client.Core.Services
             return await response.Content.ReadFromJsonAsync<VaultAssetResponseDto>();
         }
 
-        public async Task<bool> AuthenticateAsync(System.Security.Cryptography.ECDsa identityKey, string hashedSid)
+        public async Task<bool> AuthenticateAsync(System.Security.Cryptography.ECDsa identityKey, string hashedSid, System.Collections.Generic.List<string> hashedGroupSids = null)
         {
             long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             string dataToSign = $"{hashedSid}:{timestamp}";
@@ -34,7 +34,8 @@ namespace EZKPM.Client.Core.Services
             var request = new {
                 HashedSid = hashedSid,
                 Timestamp = timestamp,
-                Signature = Convert.ToBase64String(signatureBytes)
+                Signature = Convert.ToBase64String(signatureBytes),
+                HashedGroupSids = hashedGroupSids
             };
 
             var response = await _httpClient.PostAsJsonAsync("/api/v1/auth/login", request);

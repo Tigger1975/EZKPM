@@ -251,7 +251,22 @@ public partial class MainWindow : Window
         {
             var currentUserSid = EZKPM.Client.Desktop.Services.AdSearchService.GetCurrentUser()?.Sid ?? "S-1-5-21-DUMMY-TEST-USER";
             string hashedSid = HashSid(currentUserSid);
-            bool isAuthenticated = await _apiClient.AuthenticateAsync(_cryptoService.IdentityKey, hashedSid);
+
+            var groupSids = new System.Collections.Generic.List<string>();
+            try
+            {
+                var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+                if (identity.Groups != null)
+                {
+                    foreach (var group in identity.Groups)
+                    {
+                        groupSids.Add(HashSid(group.Value));
+                    }
+                }
+            }
+            catch { }
+
+            bool isAuthenticated = await _apiClient.AuthenticateAsync(_cryptoService.IdentityKey, hashedSid, groupSids);
             
             if (!isAuthenticated)
             {
