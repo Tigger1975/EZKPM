@@ -67,8 +67,9 @@ public partial class AssetEditorWindow : Window
 {
     private string HashSid(string sid)
     {
+        if (string.IsNullOrWhiteSpace(sid)) return "";
         using var sha256 = System.Security.Cryptography.SHA256.Create();
-        return Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(sid)));
+        return Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(sid.Trim().ToUpperInvariant())));
     }
 
     private readonly VaultApiClient _apiClient;
@@ -732,7 +733,11 @@ public partial class AssetEditorWindow : Window
                 {
                     foreach (var group in identity.Groups)
                     {
-                        groupSids.Add(HashSid(group.Value));
+                        try
+                        {
+                            groupSids.Add(HashSid(group.Value));
+                        }
+                        catch { }
                     }
                 }
             }

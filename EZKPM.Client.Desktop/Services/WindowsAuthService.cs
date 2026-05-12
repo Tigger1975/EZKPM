@@ -37,7 +37,7 @@ namespace EZKPM.Client.Desktop.Services
         {
             if (!OperatingSystem.IsWindows())
             {
-                return true; // Mock for non-windows
+                return false; // Mock for non-windows - should fail close
             }
 
             try
@@ -125,13 +125,13 @@ namespace EZKPM.Client.Desktop.Services
                     return false;
                 }
 
-                Program.LogDebug($"CredUI failed technically with error code: {result}. Bypassing FA 14 for VM/RDP compatibility.");
-                return true;
+                Program.LogDebug($"CredUI failed technically with error code: {result}. Failing closed for security.");
+                return false;
             }
             catch (Exception ex)
             {
-                Program.LogDebug($"CredUI Exception: {ex.Message}. Bypassing FA 14.");
-                return true;
+                Program.LogDebug($"CredUI Exception: {ex.Message}. Failing closed for security.");
+                return false;
             }
         }
 

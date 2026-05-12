@@ -23,9 +23,9 @@ public partial class MainWindow : Window
 {
     private string HashSid(string sid)
     {
-        if (string.IsNullOrEmpty(sid)) return sid;
+        if (string.IsNullOrWhiteSpace(sid)) return "";
         using var sha256 = System.Security.Cryptography.SHA256.Create();
-        return Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(sid)));
+        return Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(sid.Trim().ToUpperInvariant())));
     }
 
     private readonly VaultApiClient _apiClient;
@@ -83,6 +83,22 @@ public partial class MainWindow : Window
             {
                 Services.SessionManager.HandleWindowStateChanged(this.WindowState);
             }
+        };
+
+        Services.SessionManager.OnSessionLocked += () => {
+            _cryptoService.ClearKeys();
+        };
+
+        Services.SessionManager.OnSessionUnlocked += () => {
+            string legacyPwd = EZKPM.Client.Core.Security.LegacyPasswordStore.GetLegacyPassword();
+            string adBlob = EZKPM.Client.Desktop.Services.AdKeyStorageService.RetrieveKeyFromAd();
+            string tpmBlob = EZKPM.Client.Desktop.Services.TpmKeyStorageService.RetrieveTpmBlob();
+            
+            _cryptoService.InitializeFromStorage(
+                adBlob, tpmBlob, legacyPwd, 
+                EZKPM.Client.Desktop.Services.TpmKeyStorageService.IsTpmAvailable() ? EZKPM.Client.Desktop.Services.TpmKeyStorageService.ProtectHardwarePepper : null,
+                EZKPM.Client.Desktop.Services.TpmKeyStorageService.IsTpmAvailable() ? EZKPM.Client.Desktop.Services.TpmKeyStorageService.UnprotectHardwarePepper : null,
+                out _, out _, out _);
         };
 
         _bridgeServer.Start();
@@ -260,7 +276,11 @@ public partial class MainWindow : Window
                 {
                     foreach (var group in identity.Groups)
                     {
-                        groupSids.Add(HashSid(group.Value));
+                        try
+                        {
+                            groupSids.Add(HashSid(group.Value));
+                        }
+                        catch { }
                     }
                 }
             }

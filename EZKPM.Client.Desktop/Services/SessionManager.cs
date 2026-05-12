@@ -15,6 +15,9 @@ namespace EZKPM.Client.Desktop.Services
         public static bool IsLocked { get; private set; } = true;
         public static bool RequiresStartupAuth { get; private set; } = false;
 
+        public static event Action OnSessionLocked;
+        public static event Action OnSessionUnlocked;
+
         public static void Initialize()
         {
             try
@@ -67,6 +70,7 @@ namespace EZKPM.Client.Desktop.Services
             {
                 Program.LogDebug(reason);
             }
+            OnSessionLocked?.Invoke();
         }
 
         public static void HandleWindowStateChanged(Avalonia.Controls.WindowState state, bool isTray = false)
@@ -107,6 +111,7 @@ namespace EZKPM.Client.Desktop.Services
             {
                 IsLocked = false;
                 RegisterActivity();
+                OnSessionUnlocked?.Invoke();
                 return true;
             }
             

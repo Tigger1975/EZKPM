@@ -23,6 +23,15 @@ namespace EZKPM.Client.Core.Cryptography
             _keyWrapper = keyWrapper;
         }
 
+        public void ClearKeys()
+        {
+            _myPrivateKeyX25519?.Dispose();
+            _myPrivateKeyX25519 = null;
+            
+            _myPrivateKeyKyber?.Dispose();
+            _myPrivateKeyKyber = null;
+        }
+
         public enum CryptoInitResult
         {
             Success,
