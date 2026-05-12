@@ -49,7 +49,19 @@ public partial class MainWindow : Window
 
         AssetTreeView.ItemsSource = _treeNodes;
 
-        _bridgeServer = new BrowserBridgeServer(() => _decryptedAssets, RequestAuditAsync);
+        _bridgeServer = new BrowserBridgeServer(() => _decryptedAssets, RequestAuditAsync, async () => {
+            if (!Services.SessionManager.IsLocked) return true;
+            bool success = await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => Services.SessionManager.EnsureAuthenticated("Browser Extension Autofill"));
+            if (success) {
+                int retries = 0;
+                while (_decryptedAssets.Count == 0 && retries < 20) {
+                    await Task.Delay(250);
+                    retries++;
+                }
+                return true;
+            }
+            return false;
+        });
         _bridgeServer.OnCredentialProvided = (assetTitle) => ShowNotification(assetTitle);
         _bridgeServer.OnSaveNewCredentialRequested = (payload) => {
             Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => {
@@ -87,6 +99,9 @@ public partial class MainWindow : Window
 
         Services.SessionManager.OnSessionLocked += () => {
             _cryptoService.ClearKeys();
+            _decryptedAssets.Clear();
+            _treeNodes.Clear();
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => UpdateDataGrid());
         };
 
         Services.SessionManager.OnSessionUnlocked += () => {
@@ -99,6 +114,10 @@ public partial class MainWindow : Window
                 EZKPM.Client.Desktop.Services.TpmKeyStorageService.IsTpmAvailable() ? EZKPM.Client.Desktop.Services.TpmKeyStorageService.ProtectHardwarePepper : null,
                 EZKPM.Client.Desktop.Services.TpmKeyStorageService.IsTpmAvailable() ? EZKPM.Client.Desktop.Services.TpmKeyStorageService.UnprotectHardwarePepper : null,
                 out _, out _, out _);
+                
+            Avalonia.Threading.Dispatcher.UIThread.Post(async () => {
+                await LoadAssetsAsync();
+            });
         };
 
         _bridgeServer.Start();

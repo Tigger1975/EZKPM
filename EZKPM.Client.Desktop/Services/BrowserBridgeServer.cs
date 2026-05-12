@@ -11,7 +11,7 @@ using EZKPM.Shared.Contracts;
 
 namespace EZKPM.Client.Desktop.Services
 {
-    public class BrowserBridgeServer(Func<IEnumerable<VaultAssetPayload>> getDecryptedAssetsFunc, Func<Guid, bool, string, Task<bool>> requestAuditFunc)
+    public class BrowserBridgeServer(Func<IEnumerable<VaultAssetPayload>> getDecryptedAssetsFunc, Func<Guid, bool, string, Task<bool>> requestAuditFunc, Func<Task<bool>> requestUnlockFunc)
     {
         private static void Log(string msg)
         {
@@ -25,6 +25,7 @@ namespace EZKPM.Client.Desktop.Services
         }
         private readonly Func<IEnumerable<VaultAssetPayload>> _getDecryptedAssetsFunc = getDecryptedAssetsFunc;
         private readonly Func<Guid, bool, string, Task<bool>> _requestAuditFunc = requestAuditFunc;
+        private readonly Func<Task<bool>> _requestUnlockFunc = requestUnlockFunc;
         private CancellationTokenSource _cts;
 
         public Action<string> OnCredentialProvided { get; set; }
@@ -107,6 +108,8 @@ namespace EZKPM.Client.Desktop.Services
 
                 if (action == "REQUEST_AUTOFILL")
                 {
+                    if (!await _requestUnlockFunc()) return JsonSerializer.Serialize(new { Type = "NO_MATCH" });
+
                     string url = root.GetProperty("Url").GetString()?.ToLowerInvariant() ?? "";
                     
                     var assets = _getDecryptedAssetsFunc();
@@ -146,6 +149,8 @@ namespace EZKPM.Client.Desktop.Services
                 }
                 else if (action == "REQUEST_SEARCH")
                 {
+                    if (!await _requestUnlockFunc()) return JsonSerializer.Serialize(new { Type = "SEARCH_RESULTS", Results = new List<object>() });
+
                     string query = root.TryGetProperty("Query", out var qProp) ? qProp.GetString() : "";
                     var assets = _getDecryptedAssetsFunc();
                     var matches = assets.Where(a => 
@@ -173,6 +178,8 @@ namespace EZKPM.Client.Desktop.Services
                 }
                 else if (action == "REQUEST_CREDENTIAL_DATA")
                 {
+                    if (!await _requestUnlockFunc()) return JsonSerializer.Serialize(new { Type = "AUDIT_REJECTED" });
+
                     if (root.TryGetProperty("AssetId", out var idProp) && Guid.TryParse(idProp.GetString(), out Guid assetId))
                     {
                         var asset = _getDecryptedAssetsFunc().FirstOrDefault(a => a.TransientAssetId == assetId);
