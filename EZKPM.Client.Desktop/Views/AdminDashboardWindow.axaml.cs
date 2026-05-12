@@ -89,9 +89,26 @@ public partial class AdminDashboardWindow : Window
                 var pairingCode = result.GetProperty("pairingCode").GetString();
 
                 // 3. Open local E-Mail client (mailto)
+                string serverUrl = EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl;
                 string email = $"{_selectedUserForInvite.SamAccountName}@{System.DirectoryServices.ActiveDirectory.Domain.GetCurrentDomain().Name}";
-                string subject = Uri.EscapeDataString("Ihre Einladung für EZKPM (Ironclad Vault)");
-                string body = Uri.EscapeDataString($"Hallo {_selectedUserForInvite.DisplayName},\n\nSie wurden eingeladen.\nBitte installieren Sie den Client und klicken Sie auf folgenden Link:\n\nezkpm://pair?code={pairingCode}\n\nAlternativ können Sie den Code manuell eingeben:\nCode: {pairingCode}");
+                string subject = Uri.EscapeDataString("Ihre Einladung für EZKPM / Your invitation for EZKPM (Ironclad Vault)");
+                
+                string bodyText = 
+                    $"Hallo {_selectedUserForInvite.DisplayName},\n\n" +
+                    $"Sie wurden zur Nutzung von EZKPM (Ironclad Vault) eingeladen.\n" +
+                    $"1. Laden Sie den Client hier herunter: {serverUrl}\n" +
+                    $"2. Klicken Sie nach der Installation auf folgenden Link, um sich zu verbinden:\n" +
+                    $"   ezkpm://pair?code={pairingCode}\n\n" +
+                    $"Alternativ können Sie den Code manuell eingeben: {pairingCode}\n\n" +
+                    $"---\n\n" +
+                    $"Hello {_selectedUserForInvite.DisplayName},\n\n" +
+                    $"You have been invited to use EZKPM (Ironclad Vault).\n" +
+                    $"1. Download the client here: {serverUrl}\n" +
+                    $"2. After installation, click the following link to connect:\n" +
+                    $"   ezkpm://pair?code={pairingCode}\n\n" +
+                    $"Alternatively, you can enter the code manually: {pairingCode}";
+
+                string body = Uri.EscapeDataString(bodyText);
                 
                 string mailtoUri = $"mailto:{email}?subject={subject}&body={body}";
 
