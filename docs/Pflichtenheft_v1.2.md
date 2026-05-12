@@ -139,13 +139,13 @@ Ein einheitliches Look & Feel ist bei sicherheitsrelevanter Software das A und O
 
 ✅ AD & ACL Rollen (FA 11 & FA 12): AD-Gruppen-Abfragen und SID-basiertes Rechtesystem (Read, Owner, Execute-Only) sind im UI vollständig abgebildet und funktional.
 
+✅ Kryptografisches Audit-Log (FA 4.2 & FA 22): Eingaben (Zahlungsdaten/Sonderaktionen) werden lokal verschlüsselt und per Hash-Chaining verkettet an den Server gesendet (VaultApiClient & VaultCryptoService).
+
+✅ API-Client & Server-Kommunikation: Der VaultApiClient wurde implementiert und ruft verschlüsselte Blobs über den VaultController (PDP) via HTTPS/OIDC ab.
+
 6.2 Offene Anforderungen (Nächste Schritte)
 
 ⏳ Multi-Device Roaming (FA 15 - Weg B): Implementierung des 34-stelligen "Secret Key" (1Password-Prinzip) für die plattformunabhängige Geräte-Kopplung und Wiederherstellung bei vollständigem Geräteverlust.
-
-⏳ API-Client & Server-Kommunikation: Ein VaultApiClient muss implementiert werden, um mit dem VaultController (PDP) via HTTPS/OIDC zu kommunizieren und verschlüsselte Blobs abzurufen.
-
-⏳ Kryptografisches Audit-Log (FA 4.2 & FA 22): Die Eingaben aus dem AuditDialog müssen lokal mit AES-GCM verschlüsselt und mit dem Hash des vorherigen Eintrags verkettet werden (Hash-Chaining), bevor sie an den Server gesendet werden.
 
 7. Abnahmekriterien
 
