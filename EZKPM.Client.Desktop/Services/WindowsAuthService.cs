@@ -87,12 +87,26 @@ namespace EZKPM.Client.Desktop.Services
                         
                         if (unpacked)
                         {
+                            string resolvedDomain = domain.ToString();
+                            if (string.IsNullOrEmpty(resolvedDomain))
+                            {
+                                var identityName = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+                                if (identityName.Contains("\\"))
+                                {
+                                    resolvedDomain = identityName.Split('\\')[0];
+                                }
+                                else
+                                {
+                                    resolvedDomain = Environment.MachineName;
+                                }
+                            }
+
+                            var contextType = string.Equals(resolvedDomain, Environment.MachineName, StringComparison.OrdinalIgnoreCase) 
+                                ? System.DirectoryServices.AccountManagement.ContextType.Machine 
+                                : System.DirectoryServices.AccountManagement.ContextType.Domain;
+
                             // Validate the unpacked credentials against the OS
-                            using var context = new System.DirectoryServices.AccountManagement.PrincipalContext(
-                                string.IsNullOrEmpty(domain.ToString()) ? 
-                                System.DirectoryServices.AccountManagement.ContextType.Machine : 
-                                System.DirectoryServices.AccountManagement.ContextType.Domain, 
-                                string.IsNullOrEmpty(domain.ToString()) ? Environment.MachineName : domain.ToString());
+                            using var context = new System.DirectoryServices.AccountManagement.PrincipalContext(contextType, resolvedDomain);
 
                             bool isValid = context.ValidateCredentials(user.ToString(), pwd.ToString());
                             
@@ -101,7 +115,7 @@ namespace EZKPM.Client.Desktop.Services
 
                             if (!isValid)
                             {
-                                Program.LogDebug("Credential validation failed! Incorrect password.");
+                                Program.LogDebug($"Credential validation failed! Incorrect password for user {resolvedDomain}\\{user}.");
                                 return false;
                             }
                             
