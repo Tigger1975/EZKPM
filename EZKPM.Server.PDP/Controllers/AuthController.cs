@@ -65,8 +65,14 @@ namespace EZKPM.Server.PDP.Controllers
                 return Conflict("User is already fully registered with an Identity Key.");
 
             // Generate a secure 8-character Pairing Code
-            var pairingCodeBytes = RandomNumberGenerator.GetBytes(6);
-            var pairingCode = Convert.ToBase64String(pairingCodeBytes).Replace("+", "").Replace("/", "").Substring(0, 8).ToUpper();
+            var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ23456789";
+            var stringChars = new char[8];
+            var randomBytes = RandomNumberGenerator.GetBytes(8);
+            for (int i = 0; i < stringChars.Length; i++)
+            {
+                stringChars[i] = chars[randomBytes[i] % chars.Length];
+            }
+            var pairingCode = new string(stringChars);
 
             // Hash the pairing code for storage
             using var sha256 = SHA256.Create();
