@@ -1,0 +1,31 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="EZKPM.Client.Desktop.Views.SecuritySettingsWindow"
+        Title="Sicherheit &amp; Notfall-Wiederherstellung" Width="600" Height="400"
+        WindowStartupLocation="CenterOwner" Background="#F9FAFB">
+    
+    <Grid RowDefinitions="Auto, *">
+        <Border Grid.Row="0" Background="#1E293B" Padding="20">
+            <TextBlock Text="🔒 Sicherheit &amp; Notfall-Wiederherstellung" FontSize="20" FontWeight="Bold" Foreground="White" />
+        </Border>
+
+        <StackPanel Grid.Row="1" Margin="20" Spacing="20">
+            <TextBlock Text="Geräte-Schlüssel (Setup-Code)" FontWeight="Bold" FontSize="16"/>
+            <TextBlock Text="Mit diesem 34-stelligen Schlüssel können Sie Ihr Konto auf neuen Geräten (z.B. Smartphone oder Laptop) wiederherstellen, falls diese nicht an die Windows-Domäne angeschlossen sind. Bewahren Sie ihn extrem sicher auf!" TextWrapping="Wrap" Foreground="#4B5563"/>
+            
+            <TextBox x:Name="SecretKeyTextBox" IsReadOnly="True" FontSize="16" FontFamily="Consolas, Courier New, monospace" FontWeight="Bold" TextAlignment="Center" Padding="15" Background="#F1F5F9" BorderBrush="#CBD5E1"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
+                <Button Content="Kopieren" Click="CopyKeyButton_Click" Background="#3B82F6" Foreground="White" Padding="20,10" FontWeight="Bold"/>
+                <Button Content="Als Notfall-PDF speichern (TODO)" IsEnabled="False" Background="#10B981" Foreground="White" Padding="20,10" FontWeight="Bold"/>
+            </StackPanel>
+            
+            <Border Background="#FEF2F2" BorderBrush="#F87171" BorderThickness="1" CornerRadius="5" Padding="10" Margin="0,10,0,0">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="⚠️" FontSize="24" VerticalAlignment="Center"/>
+                    <TextBlock Text="Achtung: Jeder, der diesen Schlüssel (zusammen mit Ihrem Windows/AD-Login) besitzt, kann Ihren Tresor auf einem neuen Gerät entschlüsseln. Speichern Sie ihn niemals digital unverschlüsselt!" TextWrapping="Wrap" VerticalAlignment="Center" Foreground="#991B1B" MaxWidth="500"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Grid>
+</Window>

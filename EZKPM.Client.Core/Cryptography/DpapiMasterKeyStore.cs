@@ -23,12 +23,23 @@ namespace EZKPM.Client.Core.Cryptography
 
         public static byte[] GetOrGenerateMachineSecret()
         {
-            if (!OperatingSystem.IsWindows())
-            {
-                // Fallback für nicht-Windows (z. B. macOS/Linux in der Entwicklung)
-                // Hier würde man den Keychain verwenden. Für den Moment mocken wir das.
-                return new byte[16];
-            }
+
+            var key = GetMachineSecret();
+            if (key != null) return key;
+
+            // Wenn wir hier sind, existiert kein Key oder er ist defekt. Wir generieren einen neuen.
+
+            byte[] newMachineSecret = new byte[16];
+            RandomNumberGenerator.Fill(newMachineSecret);
+
+            SaveMachineSecret(newMachineSecret);
+
+            return newMachineSecret;
+        }
+
+        public static byte[] GetMachineSecret()
+        {
+            if (!OperatingSystem.IsWindows()) return new byte[16];
 
             var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var appDir = Path.Combine(appData, AppFolderName);
@@ -39,9 +50,7 @@ namespace EZKPM.Client.Core.Cryptography
                 try
                 {
                     byte[] encryptedKey = File.ReadAllBytes(keyPath);
-                    // Unprotect entschlüsselt mit dem Windows-Passwort (Current User)
                     byte[] decryptedKey = ProtectedData.Unprotect(encryptedKey, null, DataProtectionScope.CurrentUser);
-                    
                     if (decryptedKey.Length == 64 || decryptedKey.Length == 16)
                     {
                         return decryptedKey;
@@ -49,19 +58,10 @@ namespace EZKPM.Client.Core.Cryptography
                 }
                 catch (CryptographicException)
                 {
-                    // DPAPI Unprotect failed (e.g. password changed or corrupted).
-                    // We must NOT generate a new key, as this would lock the user out of existing assets!
                     throw new RequiresRecoveryException("DPAPI Master-Key konnte nicht entschlüsselt werden. Ein 4-Augen-Recovery wird benötigt.");
                 }
             }
-
-            // Wenn wir hier sind, existiert kein Key oder er ist defekt. Wir generieren einen neuen.
-            byte[] newMachineSecret = new byte[16];
-            RandomNumberGenerator.Fill(newMachineSecret);
-
-            SaveMachineSecret(newMachineSecret);
-
-            return newMachineSecret;
+            return null;
         }
 
         public static void SaveMachineSecret(byte[] key)

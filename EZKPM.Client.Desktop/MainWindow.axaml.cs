@@ -1369,6 +1369,15 @@ public partial class MainWindow : Window
         return privateFolder?.TransientAssetId;
     }
 
+
+
+    private void OpenSecuritySettings_Click(object sender, RoutedEventArgs e)
+    {
+        if (!Services.SessionManager.EnsureAuthenticated("Sicherheits-Einstellungen öffnen")) return;
+        var secWin = new Views.SecuritySettingsWindow();
+        secWin.ShowDialog(this);
+    }
+
     private void NewAssetButton_Click(object sender, RoutedEventArgs e)
     {
         var selectedNode = AssetTreeView?.SelectedItem as VaultTreeNode;

@@ -129,6 +129,7 @@
                         <Button.Flyout>
                             <MenuFlyout>
                                 <MenuItem Header="{x:Static res:AppStrings.Main_MenuSettings}" Click="ChangeServerMenuItem_Click" />
+                                <MenuItem Header="Sicherheit &amp; Notfall-Wiederherstellung" Click="OpenSecuritySettings_Click" />
                                 <MenuItem Header="{x:Static res:AppStrings.Settings_CheckUpdate}" Click="CheckForUpdates_Click" />
                                 <MenuItem Header="{x:Static res:AppStrings.Settings_About}" Click="ShowVersion_Click" />
                             </MenuFlyout>

@@ -17,10 +17,18 @@ namespace EZKPM.Client.Core.Cryptography
         {
             byte[] secretBytes = new byte[16];
             RandomNumberGenerator.Fill(secretBytes);
-            string base32 = ToBase32(secretBytes);
+            return FormatSecretKey(secretBytes);
+        }
 
-            // Format: EZ-XXXXX-XXXXX-XXXXX-XXXXX-XXXXXX
-            // base32 is exactly 26 characters for 16 bytes.
+        /// <summary>
+        /// Formatiert rohe 16-Byte Schlüsseldaten in das 34-stellige Format.
+        /// </summary>
+        public static string FormatSecretKey(byte[] secretBytes)
+        {
+            if (secretBytes == null || secretBytes.Length != 16)
+                throw new ArgumentException("Secret Key muss exakt 16 Bytes lang sein.");
+
+            string base32 = ToBase32(secretBytes);
             return $"EZ-{base32.Substring(0, 5)}-{base32.Substring(5, 5)}-{base32.Substring(10, 5)}-{base32.Substring(15, 5)}-{base32.Substring(20, 6)}";
         }
 
