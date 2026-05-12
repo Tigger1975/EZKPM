@@ -107,7 +107,10 @@ public partial class AdminDashboardWindow : Window
 
                 // 3. Open local E-Mail client (mailto)
                 string serverUrl = EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl;
-                string email = $"{_selectedUserForInvite.SamAccountName}@{System.DirectoryServices.ActiveDirectory.Domain.GetCurrentDomain().Name}";
+                string email = !string.IsNullOrWhiteSpace(_selectedUserForInvite.EmailAddress) 
+                    ? _selectedUserForInvite.EmailAddress 
+                    : $"{_selectedUserForInvite.SamAccountName}@{System.DirectoryServices.ActiveDirectory.Domain.GetCurrentDomain().Name}";
+                    
                 string subject = Uri.EscapeDataString("Ihre Einladung für EZKPM / Your invitation for EZKPM (Ironclad Vault)");
                 
                 string bodyText = 

@@ -34,6 +34,7 @@ public static class AdSearchService
             var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
             string displayName = identity.Name;
             string samAccountName = identity.Name.Split('\\').LastOrDefault() ?? identity.Name;
+            string email = "";
             
             try 
             {
@@ -58,6 +59,7 @@ public static class AdSearchService
                         {
                             displayName = user.DisplayName;
                             samAccountName = user.SamAccountName;
+                            email = user.EmailAddress ?? "";
                         }
                     }
                 }
@@ -69,6 +71,7 @@ public static class AdSearchService
                 DisplayName = displayName, 
                 SamAccountName = samAccountName,
                 Sid = identity.User?.Value ?? Environment.UserDomainName + "\\" + Environment.UserName, 
+                EmailAddress = email,
                 Type = "User" 
             };
         }
@@ -112,6 +115,7 @@ public static class AdSearchService
                         DisplayName = u.DisplayName ?? u.Name, 
                         SamAccountName = u.SamAccountName,
                         Sid = u.Sid?.Value ?? "", 
+                        EmailAddress = u.EmailAddress ?? "",
                         Type = "User",
                         IsAccountDisabled = !isEnabled
                     });
