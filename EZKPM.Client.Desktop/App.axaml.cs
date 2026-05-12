@@ -62,6 +62,12 @@ namespace EZKPM.Client.Desktop
                 return;
             }
 
+            if (args.Any(a => a.Equals("--headless", StringComparison.OrdinalIgnoreCase)))
+            {
+                await StartHeadlessModeAsync(desktop);
+                return;
+            }
+
             var startup = new Views.StartupWindow();
             startup.Closed += (s, e) =>
             {
@@ -77,6 +83,53 @@ namespace EZKPM.Client.Desktop
             if (!Program.IsAutoStart)
             {
                 startup.Show();
+            }
+        }
+
+        private async Task StartHeadlessModeAsync(IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            try
+            {
+                var cryptoWrapper = new EZKPM.Client.Core.Cryptography.HybridPqcKeyWrapper();
+                var cryptoService = new EZKPM.Client.Core.Cryptography.VaultCryptoService(cryptoWrapper);
+
+                if (!EZKPM.Client.Core.Cryptography.DpapiMasterKeyStore.HasMachineSecret())
+                {
+                    Program.LogDebug("Headless mode failed: No DPAPI Machine Secret found. Please run the client once interactively with the service account to pair the device.");
+                    desktop.Shutdown(-1);
+                    return;
+                }
+
+                string legacyPwd = EZKPM.Client.Core.Security.LegacyPasswordStore.GetLegacyPassword();
+                string adBlob = EZKPM.Client.Desktop.Services.AdKeyStorageService.RetrieveKeyFromAd();
+                string tpmBlob = EZKPM.Client.Desktop.Services.TpmKeyStorageService.RetrieveTpmBlob();
+
+                var result = cryptoService.InitializeFromStorage(
+                    adBlob, tpmBlob, legacyPwd, 
+                    EZKPM.Client.Desktop.Services.TpmKeyStorageService.IsTpmAvailable() ? EZKPM.Client.Desktop.Services.TpmKeyStorageService.ProtectHardwarePepper : null,
+                    EZKPM.Client.Desktop.Services.TpmKeyStorageService.IsTpmAvailable() ? EZKPM.Client.Desktop.Services.TpmKeyStorageService.UnprotectHardwarePepper : null,
+                    out _, out _, out _);
+
+                if (result == EZKPM.Client.Core.Cryptography.VaultCryptoService.CryptoInitResult.Success)
+                {
+                    Program.LogDebug("Headless mode: DPAPI decryption successful.");
+                    
+                    // Wir erstellen das MainWindow, lassen es aber unsichtbar!
+                    var main = new MainWindow(cryptoService, null);
+                    desktop.MainWindow = main;
+                    // Kein main.Show() aufrufen! 
+                    // MainWindow.LoadAssetsAsync kümmert sich um den Start der API.
+                }
+                else
+                {
+                    Program.LogDebug($"Headless mode failed: Crypto Init Result = {result}");
+                    desktop.Shutdown(-1);
+                }
+            }
+            catch (Exception ex)
+            {
+                Program.LogDebug($"Headless mode fatal error: {ex.Message}");
+                desktop.Shutdown(-1);
             }
         }
 
