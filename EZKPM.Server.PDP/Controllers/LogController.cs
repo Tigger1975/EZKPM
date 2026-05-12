@@ -67,8 +67,7 @@ namespace EZKPM.Server.PDP.Controllers
             }
             else
             {
-                // Only allow setting once, or maybe admins can override. For now, allow setting if empty.
-                return Conflict("Environment key already set.");
+                conf.Value = publicKey;
             }
             await _db.SaveChangesAsync();
             return Ok();

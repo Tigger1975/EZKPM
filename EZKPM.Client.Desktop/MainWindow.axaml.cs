@@ -552,9 +552,11 @@ public partial class MainWindow : Window
         try
         {
             var existingPubKey = await _apiClient.GetEnvironmentPublicKeyAsync();
-            if (!string.IsNullOrEmpty(existingPubKey))
+            var hasLocalKey = _decryptedAssets.Any(a => a.Title == "EnvironmentLogKey");
+            
+            if (!string.IsNullOrEmpty(existingPubKey) && hasLocalKey)
             {
-                return; // Key exists, nothing to do
+                return; // Key exists both on server and locally, nothing to do
             }
 
             // Key does not exist, generate an RSA key pair
