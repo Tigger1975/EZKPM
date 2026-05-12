@@ -935,6 +935,61 @@ public partial class AdminDashboardWindow : Window
             }
         }
     }
+    private async void RefreshAllUsersButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var serverData = await _apiClient.GetAllUsersAsync();
+            var allAdUsers = await EZKPM.Client.Desktop.Services.AdSearchService.GetAllAdUsersAsync();
+            
+            var displayList = new System.Collections.Generic.List<UserManagementViewModel>();
+
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+
+            foreach (var adUser in allAdUsers)
+            {
+                var sidHashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(adUser.Sid));
+                var hashedSid = Convert.ToBase64String(sidHashBytes);
+
+                var registeredMatch = serverData.RegisteredUsers?.FirstOrDefault(u => u.HashedSid == hashedSid);
+                var inviteMatch = serverData.PendingInvites?.FirstOrDefault(i => i.HashedSid == hashedSid);
+
+                if (registeredMatch != null || inviteMatch != null)
+                {
+                    string status = "Registriert";
+                    string color = "#10B981"; // Green
+
+                    if (inviteMatch != null)
+                    {
+                        status = "Eingeladen (Ausstehend)";
+                        color = "#F59E0B"; // Yellow
+                    }
+                    if (adUser.IsAccountDisabled)
+                    {
+                        status = "AD Deaktiviert";
+                        color = "#EF4444"; // Red
+                    }
+
+                    displayList.Add(new UserManagementViewModel
+                    {
+                        Sid = adUser.Sid,
+                        DisplayName = adUser.DisplayName,
+                        SamAccountName = adUser.SamAccountName,
+                        StatusText = status,
+                        StatusColor = color
+                    });
+                }
+            }
+
+            var listBox = this.FindControl<ListBox>("AllUsersList");
+            if (listBox != null) listBox.ItemsSource = displayList;
+        }
+        catch (Exception ex)
+        {
+            var dialog = new ConfirmationDialog($"Fehler beim Laden der Benutzer: {ex.Message}");
+            await dialog.ShowDialogAsync(this);
+        }
+    }
 }
 
 public class AdminUserViewModel
@@ -945,4 +1000,13 @@ public class AdminUserViewModel
     public bool IsAccountDisabled { get; set; }
     public string StatusText => IsAccountDisabled ? "Deaktiviert" : "Aktiv";
     public string StatusColor => IsAccountDisabled ? "#EF4444" : "#10B981";
+}
+
+public class UserManagementViewModel
+{
+    public string Sid { get; set; }
+    public string DisplayName { get; set; }
+    public string SamAccountName { get; set; }
+    public string StatusText { get; set; }
+    public string StatusColor { get; set; }
 }

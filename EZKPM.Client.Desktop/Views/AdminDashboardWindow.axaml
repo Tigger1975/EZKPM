@@ -126,6 +126,44 @@
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
+            <TabItem Header="Benutzerverwaltung">
+                <ScrollViewer>
+                    <StackPanel Spacing="20" MaxWidth="900" HorizontalAlignment="Left">
+                        <Border Classes="card">
+                            <StackPanel Spacing="15">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Alle existierenden Benutzer" FontWeight="Bold" FontSize="18"/>
+                                        <TextBlock Text="Zeigt alle im System registrierten und eingeladenen Benutzer, kombiniert mit dem aktuellen Active Directory Status." Foreground="#6B7280" FontSize="13" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Content="↻ Liste Aktualisieren" Click="RefreshAllUsersButton_Click" Background="White" BorderBrush="#D1D5DB" BorderThickness="1" Foreground="#374151" FontWeight="Medium" Padding="15,8"/>
+                                </Grid>
+                                
+                                <ListBox x:Name="AllUsersList" Height="500" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="6" Background="#F9FAFB">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate x:CompileBindings="False">
+                                            <Grid ColumnDefinitions="Auto, *, Auto" Margin="8,4">
+                                                <Border Grid.Column="0" Background="#E0E7FF" CornerRadius="15" Width="30" Height="30" VerticalAlignment="Center" Margin="0,0,12,0">
+                                                    <TextBlock Text="👤" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16"/>
+                                                </Border>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" Foreground="#111827" FontSize="15"/>
+                                                    <TextBlock Text="{Binding SamAccountName}" Foreground="#6B7280" FontSize="12"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                                    <Border Background="{Binding StatusColor}" CornerRadius="4" Padding="6,2">
+                                                        <TextBlock Text="{Binding StatusText}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
             <TabItem Header="Benutzer Einladen">
                 <ScrollViewer>

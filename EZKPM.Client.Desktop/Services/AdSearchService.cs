@@ -184,6 +184,63 @@ public static class AdSearchService
         });
     }
 
+    public static async Task<List<AdPrincipal>> GetAllAdUsersAsync()
+    {
+        return await Task.Run(() =>
+        {
+            var results = new List<AdPrincipal>();
+            try
+            {
+                using var context = new PrincipalContext(ContextType.Domain);
+                using var userPrincipal = new UserPrincipal(context) { Name = "*" };
+                using var userSearcher = new PrincipalSearcher(userPrincipal);
+                
+                // Wir limitieren hier bewusst NICHT, da dies für den kompletten AD-Abgleich im Admin-Dashboard gedacht ist
+                var users = userSearcher.FindAll().OfType<UserPrincipal>();
+                
+                foreach (var u in users)
+                {
+                    bool isEnabled = u.Enabled ?? true;
+                    results.Add(new AdPrincipal 
+                    { 
+                        DisplayName = u.DisplayName ?? u.Name, 
+                        SamAccountName = u.SamAccountName,
+                        Sid = u.Sid?.Value ?? "", 
+                        EmailAddress = u.EmailAddress ?? "",
+                        Type = "User",
+                        IsAccountDisabled = !isEnabled
+                    });
+                }
+            }
+            catch (Exception)
+            {
+                // Fallback: Local Machine
+                try
+                {
+                    using var localContext = new PrincipalContext(ContextType.Machine);
+                    using var userPrincipal = new UserPrincipal(localContext) { Name = "*" };
+                    using var userSearcher = new PrincipalSearcher(userPrincipal);
+                    var users = userSearcher.FindAll().OfType<UserPrincipal>();
+                    foreach (var u in users)
+                    {
+                        bool isEnabled = u.Enabled ?? true;
+                        results.Add(new AdPrincipal 
+                        { 
+                            DisplayName = u.DisplayName ?? u.Name, 
+                            SamAccountName = u.SamAccountName,
+                            Sid = u.Sid?.Value ?? "", 
+                            Type = "User",
+                            IsAccountDisabled = !isEnabled
+                        });
+                    }
+                }
+                catch { }
+            }
+
+            return results.OrderBy(r => r.DisplayName).ToList();
+        });
+    }
+
     public static async Task<List<AdPrincipal>> GetGroupMembersAsync(string groupSid)
     {
         return await Task.Run(() =>

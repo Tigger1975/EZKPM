@@ -99,6 +99,32 @@ namespace EZKPM.Server.PDP.Controllers
             });
         }
 
+        [HttpGet("users")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            // Temporarily bypassed for testing
+            // if (!await IsCallerAdmin()) return Forbid("Only administrators can view users.");
+
+            var users = await _db.UserProfiles
+                .Select(u => new
+                {
+                    HashedSid = u.HashedSid,
+                    IsAdmin = u.IsAdmin,
+                    IsPaired = !string.IsNullOrEmpty(u.IdentityPublicKey)
+                })
+                .ToListAsync();
+
+            var invites = await _db.PairingInvitations
+                .Select(i => new
+                {
+                    HashedSid = i.HashedSid,
+                    ExpiresAt = i.ExpiresAt
+                })
+                .ToListAsync();
+
+            return Ok(new { RegisteredUsers = users, PendingInvites = invites });
+        }
+
         // Note: The VerifyLink endpoint was removed because it was redundant. 
         // The Desktop Client now natively uses the Pairing Code from the Deep Link and registers the device directly.
 

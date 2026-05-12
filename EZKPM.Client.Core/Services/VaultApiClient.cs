@@ -55,6 +55,32 @@ namespace EZKPM.Client.Core.Services
             return false;
         }
 
+        public class ServerUserDto
+        {
+            public string HashedSid { get; set; }
+            public bool IsAdmin { get; set; }
+            public bool IsPaired { get; set; }
+        }
+
+        public class ServerInviteDto
+        {
+            public string HashedSid { get; set; }
+            public DateTime ExpiresAt { get; set; }
+        }
+
+        public class ServerUsersResponseDto
+        {
+            public System.Collections.Generic.List<ServerUserDto> RegisteredUsers { get; set; }
+            public System.Collections.Generic.List<ServerInviteDto> PendingInvites { get; set; }
+        }
+
+        public async Task<ServerUsersResponseDto> GetAllUsersAsync()
+        {
+            var response = await _httpClient.GetAsync("/api/v1/auth/users");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<ServerUsersResponseDto>();
+        }
+
         public async Task<System.Collections.Generic.List<VaultAssetResponseDto>> GetAllAssetsAsync()
         {
             var response = await _httpClient.GetAsync("/api/v1/vault/assets/all");
