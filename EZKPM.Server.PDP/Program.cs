@@ -51,6 +51,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = "EZKPM_Client",
             IssuerSigningKey = new SymmetricSecurityKey(key)
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                if (context.Request.Headers.TryGetValue("X-Vault-Token", out var token))
+                {
+                    context.Token = token;
+                }
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                try { System.IO.File.AppendAllText("C:\\inetpub\\EZKPM\\jwt_debug.txt", $"[{DateTime.UtcNow}] Auth Failed: {context.Exception.Message}\n"); } catch {}
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                try { System.IO.File.AppendAllText("C:\\inetpub\\EZKPM\\jwt_debug.txt", $"[{DateTime.UtcNow}] Challenge: {context.Error}, {context.ErrorDescription}\n"); } catch {}
+                return Task.CompletedTask;
+            }
+        };
     });
 builder.Services.AddOpenIddict()
     .AddCore(options =>

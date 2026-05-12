@@ -47,7 +47,8 @@ namespace EZKPM.Client.Core.Services
 
                 if (!string.IsNullOrEmpty(token))
                 {
-                    _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                    _httpClient.DefaultRequestHeaders.Remove("X-Vault-Token");
+                    _httpClient.DefaultRequestHeaders.Add("X-Vault-Token", token);
                     return true;
                 }
             }
