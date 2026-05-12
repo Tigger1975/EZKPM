@@ -93,8 +93,8 @@ try {
 } catch {
 }
 
-Write-Host "`n[8/8] Starte lokalen Desktop-Client..." -ForegroundColor Yellow
-Start-Process "$PublishClientPath\EZKPM.Client.Desktop.exe" -WorkingDirectory $PublishClientPath
+#Write-Host "`n[8/8] Starte lokalen Desktop-Client..." -ForegroundColor Yellow
+#Start-Process "$PublishClientPath\EZKPM.Client.Desktop.exe" -WorkingDirectory $PublishClientPath
 
 Write-Host "`n==========================================" -ForegroundColor Green
 Write-Host " Deployment erfolgreich abgeschlossen! " -ForegroundColor Green
