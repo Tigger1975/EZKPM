@@ -57,8 +57,8 @@ namespace EZKPM.Server.PDP.Data
             modelBuilder.Entity<AuditLog>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                // Verkettung erzwingen durch Unique-Index auf PreviousEntryHash
-                entity.HasIndex(e => e.PreviousEntryHash).IsUnique();
+                // Verkettung (Hash-Chaining)
+                entity.HasIndex(e => e.PreviousEntryHash);
 
                 entity.HasOne(e => e.Asset)
                       .WithMany()

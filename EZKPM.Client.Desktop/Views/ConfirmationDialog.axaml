@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:res="using:EZKPM.Client.Desktop.Resources"
         x:Class="EZKPM.Client.Desktop.Views.ConfirmationDialog"
-        Title="{x:Static res:AppStrings.ConfirmDialog_Title}" Width="400" Height="200" WindowStartupLocation="CenterOwner">
+        Title="{x:Static res:AppStrings.ConfirmDialog_Title}" Width="450" MinHeight="200" SizeToContent="Height" WindowStartupLocation="CenterOwner">
     <StackPanel Margin="20" Spacing="20">
         <TextBox x:Name="MessageTextBlock" TextWrapping="Wrap" IsReadOnly="True" BorderThickness="0" Background="Transparent" />
         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
