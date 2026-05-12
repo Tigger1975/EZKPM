@@ -14,18 +14,19 @@ namespace EZKPM.Client.Desktop.Views;
 public partial class AdminDashboardWindow : Window
 {
     private readonly VaultApiClient _apiClient;
+    private List<EZKPM.Shared.Contracts.VaultAssetPayload> _decryptedAssets;
+    private readonly Func<Guid, EZKPM.Shared.Contracts.VaultAssetPayload> _getAssetOnDemand;
 
     public AdminDashboardWindow()
     {
         InitializeComponent();
     }
 
-    private List<EZKPM.Shared.Contracts.VaultAssetPayload> _decryptedAssets;
-
-    public AdminDashboardWindow(VaultApiClient apiClient, List<EZKPM.Shared.Contracts.VaultAssetPayload> decryptedAssets = null) : this()
+    public AdminDashboardWindow(VaultApiClient apiClient, List<EZKPM.Shared.Contracts.VaultAssetPayload> decryptedAssets, Func<Guid, EZKPM.Shared.Contracts.VaultAssetPayload> getAssetOnDemand) : this()
     {
         _apiClient = apiClient;
         _decryptedAssets = decryptedAssets;
+        _getAssetOnDemand = getAssetOnDemand;
         LoadAdminStatus();
         _ = LoadAlertsAsync();
         var config = EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig;
@@ -101,24 +102,34 @@ public partial class AdminDashboardWindow : Window
         catch { }
     }
 
+    private string GetEnvironmentLogKeyPassword()
+    {
+        if (_decryptedAssets == null || _getAssetOnDemand == null) return null;
+        var logKeyAsset = _decryptedAssets.FirstOrDefault(a => a.Title == "EnvironmentLogKey");
+        if (logKeyAsset == null || !logKeyAsset.TransientAssetId.HasValue) return null;
+        
+        // Use JIT Decryption since ScrubSensitiveData wiped it from RAM
+        var rawAsset = _getAssetOnDemand(logKeyAsset.TransientAssetId.Value);
+        return rawAsset?.Password;
+    }
+
     private async void CopyLogKeyButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_decryptedAssets == null) return;
-        var logKeyAsset = _decryptedAssets.FirstOrDefault(a => a.Title == "EnvironmentLogKey");
-        if (logKeyAsset != null && !string.IsNullOrEmpty(logKeyAsset.Password))
+        string privateKeyBase64 = GetEnvironmentLogKeyPassword();
+        if (!string.IsNullOrEmpty(privateKeyBase64))
         {
             var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
             if (clipboard != null)
             {
-                await clipboard.SetTextAsync(logKeyAsset.Password);
+                await clipboard.SetTextAsync(privateKeyBase64);
                 var dialog = new ConfirmationDialog("Environment Log Key wurde in die Zwischenablage kopiert.");
-                await dialog.ShowDialogAsync(this);
+                await dialog.ShowDialog(this);
             }
         }
         else
         {
             var dialog = new ConfirmationDialog("Log Key nicht verfügbar (fehlende Berechtigung oder noch nicht generiert).");
-            await dialog.ShowDialogAsync(this);
+            await dialog.ShowDialog(this);
         }
     }
 
@@ -141,8 +152,7 @@ public partial class AdminDashboardWindow : Window
             return;
         }
 
-        var logKeyAsset = _decryptedAssets?.FirstOrDefault(a => a.Title == "EnvironmentLogKey");
-        string privateKeyBase64 = logKeyAsset?.Password;
+        string privateKeyBase64 = GetEnvironmentLogKeyPassword();
 
         if (string.IsNullOrEmpty(privateKeyBase64))
         {

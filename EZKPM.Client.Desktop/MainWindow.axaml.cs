@@ -1018,7 +1018,7 @@ public partial class MainWindow : Window
     {
         if (!Services.SessionManager.EnsureAuthenticated(EZKPM.Client.Desktop.Resources.AppStrings.AuthReason_AdminPanel)) return;
 
-        var adminDashboard = new Views.AdminDashboardWindow(_apiClient, _decryptedAssets.ToList());
+        var adminDashboard = new Views.AdminDashboardWindow(_apiClient, _decryptedAssets.ToList(), GetDecryptedAssetOnDemand);
         await adminDashboard.ShowDialog(this);
         
         // Refresh admin button status after closing (in case bootstrap ended or rights changed)
