@@ -143,9 +143,11 @@ Ein einheitliches Look & Feel ist bei sicherheitsrelevanter Software das A und O
 
 ✅ API-Client & Server-Kommunikation: Der VaultApiClient wurde implementiert und ruft verschlüsselte Blobs über den VaultController (PDP) via HTTPS/OIDC ab.
 
+✅ Multi-Device Roaming (FA 15 - Weg B): Der 34-stellige "Secret Key" (1Password-Prinzip) ist implementiert und dient als Master-Passwort-Äquivalent für die plattformunabhängige Geräte-Kopplung und Wiederherstellung.
+
 6.2 Offene Anforderungen (Nächste Schritte)
 
-⏳ Multi-Device Roaming (FA 15 - Weg B): Implementierung des 34-stelligen "Secret Key" (1Password-Prinzip) für die plattformunabhängige Geräte-Kopplung und Wiederherstellung bei vollständigem Geräteverlust.
+(Alle aktuellen Architektur-Meilensteine für V1 sind vollständig erfüllt)
 
 7. Abnahmekriterien
 
