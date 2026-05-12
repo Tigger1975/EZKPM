@@ -1172,21 +1172,18 @@ public partial class MainWindow : Window
 
     private void ShowStatus(string message, bool isError = false, bool isWarning = false)
     {
-        StatusTextBlock.Text = message;
-        if (isError) StatusTextBlock.Foreground = Avalonia.Media.Brushes.Red;
-        else if (isWarning) StatusTextBlock.Foreground = Avalonia.Media.Brushes.Orange;
-        else StatusTextBlock.Foreground = Avalonia.Media.Brushes.Green;
-
-        if (string.IsNullOrEmpty(message)) return;
-
-        try
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            var logFile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ezkpm_app.log");
+            StatusTextBlock.Text = message;
+            if (isError) StatusTextBlock.Foreground = Avalonia.Media.Brushes.Red;
+            else if (isWarning) StatusTextBlock.Foreground = Avalonia.Media.Brushes.Orange;
+            else StatusTextBlock.Foreground = Avalonia.Media.Brushes.Green;
+
+            if (string.IsNullOrEmpty(message)) return;
+
             var level = isError ? "ERROR" : (isWarning ? "WARN" : "INFO");
-            var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level}] {message}\n";
-            System.IO.File.AppendAllText(logFile, logEntry);
-        }
-        catch { }
+            Program.LogDebug(message, level);
+        });
     }
 
     private async void DataGridAutoType_Click(object sender, RoutedEventArgs e)

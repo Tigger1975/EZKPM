@@ -154,14 +154,31 @@ namespace EZKPM.Server.PDP.Controllers
 
             // Success! Register the public key
             var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == request.HashedSid);
+            bool isNew = false;
             if (profile == null)
             {
                 profile = new UserProfile { HashedSid = request.HashedSid };
                 if (isGenesis) profile.IsAdmin = true;
                 _db.UserProfiles.Add(profile);
+                isNew = true;
             }
 
             profile.IdentityPublicKey = request.IdentityPublicKey;
+
+            // Generate AuditLog
+            var prevLog = await _db.AuditLogs.Where(l => l.TargetHashedSid == request.HashedSid).OrderByDescending(l => l.Timestamp).FirstOrDefaultAsync();
+            byte[] prevHash = prevLog?.CurrentEntryHash ?? new byte[32];
+            byte[] currentHash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(request.HashedSid + (isNew ? "Created" : "Modified") + Convert.ToBase64String(prevHash)));
+
+            _db.AuditLogs.Add(new AuditLog
+            {
+                ActionType = isNew ? "UserProfileCreated" : "UserProfileModified",
+                TargetHashedSid = request.HashedSid,
+                ActorHashedSid = request.HashedSid,
+                PreviousEntryHash = prevHash,
+                CurrentEntryHash = currentHash,
+                Timestamp = DateTime.UtcNow
+            });
             
             await _db.SaveChangesAsync();
 

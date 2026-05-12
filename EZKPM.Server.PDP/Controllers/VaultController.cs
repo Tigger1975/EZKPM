@@ -163,6 +163,7 @@ namespace EZKPM.Server.PDP.Controllers
                 });
             }
 
+            await AppendAuditLog(newAsset.Id, userSid, "AssetCreated");
             await _db.SaveChangesAsync();
             _syncTrigger.Trigger();
             NotifyClients();
@@ -238,6 +239,7 @@ namespace EZKPM.Server.PDP.Controllers
                 acl.EncryptedKeyShare = Convert.FromBase64String(request.EncryptedKeyShare);
             }
             
+            await AppendAuditLog(asset.Id, userSid, "AssetModified");
             await _db.SaveChangesAsync();
             _syncTrigger.Trigger();
             NotifyClients();
@@ -270,6 +272,8 @@ namespace EZKPM.Server.PDP.Controllers
                 asset.IsDeleted = true;
                 asset.UpdatedUtc = DateTime.UtcNow;
             }
+
+            await AppendAuditLog(asset.Id, userSidsInfo.PrimarySid, "AssetDeleted");
             await _db.SaveChangesAsync();
             _syncTrigger.Trigger();
 
@@ -319,6 +323,8 @@ namespace EZKPM.Server.PDP.Controllers
 
             asset.IsDeleted = false;
             asset.UpdatedUtc = DateTime.UtcNow;
+
+            await AppendAuditLog(asset.Id, userSidsInfo.PrimarySid, "AssetRestored");
             await _db.SaveChangesAsync();
             _syncTrigger.Trigger();
 
@@ -464,6 +470,23 @@ namespace EZKPM.Server.PDP.Controllers
         private async void NotifyClients()
         {
             await Microsoft.AspNetCore.SignalR.ClientProxyExtensions.SendAsync(_clientSyncHub.Clients.All, "VaultUpdated");
+        }
+
+        private async Task AppendAuditLog(Guid assetId, string actorHashedSid, string actionType)
+        {
+            var prevLog = await _db.AuditLogs.Where(l => l.AssetId == assetId).OrderByDescending(l => l.Timestamp).FirstOrDefaultAsync();
+            byte[] prevHash = prevLog?.CurrentEntryHash ?? new byte[32];
+            byte[] currentHash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(assetId.ToString() + actionType + Convert.ToBase64String(prevHash)));
+
+            _db.AuditLogs.Add(new AuditLog
+            {
+                AssetId = assetId,
+                ActionType = actionType,
+                ActorHashedSid = actorHashedSid,
+                PreviousEntryHash = prevHash,
+                CurrentEntryHash = currentHash,
+                Timestamp = DateTime.UtcNow
+            });
         }
     }
 }

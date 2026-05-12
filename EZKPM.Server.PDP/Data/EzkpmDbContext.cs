@@ -19,6 +19,7 @@ namespace EZKPM.Server.PDP.Data
         public DbSet<RecoveryAuditLog> RecoveryAuditLogs { get; set; }
         public DbSet<SecurityAlert> SecurityAlerts { get; set; }
         public DbSet<PairingInvitation> PairingInvitations { get; set; }
+        public DbSet<ClientLog> ClientLogs { get; set; }
 
         public EzkpmDbContext(DbContextOptions<EzkpmDbContext> options) : base(options) { }
 
@@ -62,7 +63,15 @@ namespace EZKPM.Server.PDP.Data
                 entity.HasOne(e => e.Asset)
                       .WithMany()
                       .HasForeignKey(e => e.AssetId)
+                      .IsRequired(false)
                       .OnDelete(DeleteBehavior.Restrict); // Logs dürfen NICHT gelöscht werden
+            });
+
+            // --- ClientLog Configuration ---
+            modelBuilder.Entity<ClientLog>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.Timestamp); // Indizierung für Rotation (30 Tage)
             });
 
             // --- Recovery Configuration ---
@@ -197,8 +206,11 @@ namespace EZKPM.Server.PDP.Data
     public class AuditLog
     {
         public Guid Id { get; set; } = Guid.NewGuid();
-        public Guid AssetId { get; set; }
+        public Guid? AssetId { get; set; } // Nullable für System/Profile-Ereignisse
         public VaultAsset Asset { get; set; }
+
+        public string ActionType { get; set; } // z.B. "AssetCreated", "AssetModified", "UserProfileCreated"
+        public string TargetHashedSid { get; set; } // Für Profil-Änderungen
 
         /// <summary>
         /// AD SID Hash des Akteurs, der die Aktion ausgeführt hat.
@@ -206,7 +218,7 @@ namespace EZKPM.Server.PDP.Data
         public string ActorHashedSid { get; set; }
 
         /// <summary>
-        /// Verschlüsselte Log-Details (z.B. Betrag, Bestellnummer bei Payments).
+        /// Verschlüsselte Log-Details (z.B. Betrag, Bestellnummer bei Payments). Optional.
         /// </summary>
         public byte[] EncryptedLogBlob { get; set; }
         public byte[] Nonce { get; set; }
@@ -222,6 +234,17 @@ namespace EZKPM.Server.PDP.Data
         public byte[] CurrentEntryHash { get; set; }
 
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    }
+
+    public class ClientLog
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string MachineName { get; set; }
+        public string Username { get; set; }
+        public string Level { get; set; }
+        public string Message { get; set; }
+        public DateTime Timestamp { get; set; }
+        public DateTime ReceivedAt { get; set; } = DateTime.UtcNow;
     }
 
     public class UserProfile

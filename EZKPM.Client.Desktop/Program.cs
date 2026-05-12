@@ -20,12 +20,15 @@ namespace EZKPM.Client.Desktop
         private static readonly string LockFileDir = Path.GetTempPath();
         private static FileSystemWatcher _killSwitchWatcher;
 
-        public static void LogDebug(string message)
+        public static void LogDebug(string message, string level = "INFO")
         {
             try 
             { 
                 Directory.CreateDirectory(Path.GetDirectoryName(LogFilePath));
-                File.AppendAllText(LogFilePath, $"[{DateTime.UtcNow:O}] {message}\n"); 
+                File.AppendAllText(LogFilePath, $"[{DateTime.UtcNow:O}] [{level}] {message}\n"); 
+                
+                // Enqueue to server buffer
+                Services.ClientLogService.EnqueueLog(level, message);
             } 
             catch { }
         }
@@ -53,8 +56,10 @@ namespace EZKPM.Client.Desktop
                 
                 InitializeKillSwitch();
                 File.AppendAllText(bootstrapLogPath, $"[{DateTime.UtcNow:O}] KillSwitch initialized.\n");
+                
+                Services.ClientLogService.Initialize();
 
-                LogDebug($"App started. Arguments: {string.Join(" ", args)}");
+                LogDebug($"App started. Arguments: {string.Join(" ", args)}", "INFO");
 
                 if (args.Any(a => a.Equals("autostart", StringComparison.OrdinalIgnoreCase) || a.Equals("--autostart", StringComparison.OrdinalIgnoreCase)))
                 {

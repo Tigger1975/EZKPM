@@ -92,6 +92,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 builder.Services.AddHostedService<EZKPM.Server.PDP.Services.ServerVulnerabilityScannerService>();
+builder.Services.AddHostedService<EZKPM.Server.PDP.Services.LogRotationService>();
 
 var app = builder.Build();
 
