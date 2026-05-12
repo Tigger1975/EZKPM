@@ -20,6 +20,7 @@ namespace EZKPM.Server.PDP.Data
         public DbSet<SecurityAlert> SecurityAlerts { get; set; }
         public DbSet<PairingInvitation> PairingInvitations { get; set; }
         public DbSet<ClientLog> ClientLogs { get; set; }
+        public DbSet<GlobalConfig> GlobalConfigs { get; set; }
 
         public EzkpmDbContext(DbContextOptions<EzkpmDbContext> options) : base(options) { }
 
@@ -295,5 +296,12 @@ namespace EZKPM.Server.PDP.Data
         public string PairingCodeHash { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime ExpiresAt { get; set; }
+    }
+
+    public class GlobalConfig
+    {
+        [System.ComponentModel.DataAnnotations.Key]
+        public string Key { get; set; }
+        public string Value { get; set; }
     }
 }

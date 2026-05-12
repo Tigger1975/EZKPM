@@ -75,6 +75,8 @@ namespace EZKPM.Client.Desktop.Services
             catch { } // Best effort
         }
 
+        private static string _cachedEnvPubKey = null;
+
         public static async Task FlushLogsAsync()
         {
             try
@@ -95,6 +97,51 @@ namespace EZKPM.Client.Desktop.Services
                 }
 
                 if (logsToSend == null || logsToSend.Count == 0) return;
+
+                // Try to get EnvPubKey
+                if (string.IsNullOrEmpty(_cachedEnvPubKey))
+                {
+                    var envResponse = await _httpClient.GetAsync($"{serverUrl}/api/v1/log/envkey");
+                    if (envResponse.IsSuccessStatusCode)
+                    {
+                        var envResult = await envResponse.Content.ReadFromJsonAsync<JsonElement>();
+                        if (envResult.TryGetProperty("publicKey", out var pub) || envResult.TryGetProperty("PublicKey", out pub))
+                        {
+                            _cachedEnvPubKey = pub.GetString();
+                        }
+                    }
+                }
+
+                // Encrypt logs if key is available
+                if (!string.IsNullOrEmpty(_cachedEnvPubKey))
+                {
+                    using var rsa = System.Security.Cryptography.RSA.Create();
+                    rsa.ImportSubjectPublicKeyInfo(Convert.FromBase64String(_cachedEnvPubKey), out _);
+
+                    foreach (var log in logsToSend)
+                    {
+                        if (log.Message.StartsWith("ENV_ENC:")) continue;
+
+                        byte[] aesKey = new byte[32];
+                        byte[] nonce = new byte[12];
+                        System.Security.Cryptography.RandomNumberGenerator.Fill(aesKey);
+                        System.Security.Cryptography.RandomNumberGenerator.Fill(nonce);
+
+                        byte[] plainText = System.Text.Encoding.UTF8.GetBytes(log.Message);
+                        byte[] cipherText = new byte[plainText.Length];
+                        byte[] tag = new byte[16];
+
+                        using (var aesGcm = new System.Security.Cryptography.AesGcm(aesKey, 16))
+                        {
+                            aesGcm.Encrypt(nonce, plainText, cipherText, tag);
+                        }
+
+                        byte[] encryptedAesKey = rsa.Encrypt(aesKey, System.Security.Cryptography.RSAEncryptionPadding.OaepSHA256);
+
+                        string payload = $"{Convert.ToBase64String(encryptedAesKey)}:{Convert.ToBase64String(nonce)}:{Convert.ToBase64String(cipherText)}:{Convert.ToBase64String(tag)}";
+                        log.Message = $"ENV_ENC:{payload}";
+                    }
+                }
 
                 var url = $"{serverUrl}/api/v1/log/batch";
                 var response = await _httpClient.PostAsJsonAsync(url, logsToSend);

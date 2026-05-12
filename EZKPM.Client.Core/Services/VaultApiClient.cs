@@ -120,6 +120,32 @@ namespace EZKPM.Client.Core.Services
             response.EnsureSuccessStatusCode();
         }
 
+        public async Task<string> GetEnvironmentPublicKeyAsync()
+        {
+            var response = await _httpClient.GetAsync("/api/v1/log/envkey");
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                if (result.TryGetProperty("publicKey", out var pub) || result.TryGetProperty("PublicKey", out pub))
+                {
+                    return pub.GetString();
+                }
+            }
+            return null;
+        }
+
+        public async Task<bool> SetEnvironmentPublicKeyAsync(string publicKey)
+        {
+            var response = await _httpClient.PostAsJsonAsync("/api/v1/log/envkey", publicKey);
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task DeleteAssetAsync(Guid id)
+        {
+            var response = await _httpClient.DeleteAsync($"/api/v1/vault/assets/{id}");
+            response.EnsureSuccessStatusCode();
+        }
+
         public async Task<bool> AppendAuditLogAsync(Guid assetId, AuditLogRequestDto logRequest)
         {
             var response = await _httpClient.PostAsJsonAsync($"/api/v1/vault/assets/{assetId}/audit", logRequest);

@@ -46,5 +46,30 @@ namespace EZKPM.Server.PDP.Controllers
             await _db.SaveChangesAsync();
             return Ok(new { Status = "Success" });
         }
+
+        [HttpGet("envkey")]
+        public async Task<IActionResult> GetEnvKey()
+        {
+            var conf = await _db.GlobalConfigs.FindAsync("EnvironmentLogKey.PublicKey");
+            if (conf == null) return NotFound();
+            return Ok(new { PublicKey = conf.Value });
+        }
+
+        [HttpPost("envkey")]
+        public async Task<IActionResult> SetEnvKey([FromBody] string publicKey)
+        {
+            var conf = await _db.GlobalConfigs.FindAsync("EnvironmentLogKey.PublicKey");
+            if (conf == null)
+            {
+                _db.GlobalConfigs.Add(new GlobalConfig { Key = "EnvironmentLogKey.PublicKey", Value = publicKey });
+            }
+            else
+            {
+                // Only allow setting once, or maybe admins can override. For now, allow setting if empty.
+                return Conflict("Environment key already set.");
+            }
+            await _db.SaveChangesAsync();
+            return Ok();
+        }
     }
 }

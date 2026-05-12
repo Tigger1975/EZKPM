@@ -418,11 +418,67 @@ public partial class MainWindow : Window
                 }
             }
 
+            // Ensure Environment Log Key exists (for encrypting client logs)
+            await EnsureEnvironmentLogKeyAsync();
+
             BuildTree();
         }
         catch (Exception ex)
         {
             ShowStatus($"Load Error: {ex.Message}", isError: true);
+        }
+    }
+
+    private async Task EnsureEnvironmentLogKeyAsync()
+    {
+        try
+        {
+            var existingPubKey = await _apiClient.GetEnvironmentPublicKeyAsync();
+            if (!string.IsNullOrEmpty(existingPubKey))
+            {
+                return; // Key exists, nothing to do
+            }
+
+            // Key does not exist, generate an RSA key pair
+            using var rsa = System.Security.Cryptography.RSA.Create(4096);
+            var pubKeyBytes = rsa.ExportSubjectPublicKeyInfo();
+            var privKeyBytes = rsa.ExportPkcs8PrivateKey();
+
+            var pubKeyBase64 = Convert.ToBase64String(pubKeyBytes);
+            var privKeyBase64 = Convert.ToBase64String(privKeyBytes);
+
+            // Post public key to server
+            bool success = await _apiClient.SetEnvironmentPublicKeyAsync(pubKeyBase64);
+            if (success)
+            {
+                // Save private key as a VaultAsset
+                var currentUser = EZKPM.Client.Desktop.Services.AdSearchService.GetCurrentUser()?.Sid ?? "S-1-5-21-DUMMY-TEST-USER";
+                var newKeyAsset = new VaultAssetPayload
+                {
+                    AssetType = "SystemKey",
+                    Title = "EnvironmentLogKey",
+                    Username = "SYSTEM",
+                    Password = privKeyBase64,
+                    IsInheriting = false,
+                    Acls = new List<EZKPM.Shared.Contracts.AclEntryDto> { 
+                        new EZKPM.Shared.Contracts.AclEntryDto { 
+                            HashedSid = HashSid(currentUser), 
+                            PermissionLevel = 3 // Owner
+                        } 
+                    },
+                    TransientAssetId = Guid.NewGuid(),
+                    ParentFolderId = null
+                };
+
+                var requestDto = _cryptoService.EncryptAsset(newKeyAsset);
+                Guid realId = await _apiClient.CreateAssetAsync(requestDto);
+                newKeyAsset.TransientAssetId = realId;
+                _decryptedAssets.Add(newKeyAsset);
+            }
+        }
+        catch (Exception ex)
+        {
+            Program.LogDebug($"Failed to initialize Environment Log Key: {ex.Message}");
         }
     }
 
