@@ -27,24 +27,35 @@ public partial class AdminDashboardWindow : Window
         _decryptedAssets = decryptedAssets;
         LoadAdminStatus();
         _ = LoadAlertsAsync();
-        LoadEnvironmentLogKey();
-
         var config = EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig;
 
-        var serverBox = this.FindControl<TextBox>("SmtpServerTextBox");
-        if (serverBox != null) serverBox.Text = config.SmtpServer;
+        // Note: Controls inside tabs are lazily evaluated in Avalonia.
+        // We populate them in TabControl_SelectionChanged instead.
+    }
 
-        var portBox = this.FindControl<TextBox>("SmtpPortTextBox");
-        if (portBox != null) portBox.Text = config.SmtpPort.ToString();
+    private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (e.Source is TabControl)
+        {
+            LoadEnvironmentLogKey();
+            
+            var config = EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig;
 
-        var senderBox = this.FindControl<TextBox>("SmtpSenderTextBox");
-        if (senderBox != null) senderBox.Text = config.SmtpSender;
+            var serverBox = this.FindControl<TextBox>("SmtpServerTextBox");
+            if (serverBox != null && string.IsNullOrEmpty(serverBox.Text)) serverBox.Text = config.SmtpServer;
 
-        var subjectBox = this.FindControl<TextBox>("EmailSubjectTextBox");
-        if (subjectBox != null) subjectBox.Text = config.SmtpSubjectTemplate;
+            var portBox = this.FindControl<TextBox>("SmtpPortTextBox");
+            if (portBox != null && string.IsNullOrEmpty(portBox.Text)) portBox.Text = config.SmtpPort.ToString();
 
-        var bodyBox = this.FindControl<TextBox>("EmailBodyTextBox");
-        if (bodyBox != null) bodyBox.Text = config.SmtpBodyTemplate;
+            var senderBox = this.FindControl<TextBox>("SmtpSenderTextBox");
+            if (senderBox != null && string.IsNullOrEmpty(senderBox.Text)) senderBox.Text = config.SmtpSender;
+
+            var subjectBox = this.FindControl<TextBox>("EmailSubjectTextBox");
+            if (subjectBox != null && string.IsNullOrEmpty(subjectBox.Text)) subjectBox.Text = config.SmtpSubjectTemplate;
+
+            var bodyBox = this.FindControl<TextBox>("EmailBodyTextBox");
+            if (bodyBox != null && string.IsNullOrEmpty(bodyBox.Text)) bodyBox.Text = config.SmtpBodyTemplate;
+        }
     }
 
     private async void LoadAdminStatus()

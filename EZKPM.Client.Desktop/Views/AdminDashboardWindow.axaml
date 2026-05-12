@@ -65,7 +65,7 @@
         </Border>
 
         <!-- Main Content with Sidebar Tabs -->
-        <TabControl Grid.Row="1" Margin="20" TabStripPlacement="Left" Padding="20,0,0,0">
+        <TabControl Grid.Row="1" Margin="20" TabStripPlacement="Left" Padding="20,0,0,0" SelectionChanged="TabControl_SelectionChanged">
             
             <TabItem Header="Dashboard (Admins)">
                 <ScrollViewer>
