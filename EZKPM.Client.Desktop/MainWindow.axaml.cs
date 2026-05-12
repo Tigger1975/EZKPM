@@ -51,16 +51,29 @@ public partial class MainWindow : Window
 
         _bridgeServer = new BrowserBridgeServer(() => _decryptedAssets, RequestAuditAsync, async () => {
             if (!Services.SessionManager.IsLocked) return true;
-            bool success = await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() => Services.SessionManager.EnsureAuthenticated("Browser Extension Autofill"));
-            if (success) {
-                int retries = 0;
-                while (_decryptedAssets.Count == 0 && retries < 20) {
-                    await Task.Delay(250);
-                    retries++;
-                }
+            
+            // SILENT JIT DECRYPTION for Browser Extension
+            string legacyPwd = EZKPM.Client.Core.Security.LegacyPasswordStore.GetLegacyPassword();
+            string adBlob = EZKPM.Client.Desktop.Services.AdKeyStorageService.RetrieveKeyFromAd();
+            string tpmBlob = EZKPM.Client.Desktop.Services.TpmKeyStorageService.RetrieveTpmBlob();
+            
+            var result = _cryptoService.InitializeFromStorage(
+                adBlob, tpmBlob, legacyPwd, 
+                EZKPM.Client.Desktop.Services.TpmKeyStorageService.IsTpmAvailable() ? EZKPM.Client.Desktop.Services.TpmKeyStorageService.ProtectHardwarePepper : null,
+                EZKPM.Client.Desktop.Services.TpmKeyStorageService.IsTpmAvailable() ? EZKPM.Client.Desktop.Services.TpmKeyStorageService.UnprotectHardwarePepper : null,
+                out _, out _, out _);
+                
+            if (result == VaultCryptoService.CryptoInitResult.Success) {
+                await LoadAssetsAsync();
                 return true;
             }
             return false;
+        }, () => {
+            if (Services.SessionManager.IsLocked) {
+                _cryptoService.ClearKeys();
+                _decryptedAssets.Clear();
+                _treeNodes.Clear();
+            }
         });
         _bridgeServer.OnCredentialProvided = (assetTitle) => ShowNotification(assetTitle);
         _bridgeServer.OnSaveNewCredentialRequested = (payload) => {
