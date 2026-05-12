@@ -122,10 +122,11 @@
                     </TreeView.ItemTemplate>
                 </TreeView>
                 
-                <Grid Grid.Row="2" ColumnDefinitions="*, *, Auto" Margin="0,20,0,0">
+                <Grid Grid.Row="2" ColumnDefinitions="*, *, Auto, Auto" Margin="0,20,0,0">
                     <Button Grid.Column="0" Classes="success" Content="{x:Static res:AppStrings.Main_BtnNewAsset}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,5,0" Click="NewAssetButton_Click"/>
                     <Button Grid.Column="1" Classes="outline" Content="{x:Static res:AppStrings.Main_BtnNewFolder}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="5,0,5,0" Click="NewFolderButton_Click"/>
-                    <Button Grid.Column="2" Classes="outline" Content="⚙️" ToolTip.Tip="{x:Static res:AppStrings.Main_MenuSettings}">
+                    <Button Grid.Column="2" Classes="outline" Content="❓" ToolTip.Tip="Hilfe / Wiki" Click="OpenHelp_Click" Margin="0,0,5,0" />
+                    <Button Grid.Column="3" Classes="outline" Content="⚙️" ToolTip.Tip="{x:Static res:AppStrings.Main_MenuSettings}">
                         <Button.Flyout>
                             <MenuFlyout>
                                 <MenuItem Header="{x:Static res:AppStrings.Main_MenuSettings}" Click="ChangeServerMenuItem_Click" />

@@ -1378,6 +1378,27 @@ public partial class MainWindow : Window
         secWin.ShowDialog(this);
     }
 
+    private void OpenHelp_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var serverUrl = Services.ConfigurationManager.CurrentConfig.ServerUrl?.TrimEnd('/');
+            if (!string.IsNullOrEmpty(serverUrl))
+            {
+                var helpUrl = $"{serverUrl}/help/index.html";
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = helpUrl,
+                    UseShellExecute = true
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Program.LogDebug($"Failed to open help: {ex.Message}");
+        }
+    }
+
     private void NewAssetButton_Click(object sender, RoutedEventArgs e)
     {
         var selectedNode = AssetTreeView?.SelectedItem as VaultTreeNode;

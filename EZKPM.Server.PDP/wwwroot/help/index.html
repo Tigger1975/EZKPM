@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EZKPM Wiki & Help</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; height: 100vh; margin: 0; background: #0F172A; color: white; }
+        .sidebar { width: 300px; background: #1E293B; border-right: 1px solid #334155; padding: 20px; overflow-y: auto; }
+        .sidebar h2 { margin-top: 0; font-size: 1.2rem; color: #FACC15; margin-bottom: 20px; }
+        .nav-link { display: block; padding: 10px 15px; color: #94A3B8; text-decoration: none; border-radius: 5px; margin-bottom: 5px; transition: background 0.2s; cursor: pointer; }
+        .nav-link:hover, .nav-link.active { background: #3B82F6; color: white; }
+        
+        .content { flex: 1; padding: 40px; overflow-y: auto; background: white; }
+        .markdown-body { box-sizing: border-box; min-width: 200px; max-width: 980px; margin: 0 auto; padding: 45px; }
+        
+        @media (max-width: 767px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid #334155; }
+            .markdown-body { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>📚 EZKPM Knowledge Base</h2>
+        <a class="nav-link active" onclick="loadPage('01_Home.md', this)">🏠 Home</a>
+        <a class="nav-link" onclick="loadPage('02_System_Overview.md', this)">🔍 System Overview</a>
+        <a class="nav-link" onclick="loadPage('03_User_Guide.md', this)">👤 User Guide</a>
+        <a class="nav-link" onclick="loadPage('04_Admin_Guide.md', this)">🛡️ Admin Guide</a>
+        <a class="nav-link" onclick="loadPage('05_Browser_Extension.md', this)">🧩 Browser Extension</a>
+        <a class="nav-link" onclick="loadPage('06_Recovery_and_Security.md', this)">🚑 Recovery & Security</a>
+    </div>
+
+    <div class="content">
+        <article class="markdown-body" id="wiki-content">
+            Loading...
+        </article>
+    </div>
+
+    <script>
+        async function loadPage(filename, element) {
+            try {
+                // Update active state
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                if(element) element.classList.add('active');
+
+                // Fetch markdown from server
+                const response = await fetch(`/docs/${filename}`);
+                if (!response.ok) throw new Error("Page not found");
+                
+                let text = await response.text();
+                
+                // Fix image paths
+                text = text.replace(/images\//g, '/docs/images/');
+
+                document.getElementById('wiki-content').innerHTML = marked.parse(text);
+                
+                // Scroll to top
+                document.querySelector('.content').scrollTop = 0;
+            } catch (e) {
+                document.getElementById('wiki-content').innerHTML = `<h1>Error Loading Wiki Page</h1><p>${e.message}</p>`;
+            }
+        }
+
+        // Load home on startup
+        loadPage('01_Home.md', document.querySelector('.nav-link'));
+    </script>
+</body>
+</html>
