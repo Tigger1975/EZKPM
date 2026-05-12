@@ -31,10 +31,15 @@ public partial class AdminDashboardWindow : Window
 
         // Note: Controls inside tabs are lazily evaluated in Avalonia.
         // We populate them in TabControl_SelectionChanged instead.
+        
+        // The first tab is already selected, so we load its data now:
+        _ = LoadAdminsAsync();
     }
 
     private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (_apiClient == null) return; // Prevent crash during InitializeComponent
+        
         if (e.Source is TabControl tc)
         {
             if (tc.SelectedIndex == 0)
