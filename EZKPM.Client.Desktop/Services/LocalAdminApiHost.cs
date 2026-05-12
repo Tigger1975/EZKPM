@@ -1,104 +1,20 @@
 using System;
-using System.Threading.Tasks;
+using System.IO;
+using System.Net;
 using System.Net.Http.Json;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Authentication.Negotiate;
 using System.Security.Principal;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace EZKPM.Client.Desktop.Services
 {
     public class LocalAdminApiHost
     {
-        private WebApplication _app;
-
-        public async Task StartAsync(int port, string allowedSid, EZKPM.Client.Core.Services.VaultApiClient apiClient)
-        {
-            if (_app != null) return;
-
-            var builder = WebApplication.CreateBuilder();
-
-            // Setup Kestrel to listen only on localhost
-            builder.WebHost.ConfigureKestrel(options =>
-            {
-                options.ListenLocalhost(port);
-            });
-
-            // Enable Windows Authentication (Negotiate / NTLM)
-            builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
-                .AddNegotiate();
-            builder.Services.AddAuthorization(options =>
-            {
-                options.FallbackPolicy = options.DefaultPolicy;
-            });
-
-            _app = builder.Build();
-
-            _app.UseAuthentication();
-            _app.UseAuthorization();
-
-            // Middleware for strict SID checking
-            _app.Use(async (context, next) =>
-            {
-                if (context.User.Identity is WindowsIdentity windowsIdentity)
-                {
-                    if (!string.IsNullOrEmpty(allowedSid))
-                    {
-                        var callerSid = windowsIdentity.User?.Value;
-                        if (callerSid != allowedSid)
-                        {
-                            context.Response.StatusCode = 403;
-                            await context.Response.WriteAsync("Forbidden: SID mismatch.");
-                            return;
-                        }
-                    }
-                }
-                else
-                {
-                    context.Response.StatusCode = 401;
-                    return;
-                }
-                
-                await next();
-            });
-
-            // Simple test endpoint
-            _app.MapGet("/api/admin/ping", () => Results.Ok(new { Status = "Online", Message = "EZKPM Local Admin API is running." }));
-
-            // Invite User Endpoint
-            _app.MapPost("/api/admin/invite", async (InviteRequest req) =>
-            {
-                if (string.IsNullOrWhiteSpace(req.Sid) || string.IsNullOrWhiteSpace(req.SamAccountName))
-                    return Results.BadRequest("Sid and SamAccountName are required.");
-
-                using var sha256 = System.Security.Cryptography.SHA256.Create();
-                var sidHash = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(req.Sid)));
-                var nameHash = Convert.ToBase64String(sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(req.SamAccountName)));
-
-                var payload = new { HashedSid = sidHash, HashedUsername = nameHash };
-                var response = await apiClient.HttpClient.PostAsJsonAsync("/api/v1/auth/invite", payload);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-                    if (result.TryGetProperty("pairingCode", out var codeElement))
-                    {
-                        return Results.Ok(new { PairingCode = codeElement.GetString() });
-                    }
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
-                {
-                    return Results.Conflict("User is already invited or active.");
-                }
-
-                return Results.StatusCode((int)response.StatusCode);
-            });
-
-            await _app.StartAsync();
-            Console.WriteLine($"Local Admin API listening on http://localhost:{port}");
-        }
+        private HttpListener _listener;
+        private CancellationTokenSource _cts;
+        private Task _listenTask;
 
         public class InviteRequest
         {
@@ -106,14 +22,172 @@ namespace EZKPM.Client.Desktop.Services
             public string SamAccountName { get; set; }
         }
 
-        public async Task StopAsync()
+        public Task StartAsync(int port, string allowedSid, EZKPM.Client.Core.Services.VaultApiClient apiClient)
         {
-            if (_app != null)
+            if (_listener != null) return Task.CompletedTask;
+
+            _listener = new HttpListener();
+            _listener.Prefixes.Add($"http://localhost:{port}/api/admin/");
+            // Enforce Windows Authentication
+            _listener.AuthenticationSchemes = AuthenticationSchemes.Negotiate;
+
+            try
             {
-                await _app.StopAsync();
-                await _app.DisposeAsync();
-                _app = null;
+                _listener.Start();
+                _cts = new CancellationTokenSource();
+                _listenTask = ListenLoop(allowedSid, apiClient, _cts.Token);
+                Console.WriteLine($"Local Admin API listening on http://localhost:{port}/api/admin/");
             }
+            catch (Exception ex)
+            {
+                Program.LogDebug($"Failed to start LocalAdminApiHost: {ex.Message}");
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private async Task ListenLoop(string allowedSid, EZKPM.Client.Core.Services.VaultApiClient apiClient, CancellationToken token)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    var context = await _listener.GetContextAsync();
+                    _ = ProcessRequestAsync(context, allowedSid, apiClient);
+                }
+                catch (HttpListenerException) when (token.IsCancellationRequested)
+                {
+                    // Expected on stop
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Program.LogDebug($"LocalAdminApiHost loop error: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task ProcessRequestAsync(HttpListenerContext context, string allowedSid, EZKPM.Client.Core.Services.VaultApiClient apiClient)
+        {
+            var request = context.Request;
+            var response = context.Response;
+
+            try
+            {
+                // Verify SID
+                if (context.User?.Identity is WindowsIdentity winIdentity)
+                {
+                    if (!string.IsNullOrEmpty(allowedSid))
+                    {
+                        var callerSid = winIdentity.User?.Value;
+                        if (callerSid != allowedSid)
+                        {
+                            await SendResponseAsync(response, 403, "Forbidden: SID mismatch.");
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    await SendResponseAsync(response, 401, "Unauthorized");
+                    return;
+                }
+
+                string path = request.Url?.AbsolutePath.TrimEnd('/');
+                string method = request.HttpMethod;
+
+                if (method == "GET" && path == "/api/admin/ping")
+                {
+                    var resObj = new { Status = "Online", Message = "EZKPM Local Admin API is running." };
+                    await SendJsonResponseAsync(response, 200, resObj);
+                    return;
+                }
+
+                if (method == "POST" && path == "/api/admin/invite")
+                {
+                    using var reader = new StreamReader(request.InputStream, request.ContentEncoding ?? Encoding.UTF8);
+                    string body = await reader.ReadToEndAsync();
+                    
+                    var reqData = JsonSerializer.Deserialize<InviteRequest>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    if (reqData == null || string.IsNullOrWhiteSpace(reqData.Sid) || string.IsNullOrWhiteSpace(reqData.SamAccountName))
+                    {
+                        await SendResponseAsync(response, 400, "Sid and SamAccountName are required.");
+                        return;
+                    }
+
+                    using var sha256 = System.Security.Cryptography.SHA256.Create();
+                    var sidHash = Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(reqData.Sid)));
+                    var nameHash = Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(reqData.SamAccountName)));
+
+                    var payload = new { HashedSid = sidHash, HashedUsername = nameHash };
+                    var apiResp = await apiClient.HttpClient.PostAsJsonAsync("/api/v1/auth/invite", payload);
+
+                    if (apiResp.IsSuccessStatusCode)
+                    {
+                        var result = await apiResp.Content.ReadFromJsonAsync<JsonElement>();
+                        if (result.TryGetProperty("pairingCode", out var codeElement))
+                        {
+                            await SendJsonResponseAsync(response, 200, new { PairingCode = codeElement.GetString() });
+                            return;
+                        }
+                    }
+                    else if (apiResp.StatusCode == HttpStatusCode.Conflict)
+                    {
+                        await SendResponseAsync(response, 409, "User is already invited or active.");
+                        return;
+                    }
+
+                    await SendResponseAsync(response, (int)apiResp.StatusCode, "Upstream API error.");
+                    return;
+                }
+
+                await SendResponseAsync(response, 404, "Not Found");
+            }
+            catch (Exception ex)
+            {
+                await SendResponseAsync(response, 500, $"Internal Server Error: {ex.Message}");
+            }
+        }
+
+        private async Task SendResponseAsync(HttpListenerResponse response, int statusCode, string text)
+        {
+            response.StatusCode = statusCode;
+            response.ContentType = "text/plain";
+            var buffer = Encoding.UTF8.GetBytes(text);
+            response.ContentLength64 = buffer.Length;
+            try
+            {
+                await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                response.OutputStream.Close();
+            }
+            catch { }
+        }
+
+        private async Task SendJsonResponseAsync(HttpListenerResponse response, int statusCode, object data)
+        {
+            response.StatusCode = statusCode;
+            response.ContentType = "application/json";
+            var json = JsonSerializer.Serialize(data);
+            var buffer = Encoding.UTF8.GetBytes(json);
+            response.ContentLength64 = buffer.Length;
+            try
+            {
+                await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                response.OutputStream.Close();
+            }
+            catch { }
+        }
+
+        public Task StopAsync()
+        {
+            if (_listener != null)
+            {
+                _cts?.Cancel();
+                _listener.Stop();
+                _listener.Close();
+                _listener = null;
+            }
+            return Task.CompletedTask;
         }
     }
 }
