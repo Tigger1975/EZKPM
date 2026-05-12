@@ -10,6 +10,11 @@ namespace EZKPM.Client.Desktop.Services
     {
         public string ServerUrl { get; set; } = "";
         public DateTime LastVulnerabilityScan { get; set; } = DateTime.MinValue;
+        public string SmtpServer { get; set; } = "";
+        public int SmtpPort { get; set; } = 25;
+        public string SmtpSender { get; set; } = "";
+        public string SmtpSubjectTemplate { get; set; } = "Ihre Einladung für EZKPM / Your invitation for EZKPM (Ironclad Vault)";
+        public string SmtpBodyTemplate { get; set; } = "Hallo {DisplayName},\n\nSie wurden zur Nutzung von EZKPM (Ironclad Vault) eingeladen.\n1. Laden Sie den Client hier herunter: {ServerUrl}\n2. Klicken Sie nach der Installation auf folgenden Link, um sich zu verbinden:\n   ezkpm://pair?code={PairingCode}\n\nAlternativ können Sie den Code manuell eingeben: {PairingCode}\n\n---\n\nHello {DisplayName},\n\nYou have been invited to use EZKPM (Ironclad Vault).\n1. Download the client here: {ServerUrl}\n2. After installation, click the following link to connect:\n   ezkpm://pair?code={PairingCode}\n\nAlternatively, you can enter the code manually: {PairingCode}";
     }
 
     public static class ConfigurationManager

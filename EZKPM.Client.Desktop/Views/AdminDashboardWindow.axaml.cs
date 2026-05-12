@@ -24,28 +24,22 @@ public partial class AdminDashboardWindow : Window
         LoadAdminStatus();
         _ = LoadAlertsAsync();
 
-        // Default Email Template
+        var config = EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig;
+
+        var serverBox = this.FindControl<TextBox>("SmtpServerTextBox");
+        if (serverBox != null) serverBox.Text = config.SmtpServer;
+
+        var portBox = this.FindControl<TextBox>("SmtpPortTextBox");
+        if (portBox != null) portBox.Text = config.SmtpPort.ToString();
+
+        var senderBox = this.FindControl<TextBox>("SmtpSenderTextBox");
+        if (senderBox != null) senderBox.Text = config.SmtpSender;
+
         var subjectBox = this.FindControl<TextBox>("EmailSubjectTextBox");
-        if (subjectBox != null) subjectBox.Text = "Ihre Einladung für EZKPM / Your invitation for EZKPM (Ironclad Vault)";
+        if (subjectBox != null) subjectBox.Text = config.SmtpSubjectTemplate;
 
         var bodyBox = this.FindControl<TextBox>("EmailBodyTextBox");
-        if (bodyBox != null)
-        {
-            bodyBox.Text = 
-                "Hallo {DisplayName},\n\n" +
-                "Sie wurden zur Nutzung von EZKPM (Ironclad Vault) eingeladen.\n" +
-                "1. Laden Sie den Client hier herunter: {ServerUrl}\n" +
-                "2. Klicken Sie nach der Installation auf folgenden Link, um sich zu verbinden:\n" +
-                "   ezkpm://pair?code={PairingCode}\n\n" +
-                "Alternativ können Sie den Code manuell eingeben: {PairingCode}\n\n" +
-                "---\n\n" +
-                "Hello {DisplayName},\n\n" +
-                "You have been invited to use EZKPM (Ironclad Vault).\n" +
-                "1. Download the client here: {ServerUrl}\n" +
-                "2. After installation, click the following link to connect:\n" +
-                "   ezkpm://pair?code={PairingCode}\n\n" +
-                "Alternatively, you can enter the code manually: {PairingCode}";
-        }
+        if (bodyBox != null) bodyBox.Text = config.SmtpBodyTemplate;
     }
 
     private async void LoadAdminStatus()
@@ -222,6 +216,15 @@ public partial class AdminDashboardWindow : Window
         }
 
         if (!int.TryParse(smtpPortStr, out int smtpPort)) smtpPort = 25;
+
+        // Save config
+        var config = EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig;
+        config.SmtpServer = smtpServer;
+        config.SmtpPort = smtpPort;
+        config.SmtpSender = smtpSender;
+        config.SmtpSubjectTemplate = emailSubjectTemplate;
+        config.SmtpBodyTemplate = emailBodyTemplate;
+        EZKPM.Client.Desktop.Services.ConfigurationManager.SaveConfig();
 
         // Fetch target users
         var allUsers = await Task.Run(() => 
