@@ -48,7 +48,7 @@ public partial class AdminDashboardWindow : Window
             {
                 _ = LoadAdminsAsync();
             }
-            else if (tc.SelectedIndex == 6)
+            else if (tc.SelectedIndex == 5)
             {
                 _ = LoadMachinesForLogsAsync();
             }
