@@ -83,13 +83,6 @@ namespace EZKPM.Client.Desktop.Views
                     out string newTpmBlob, 
                     out string pubKeyBase64);
 
-                // 4. Backup to Storage
-                if (!string.IsNullOrEmpty(newAdBlob))
-                    EZKPM.Client.Desktop.Services.AdKeyStorageService.StoreKeyInAd(newAdBlob);
-                    
-                if (!string.IsNullOrEmpty(newTpmBlob))
-                    EZKPM.Client.Desktop.Services.TpmKeyStorageService.StoreTpmBlob(newTpmBlob);
-
                 // 4. Send to Server
                 var codeBox = this.FindControl<TextBox>("CodeTextBox");
                 string actualCode = codeBox?.Text ?? _pairingCode;
@@ -110,6 +103,13 @@ namespace EZKPM.Client.Desktop.Views
 
                 if (response.IsSuccessStatusCode)
                 {
+                    // Backup to Storage ONLY after server confirmed successful registration
+                    if (!string.IsNullOrEmpty(newAdBlob))
+                        EZKPM.Client.Desktop.Services.AdKeyStorageService.StoreKeyInAd(newAdBlob);
+                        
+                    if (!string.IsNullOrEmpty(newTpmBlob))
+                        EZKPM.Client.Desktop.Services.TpmKeyStorageService.StoreTpmBlob(newTpmBlob);
+
                     statusText.Text = "Status: Pairing erfolgreich! Tresor wird vorbereitet.";
                     statusText.Foreground = Avalonia.Media.Brushes.LightGreen;
                     

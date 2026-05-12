@@ -194,17 +194,29 @@ namespace EZKPM.Server.PDP.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request, [FromServices] Microsoft.Extensions.Configuration.IConfiguration config)
         {
+            var debugLog = "C:\\inetpub\\EZKPM\\login_debug.txt";
+            try { System.IO.File.AppendAllText(debugLog, $"[{DateTime.UtcNow}] Login attempt for {request.HashedSid}\n"); } catch {}
+
             if (string.IsNullOrWhiteSpace(request.HashedSid) || string.IsNullOrWhiteSpace(request.Signature))
+            {
+                try { System.IO.File.AppendAllText(debugLog, $"[{DateTime.UtcNow}] Missing fields\n"); } catch {}
                 return BadRequest("Missing required fields.");
+            }
 
             // Check timestamp to prevent replay attacks (allow 5 mins drift)
             var requestTime = DateTimeOffset.FromUnixTimeSeconds(request.Timestamp);
             if (Math.Abs((DateTimeOffset.UtcNow - requestTime).TotalMinutes) > 5)
+            {
+                try { System.IO.File.AppendAllText(debugLog, $"[{DateTime.UtcNow}] Timestamp expired: requestTime={requestTime}, utcNow={DateTimeOffset.UtcNow}\n"); } catch {}
                 return Unauthorized("Timestamp is invalid or expired.");
+            }
 
             var profile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == request.HashedSid);
             if (profile == null || string.IsNullOrEmpty(profile.IdentityPublicKey))
+            {
+                try { System.IO.File.AppendAllText(debugLog, $"[{DateTime.UtcNow}] Profile not found or missing key\n"); } catch {}
                 return Unauthorized("User not registered or missing identity key.");
+            }
 
             // Verify signature
             try
@@ -219,11 +231,13 @@ namespace EZKPM.Server.PDP.Controllers
 
                 if (!ecdsa.VerifyData(dataBytes, signatureBytes, HashAlgorithmName.SHA256))
                 {
+                    try { System.IO.File.AppendAllText(debugLog, $"[{DateTime.UtcNow}] Invalid signature\n"); } catch {}
                     return Unauthorized("Invalid signature.");
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                try { System.IO.File.AppendAllText(debugLog, $"[{DateTime.UtcNow}] Signature exception: {ex.Message}\n"); } catch {}
                 return Unauthorized("Signature validation failed.");
             }
 
