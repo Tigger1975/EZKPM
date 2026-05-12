@@ -248,6 +248,7 @@ public partial class AdminDashboardWindow : Window
                                     Sid = u.Sid.Value,
                                     DisplayName = u.DisplayName ?? u.SamAccountName,
                                     SamAccountName = u.SamAccountName,
+                                    EmailAddress = u.EmailAddress,
                                     IsAccountDisabled = false
                                 });
                             }
@@ -264,6 +265,7 @@ public partial class AdminDashboardWindow : Window
                             Sid = u.Sid.Value,
                             DisplayName = u.DisplayName ?? u.SamAccountName,
                             SamAccountName = u.SamAccountName,
+                            EmailAddress = u.EmailAddress,
                             IsAccountDisabled = false
                         });
                     }
@@ -313,7 +315,7 @@ public partial class AdminDashboardWindow : Window
                         var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
                         var pairingCode = result.GetProperty("pairingCode").GetString();
 
-                        string targetEmail = $"{user.SamAccountName}@{System.DirectoryServices.ActiveDirectory.Domain.GetCurrentDomain().Name}";
+                        string targetEmail = user.EmailAddress;
                         
                         string finalSubject = emailSubjectTemplate
                             .Replace("{DisplayName}", user.DisplayName)

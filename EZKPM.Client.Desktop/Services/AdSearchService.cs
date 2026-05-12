@@ -18,6 +18,7 @@ public class AdPrincipal
     public string DisplayName { get; set; } = "";
     public string SamAccountName { get; set; } = "";
     public string Sid { get; set; } = "";
+    public string EmailAddress { get; set; } = "";
     public string Type { get; set; } = "User"; // "User" or "Group"
     public bool IsAccountDisabled { get; set; } = false;
     
