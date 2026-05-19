@@ -279,6 +279,9 @@ namespace EZKPM.Server.PDP.Controllers
 
             if (asset.IsDeleted)
             {
+                var logs = await _db.AuditLogs.Where(l => l.AssetId == asset.Id).ToListAsync();
+                foreach (var log in logs) log.AssetId = null;
+                
                 _db.VaultAssets.Remove(asset);
             }
             else
@@ -316,6 +319,10 @@ namespace EZKPM.Server.PDP.Controllers
 
             if (orphanedAssets.Any())
             {
+                var orphanedIds = orphanedAssets.Select(a => a.Id).ToList();
+                var logs = await _db.AuditLogs.Where(l => l.AssetId.HasValue && orphanedIds.Contains(l.AssetId.Value)).ToListAsync();
+                foreach (var log in logs) log.AssetId = null;
+
                 _db.VaultAssets.RemoveRange(orphanedAssets);
                 await _db.SaveChangesAsync();
             }
