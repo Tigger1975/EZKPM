@@ -281,17 +281,19 @@ namespace EZKPM.Server.PDP.Controllers
             {
                 var logs = await _db.AuditLogs.Where(l => l.AssetId == asset.Id).ToListAsync();
                 foreach (var log in logs) log.AssetId = null;
+                await _db.SaveChangesAsync(); // <-- Ensure logs are detached first
                 
                 _db.VaultAssets.Remove(asset);
+                await _db.SaveChangesAsync();
             }
             else
             {
                 asset.IsDeleted = true;
                 asset.UpdatedUtc = DateTime.UtcNow;
                 await AppendAuditLog(asset.Id, userSidsInfo.PrimarySid, "AssetDeleted");
+                await _db.SaveChangesAsync();
             }
 
-            await _db.SaveChangesAsync();
             _syncTrigger.Trigger();
 
             return Ok();
@@ -322,6 +324,7 @@ namespace EZKPM.Server.PDP.Controllers
                 var orphanedIds = orphanedAssets.Select(a => a.Id).ToList();
                 var logs = await _db.AuditLogs.Where(l => l.AssetId.HasValue && orphanedIds.Contains(l.AssetId.Value)).ToListAsync();
                 foreach (var log in logs) log.AssetId = null;
+                await _db.SaveChangesAsync(); // <-- Ensure logs are detached first
 
                 _db.VaultAssets.RemoveRange(orphanedAssets);
                 await _db.SaveChangesAsync();

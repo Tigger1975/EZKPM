@@ -114,13 +114,22 @@ namespace EZKPM.Server.PDP.Data
                     if (entry.State == EntityState.Modified)
                     {
                         var modifiedProps = entry.Properties.Where(p => p.IsModified).ToList();
-                        if (modifiedProps.Count == 1 && modifiedProps[0].Metadata.Name == "AssetId" && log.AssetId == null)
+                        bool onlyAssetIdModified = true;
+                        foreach (var p in modifiedProps)
+                        {
+                            if (p.Metadata.Name != "AssetId")
+                            {
+                                onlyAssetIdModified = false;
+                                break;
+                            }
+                        }
+                        if (onlyAssetIdModified && log.AssetId == null)
                         {
                             // Allowed: Detaching log from a deleted asset
                         }
                         else
                         {
-                            throw new InvalidOperationException("Compliance Violation: Audit-Logs sind revisionssicher (WORM) und können nachträglich nicht geändert werden.");
+                            throw new InvalidOperationException($"Compliance Violation: Audit-Logs sind revisionssicher (WORM) und können nachträglich nicht geändert werden. (Geänderte Properties: {string.Join(", ", modifiedProps.Select(p => p.Metadata.Name))})");
                         }
                     }
                 }
