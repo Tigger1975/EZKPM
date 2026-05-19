@@ -30,6 +30,18 @@
                      BorderBrush="#374151" 
                      Padding="12" />
 
+            <TextBlock Text="Browser-Erweiterungs-URL" 
+                       Foreground="#9CA3AF" 
+                       FontSize="12"
+                       Margin="0,5,0,-15" />
+
+            <TextBox x:Name="BrowserExtensionUrlTextBox" 
+                     PlaceholderText="z.B. https://chrome.google.com/webstore/detail/..." 
+                     Background="#1F2937" 
+                     Foreground="White" 
+                     BorderBrush="#374151" 
+                     Padding="12" />
+
             <CheckBox x:Name="AutostartCheckBox" 
                       Content="{x:Static res:AppStrings.ServerConfig_AutoStart}" 
                       Foreground="White" 

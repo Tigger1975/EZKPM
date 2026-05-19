@@ -1342,25 +1342,34 @@ public partial class MainWindow : Window
 
     private async void ChangeServerMenuItem_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        var configWindow = new Views.ServerConfigWindow(Services.ConfigurationManager.CurrentConfig.ServerUrl);
+        var oldUrl = Services.ConfigurationManager.CurrentConfig.ServerUrl;
+        var configWindow = new Views.ServerConfigWindow(oldUrl);
         await configWindow.ShowDialog(this);
         if (configWindow.IsConfirmed)
         {
-            Services.ConfigurationManager.CurrentConfig.ServerUrl = configWindow.SelectedUrl;
-            Services.ConfigurationManager.SaveConfig();
-            
-            // Re-instantiate the API client with the new URL
-            var handler = new HttpClientHandler {  };
-            var httpClient = new HttpClient(handler) { BaseAddress = new Uri(Services.ConfigurationManager.CurrentConfig.ServerUrl) };
-            var newApiClient = new VaultApiClient(httpClient);
-            
-            // To properly apply the new API client to this window, we can just restart the application or swap it
-            var dialog = new Views.ConfirmationDialog("Server erfolgreich geändert. Die App wird nun neu gestartet.");
-            await dialog.ShowDialogAsync(this);
-            
-            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+            var newUrl = configWindow.SelectedUrl;
+            if (newUrl != oldUrl)
             {
-                Environment.Exit(0);
+                Services.ConfigurationManager.CurrentConfig.ServerUrl = newUrl;
+                Services.ConfigurationManager.SaveConfig();
+                
+                // Re-instantiate the API client with the new URL
+                var handler = new HttpClientHandler {  };
+                var httpClient = new HttpClient(handler) { BaseAddress = new Uri(Services.ConfigurationManager.CurrentConfig.ServerUrl) };
+                var newApiClient = new VaultApiClient(httpClient);
+                
+                // To properly apply the new API client to this window, we can just restart the application or swap it
+                var dialog = new Views.ConfirmationDialog("Server erfolgreich geändert. Die App wird nun neu gestartet.");
+                await dialog.ShowDialogAsync(this);
+                
+                if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+                {
+                    Environment.Exit(0);
+                }
+            }
+            else
+            {
+                ShowStatus("Einstellungen gespeichert.");
             }
         }
     }
@@ -1446,6 +1455,31 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             Program.LogDebug($"Failed to open help: {ex.Message}");
+        }
+    }
+
+    private void OpenBrowserExtension_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var extUrl = Services.ConfigurationManager.CurrentConfig.BrowserExtensionUrl;
+            if (!string.IsNullOrEmpty(extUrl))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = extUrl,
+                    UseShellExecute = true
+                });
+            }
+            else
+            {
+                ShowStatus("Keine Browser-Erweiterungs-URL konfiguriert.", isWarning: true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Program.LogDebug($"Failed to open browser extension: {ex.Message}");
+            ShowStatus($"Fehler beim Öffnen: {ex.Message}", isError: true);
         }
     }
 

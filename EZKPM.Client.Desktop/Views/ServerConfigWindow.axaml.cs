@@ -20,6 +20,12 @@ namespace EZKPM.Client.Desktop.Views
                 urlTextBox.Text = currentUrl;
             }
 
+            var browserExtensionUrlTextBox = this.FindControl<TextBox>("BrowserExtensionUrlTextBox");
+            if (browserExtensionUrlTextBox != null)
+            {
+                browserExtensionUrlTextBox.Text = ConfigurationManager.CurrentConfig.BrowserExtensionUrl;
+            }
+
             var versionText = this.FindControl<TextBlock>("VersionText");
             if (versionText != null)
             {
@@ -90,6 +96,13 @@ namespace EZKPM.Client.Desktop.Views
                 {
                     SetAutostartEnabled(autostartBox.IsChecked.Value);
                 }
+
+                var browserExtensionUrlTextBox = this.FindControl<TextBox>("BrowserExtensionUrlTextBox");
+                if (browserExtensionUrlTextBox != null)
+                {
+                    ConfigurationManager.CurrentConfig.BrowserExtensionUrl = browserExtensionUrlTextBox.Text?.Trim() ?? "";
+                }
+                ConfigurationManager.SaveConfig();
 
                 this.Close(true);
             }
