@@ -285,9 +285,9 @@ namespace EZKPM.Server.PDP.Controllers
             {
                 asset.IsDeleted = true;
                 asset.UpdatedUtc = DateTime.UtcNow;
+                await AppendAuditLog(asset.Id, userSidsInfo.PrimarySid, "AssetDeleted");
             }
 
-            await AppendAuditLog(asset.Id, userSidsInfo.PrimarySid, "AssetDeleted");
             await _db.SaveChangesAsync();
             _syncTrigger.Trigger();
 
