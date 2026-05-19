@@ -79,6 +79,13 @@ namespace EZKPM.Client.Core.Cryptography
             SecureMemory myPrivateKeyX25519,
             SecureMemory myPrivateKeyKyber)
         {
+            if (encryptedKeyShare == null || encryptedKeyShare.Length == 0)
+                throw new CryptographicException("No key share available for this user.");
+
+            int expectedLength = 768 + GcmNonceSize + GcmTagSize + AesKeySize;
+            if (encryptedKeyShare.Length != expectedLength)
+                throw new CryptographicException($"Invalid key share length: {encryptedKeyShare.Length} (expected {expectedLength}).");
+
             // 1. Payload parsen
             ParsePayload(encryptedKeyShare, out byte[] kyberCiphertext, out byte[] nonce, out byte[] tag, out byte[] encryptedAssetKey);
 
