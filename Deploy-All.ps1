@@ -13,7 +13,9 @@ $PublishClientPath = "$RepoPath\Publish\Client"
 $IISPath = "C:\inetpub\EZKPM"
 $UpdatesDir = "$PublishServerPath\Updates"
 
-Write-Host "`n[1/7] Stoppe laufenden lokalen Desktop-Client..." -ForegroundColor Yellow
+Write-Host "`n[1/7] Erstelle Lock-Files und stoppe laufenden lokalen Desktop-Client..." -ForegroundColor Yellow
+if (!(Test-Path $PublishClientPath)) { New-Item -ItemType Directory -Force -Path $PublishClientPath | Out-Null }
+New-Item -ItemType File -Force -Path "$PublishClientPath\ezkpm_build.lock" | Out-Null
 Stop-Process -Name "EZKPM.Client.Desktop" -Force -ErrorAction SilentlyContinue
 
 $BuildDate = Get-Date -Format "yyyyMMddHHmmss"
@@ -27,7 +29,7 @@ if (!(Test-Path "$PublishServerPath\docs")) { New-Item -ItemType Directory -Forc
 Copy-Item -Path "$RepoPath\docs\wiki" -Destination "$PublishServerPath\docs\wiki" -Recurse -Force
 
 Write-Host "`n[3/7] Kompiliere Client (Desktop & Extension Bridge)..." -ForegroundColor Yellow
-if (Test-Path $PublishClientPath) { Remove-Item -Path "$PublishClientPath\*" -Recurse -Force -ErrorAction SilentlyContinue }
+if (Test-Path $PublishClientPath) { Remove-Item -Path "$PublishClientPath\*" -Exclude "ezkpm_build.lock" -Recurse -Force -ErrorAction SilentlyContinue }
 dotnet publish "$RepoPath\EZKPM.Client.Desktop\EZKPM.Client.Desktop.csproj" -c Release -o $PublishClientPath -p:BuildDate=$BuildDate
 
 if (!(Test-Path $UpdatesDir)) { New-Item -ItemType Directory -Force -Path $UpdatesDir | Out-Null }
@@ -53,6 +55,9 @@ if ($needsZip) {
     
     # Clean up debugging symbols to drastically reduce size (saves > 100MB)
     Get-ChildItem -Path $PublishClientPath -Filter *.pdb -Recurse | Remove-Item -Force
+    
+    # Remove lock file so it doesn't get packaged into the update zip
+    Remove-Item -Path "$PublishClientPath\ezkpm_build.lock" -Force -ErrorAction SilentlyContinue
     
     Compress-Archive -Path "$PublishClientPath\*" -DestinationPath $zipPath -Force
 
@@ -89,12 +94,21 @@ try {
 Write-Host "`n[7/8] Verteile Client-Dateien an Netzlaufwerk/Freigabe..." -ForegroundColor Yellow
 Write-Host "      Kopiere Client nach T:\Kh\EZKPM_Client\ (wartet bei gesperrten Dateien)..." -ForegroundColor Yellow
 if (!(Test-Path "T:\Kh\EZKPM_Client")) { New-Item -ItemType Directory -Force -Path "T:\Kh\EZKPM_Client" | Out-Null }
+
+# Re-create lock files to instantly kill any Native Messaging hosts running from the network share
+New-Item -ItemType File -Force -Path "$PublishClientPath\ezkpm_build.lock" | Out-Null
+New-Item -ItemType File -Force -Path "T:\Kh\EZKPM_Client\ezkpm_build.lock" | Out-Null
+Start-Sleep -Seconds 2
+
 try {
     # /R:1000 = Retry up to 1000 times (approx. 83 minutes)
     # /W:5 = Wait 5 seconds between retries
     # /XD * = Ignore no directories, mirror completely
     robocopy $PublishClientPath "T:\Kh\EZKPM_Client" /MIR /R:1000 /W:5 | Out-Null
 } catch {
+} finally {
+    Remove-Item -Path "$PublishClientPath\ezkpm_build.lock" -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "T:\Kh\EZKPM_Client\ezkpm_build.lock" -Force -ErrorAction SilentlyContinue
 }
 
 #Write-Host "`n[8/8] Starte lokalen Desktop-Client..." -ForegroundColor Yellow

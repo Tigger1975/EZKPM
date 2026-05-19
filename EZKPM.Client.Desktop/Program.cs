@@ -17,7 +17,7 @@ namespace EZKPM.Client.Desktop
     {
         private static string LogFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EZKPM", "ezkpm_debug.txt");
         private static readonly string LockFileName = "ezkpm_build.lock";
-        private static readonly string LockFileDir = Path.GetTempPath();
+        private static readonly string LockFileDir = AppDomain.CurrentDomain.BaseDirectory;
         private static FileSystemWatcher _killSwitchWatcher;
 
         public static bool IsLocalLoggingEnabled = false;
