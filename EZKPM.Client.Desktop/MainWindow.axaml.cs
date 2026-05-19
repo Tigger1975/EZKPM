@@ -495,6 +495,18 @@ public partial class MainWindow : Window
                     // If decryption fails (wrong key, expired), track it so we can clean it up
                     Program.LogDebug($"Decryption failed for asset {dto.AssetId}: {ex.Message}");
                     _failedDecryptionIds.Add(dto.AssetId);
+                    
+                    var dummyAsset = new VaultAssetPayload
+                    {
+                        TransientAssetId = dto.AssetId,
+                        Title = $"Encrypted Asset ({dto.AssetId.ToString().Substring(0, 8)})",
+                        AssetType = "SecureNote",
+                        IsDeleted = dto.IsDeleted,
+                        IsExpired = dto.IsExpired,
+                        DetailedDescription = "This asset is encrypted and you do not have the decryption key."
+                    };
+                    _encryptedAssetsCache[dto.AssetId] = dto;
+                    _decryptedAssets.Add(dummyAsset);
                 }
             }
             // Ensure Private Folder exists
@@ -563,11 +575,16 @@ public partial class MainWindow : Window
         try
         {
             var existingPubKey = await _apiClient.GetEnvironmentPublicKeyAsync();
-            var hasLocalKey = _decryptedAssets.Any(a => a.Title == "EnvironmentLogKey");
             
-            if (!string.IsNullOrEmpty(existingPubKey) && hasLocalKey)
+            if (!string.IsNullOrEmpty(existingPubKey))
             {
-                return; // Key exists both on server and locally, nothing to do
+                return; // Key exists on server, nothing to do. Prevents overwriting by users lacking the private key.
+            }
+
+            var hasLocalKey = _decryptedAssets.Any(a => a.Title == "EnvironmentLogKey");
+            if (hasLocalKey)
+            {
+                return;
             }
 
             // Key does not exist, generate an RSA key pair

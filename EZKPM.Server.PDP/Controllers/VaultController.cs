@@ -81,15 +81,29 @@ namespace EZKPM.Server.PDP.Controllers
         {
             var userSidsInfo = GetUserSids();
             var allSids = userSidsInfo.AllSids;
+            var primarySid = userSidsInfo.PrimarySid;
 
-            var assets = await _db.VaultAssets
-                .Include(a => a.Acls.Where(acl => allSids.Contains(acl.HashedSid)))
-                .Where(a => a.Acls.Any(acl => allSids.Contains(acl.HashedSid)))
-                .ToListAsync();
+            var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == primarySid);
+            bool isAdmin = callerProfile != null && await _db.UserProfiles.AnyAsync(u => u.PersonId == callerProfile.PersonId && u.IsAdmin);
+
+            List<VaultAsset> assets;
+            if (isAdmin)
+            {
+                assets = await _db.VaultAssets
+                    .Include(a => a.Acls)
+                    .ToListAsync();
+            }
+            else
+            {
+                assets = await _db.VaultAssets
+                    .Include(a => a.Acls.Where(acl => allSids.Contains(acl.HashedSid)))
+                    .Where(a => a.Acls.Any(acl => allSids.Contains(acl.HashedSid)))
+                    .ToListAsync();
+            }
 
             var responseList = assets.Select(asset =>
             {
-                var userAcl = asset.Acls.First();
+                var userAcl = asset.Acls.FirstOrDefault(acl => allSids.Contains(acl.HashedSid));
                 bool isExpired = DateTime.UtcNow > asset.ExpiresAt;
                 
                 return new VaultAssetResponseDto
@@ -97,8 +111,8 @@ namespace EZKPM.Server.PDP.Controllers
                     AssetId = asset.Id,
                     CipherBlob = isExpired ? "" : Convert.ToBase64String(asset.CipherBlob),
                     Nonce = isExpired ? "" : Convert.ToBase64String(asset.Nonce),
-                    PermissionLevel = userAcl.PermissionLevel,
-                    EncryptedKeyShare = isExpired ? "" : Convert.ToBase64String(userAcl.EncryptedKeyShare),
+                    PermissionLevel = userAcl?.PermissionLevel ?? 0,
+                    EncryptedKeyShare = isExpired || userAcl == null || userAcl.EncryptedKeyShare == null || userAcl.EncryptedKeyShare.Length == 0 ? "" : Convert.ToBase64String(userAcl.EncryptedKeyShare),
                     IsExpired = isExpired,
                     IsDeleted = asset.IsDeleted
                 };
