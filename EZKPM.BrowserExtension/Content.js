@@ -480,33 +480,48 @@ function performStealthInjection(username, password, customFields = [], totpCode
                 submitted = true;
             }
             
-            // Versuch 2: Das umgebende Formular absenden
+            // Versuch 2: Heuristische Suche nach Anmelde-Buttons im gesamten DOM
+            if (!submitted) {
+                const buttons = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"], div[role="button"], a.button'));
+                const loginBtn = buttons.find(b => {
+                    const text = (b.innerText || b.value || "").toLowerCase();
+                    const id = (b.id || "").toLowerCase();
+                    const name = (b.name || "").toLowerCase();
+                    const className = (typeof b.className === 'string' ? b.className : "").toLowerCase();
+                    const rel = (b.getAttribute('rel') || "").toLowerCase();
+                    
+                    const combinedStr = `${text} ${id} ${name} ${className} ${rel}`;
+                    return combinedStr.includes("login") || 
+                           combinedStr.includes("sign in") || 
+                           combinedStr.includes("signin") || 
+                           combinedStr.includes("anmelden") || 
+                           combinedStr.includes("einloggen") || 
+                           combinedStr.includes("weiter") || 
+                           combinedStr.includes("next");
+                });
+                
+                if (loginBtn) {
+                    loginBtn.click();
+                    submitted = true;
+                }
+            }
+
+            // Versuch 3: Das umgebende Formular absenden via submit Button
             if (!submitted && passField && passField.form) {
                 const fallbackBtn = passField.form.querySelector('button[type="submit"], input[type="submit"]');
                 if (fallbackBtn) {
                     fallbackBtn.click();
                     submitted = true;
-                } else {
-                    try {
-                        passField.form.requestSubmit();
-                        submitted = true;
-                    } catch (e) {
-                        passField.form.submit();
-                        submitted = true;
-                    }
                 }
             }
 
-            // Versuch 3: Heuristische Suche nach Anmelde-Buttons im gesamten DOM (für SPAs ohne echtes <form>)
-            if (!submitted) {
-                const buttons = Array.from(document.querySelectorAll('button, input[type="button"], div[role="button"]'));
-                const loginBtn = buttons.find(b => {
-                    const text = (b.innerText || b.value || "").toLowerCase();
-                    return text.includes("login") || text.includes("sign in") || text.includes("anmelden") || text.includes("einloggen") || text.includes("weiter") || text.includes("next");
-                });
-                
-                if (loginBtn) {
-                    loginBtn.click();
+            // Versuch 4: Fallback auf hartes Formular-Submit
+            if (!submitted && passField && passField.form) {
+                try {
+                    passField.form.requestSubmit();
+                    submitted = true;
+                } catch (e) {
+                    passField.form.submit();
                     submitted = true;
                 }
             }
