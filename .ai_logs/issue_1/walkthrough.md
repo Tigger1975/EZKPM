@@ -1,6 +1,5 @@
-Die Analyse zeigte, dass der `500 Internal Server Error` beim Löschen des Key-Assets auftritt, wenn ein Hard-Delete durchgeführt wird (`asset.IsDeleted == true`).
-Dabei wurde in der Methode `DeleteAsset` das Asset über `_db.VaultAssets.Remove(asset)` aus dem Kontext gelöscht. Anschließend wurde aber bedingungslos `AppendAuditLog(asset.Id, ...)` aufgerufen.
-Dies führte zu einem Foreign-Key-Konflikt, da Entity Framework Core versucht hat, einen Audit-Log-Eintrag für ein Asset zu speichern, das in der gleichen Transaktion vollständig aus der Datenbank gelöscht werden soll.
-
-**Lösung:**
-Der Code in `EZKPM.Server.PDP/Controllers/VaultController.cs` wurde so angepasst, dass der Audit-Log-Eintrag ("AssetDeleted") nur noch erstellt wird, wenn ein Soft-Delete stattfindet. Bei einem Hard-Delete wird nun das Asset komplett entfernt, ohne dass zuvor noch ein neues Audit-Log erstellt wird.
+1. Analyzed `VaultController.DeleteAsset` and observed that when hard deleting an asset, the code attempts to detach existing `AuditLogs` by setting their `AssetId = null`, then removes the asset.
+2. EF Core or SQLite can sometimes fail with a 500 Internal Server Error (e.g., `DbUpdateException` due to `FOREIGN KEY` constraint violations) if the `UPDATE AuditLogs SET AssetId = NULL` statement and the `DELETE FROM VaultAssets` statement are batched, and the database evaluates the `RESTRICT` constraint before the update is applied, or if EF Core orders the statements incorrectly in the batch.
+3. Fixed this by splitting the operation: First, set `AssetId = null` on all related `AuditLogs` and call `await _db.SaveChangesAsync()`. This guarantees the logs are fully detached at the database level. Then, execute `_db.VaultAssets.Remove(asset)` and call `await _db.SaveChangesAsync()` again.
+4. Applied the same robust two-step detachment and deletion to `CleanOrphanedAssets`.
+5. Improved the error message in `EzkpmDbContext.EnforceImmutability` to explicitly list the modified properties if an `InvalidOperationException` is thrown, avoiding silent 500s without context.

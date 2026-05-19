@@ -106,7 +106,34 @@ namespace EZKPM.Server.PDP.Data
             var entries = ChangeTracker.Entries();
             foreach (var entry in entries)
             {
-                if (entry.Entity is AuditLog || entry.Entity is RecoveryAuditLog)
+                if (entry.Entity is AuditLog log)
+                {
+                    if (entry.State == EntityState.Deleted)
+                        throw new InvalidOperationException("Compliance Violation: Audit-Logs sind revisionssicher (WORM) und können nicht gelöscht werden.");
+                        
+                    if (entry.State == EntityState.Modified)
+                    {
+                        var modifiedProps = entry.Properties.Where(p => p.IsModified).ToList();
+                        bool onlyAssetIdModified = true;
+                        foreach (var p in modifiedProps)
+                        {
+                            if (p.Metadata.Name != "AssetId")
+                            {
+                                onlyAssetIdModified = false;
+                                break;
+                            }
+                        }
+                        if (onlyAssetIdModified && log.AssetId == null)
+                        {
+                            // Allowed: Detaching log from a deleted asset
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Compliance Violation: Audit-Logs sind revisionssicher (WORM) und können nachträglich nicht geändert werden. (Geänderte Properties: {string.Join(", ", modifiedProps.Select(p => p.Metadata.Name))})");
+                        }
+                    }
+                }
+                else if (entry.Entity is RecoveryAuditLog)
                 {
                     if (entry.State == EntityState.Modified || entry.State == EntityState.Deleted)
                     {
