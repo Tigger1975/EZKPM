@@ -1,7 +1,9 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using EZKPM.Server.PDP.Data;
@@ -103,6 +105,58 @@ namespace EZKPM.Server.PDP.Controllers
             });
 
             return Ok(dtos);
+        }
+
+        private string GetUserPrimarySid()
+        {
+            string primarySid = User.FindFirstValue(ClaimTypes.PrimarySid) ?? User.FindFirstValue("sid");
+            if (string.IsNullOrEmpty(primarySid))
+            {
+                try 
+                {
+                    if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                    {
+                        var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+                        primarySid = identity.User?.Value ?? "S-1-5-21-DUMMY-FALLBACK";
+                    }
+                }
+                catch { /* Ignored */ }
+            }
+            if (string.IsNullOrEmpty(primarySid)) primarySid = Environment.UserName; // Linux fallback
+            return EZKPM.Server.PDP.Services.SidHasher.HashSid(primarySid);
+        }
+
+        private async Task<bool> IsCallerAdminAsync()
+        {
+            var hashedPrimary = GetUserPrimarySid();
+            var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == hashedPrimary);
+            return callerProfile != null && await _db.UserProfiles.AnyAsync(u => u.PersonId == callerProfile.PersonId && u.IsAdmin);
+        }
+
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        [HttpDelete]
+        public async Task<IActionResult> DeleteAllLogs()
+        {
+            if (!await IsCallerAdminAsync()) return Forbid();
+
+            _db.ClientLogs.RemoveRange(_db.ClientLogs);
+            await _db.SaveChangesAsync();
+            return Ok(new { Status = "Success" });
+        }
+
+        [Authorize(AuthenticationSchemes = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)]
+        [HttpDelete("envkey")]
+        public async Task<IActionResult> DeleteEnvKey()
+        {
+            if (!await IsCallerAdminAsync()) return Forbid();
+
+            var conf = await _db.GlobalConfigs.FindAsync("EnvironmentLogKey.PublicKey");
+            if (conf != null)
+            {
+                _db.GlobalConfigs.Remove(conf);
+                await _db.SaveChangesAsync();
+            }
+            return Ok(new { Status = "Success" });
         }
     }
 }

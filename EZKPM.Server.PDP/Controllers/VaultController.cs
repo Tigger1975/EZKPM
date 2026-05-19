@@ -272,7 +272,14 @@ namespace EZKPM.Server.PDP.Controllers
 
             if (asset == null) return NotFound();
             
-            if (!forceAdmin) 
+            if (forceAdmin)
+            {
+                var primarySid = userSidsInfo.PrimarySid;
+                var callerProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.HashedSid == primarySid);
+                bool isAdmin = callerProfile != null && await _db.UserProfiles.AnyAsync(u => u.PersonId == callerProfile.PersonId && u.IsAdmin);
+                if (!isAdmin) return Forbid();
+            }
+            else 
             {
                 if (!asset.Acls.Any() || asset.Acls.First().PermissionLevel < 3) return Forbid(); // Only owner can delete
             }

@@ -168,9 +168,15 @@ namespace EZKPM.Client.Core.Services
             return response.IsSuccessStatusCode;
         }
 
-        public async Task DeleteAssetAsync(Guid id)
+        public async Task DeleteAllClientLogsAsync()
         {
-            var response = await _httpClient.DeleteAsync($"/api/v1/vault/assets/{id}");
+            var response = await _httpClient.DeleteAsync("/api/v1/log");
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task DeleteEnvironmentPublicKeyAsync()
+        {
+            var response = await _httpClient.DeleteAsync("/api/v1/log/envkey");
             response.EnsureSuccessStatusCode();
         }
 

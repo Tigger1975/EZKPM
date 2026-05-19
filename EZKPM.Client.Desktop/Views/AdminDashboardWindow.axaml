@@ -362,6 +362,14 @@
                                 <TextBox x:Name="ExtractedLogsTextBox" IsReadOnly="True" Height="300" AcceptsReturn="True" TextWrapping="Wrap" Background="#0F172A" Foreground="#10B981" FontFamily="Consolas" Padding="15" Margin="0,10,0,0" Watermark="Extrahierte Logs werden hier nach dem Abruf angezeigt..."/>
                             </StackPanel>
                         </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="15">
+                                <TextBlock Text="Log-System zurücksetzen &amp; Keys bereinigen" FontWeight="Bold" FontSize="18"/>
+                                <TextBlock Text="Hiermit werden alle auf dem Server gespeicherten Client-Logs gelöscht, der Environment Public Key vom Server entfernt und alle veralteten Log-Key-Assets im Vault gelöscht. Bei Bedarf generiert der Client den Key automatisch neu." Foreground="#EF4444" TextWrapping="Wrap" FontWeight="SemiBold"/>
+                                <Button x:Name="ResetLogSystemButton" Content="🔥 Log-System &amp; Key-Assets zurücksetzen" Click="ResetLogSystemButton_Click" Background="#EF4444" Foreground="White" FontWeight="Medium" Padding="15,8" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

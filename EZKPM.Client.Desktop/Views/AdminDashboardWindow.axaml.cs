@@ -1001,6 +1001,51 @@ public partial class AdminDashboardWindow : Window
             await dialog.ShowDialogAsync(this);
         }
     }
+
+    private async void ResetLogSystemButton_Click(object sender, RoutedEventArgs e)
+    {
+        var confirm = new ConfirmationDialog("Möchten Sie wirklich alle Client-Logs auf dem Server löschen, den Server-Public-Key zurücksetzen und alle 'EnvironmentLogKey' Assets im Vault unwiderruflich löschen? Dieser Schritt kann nicht rückgängig gemacht werden.");
+        if (!await confirm.ShowDialogAsync(this)) return;
+
+        try
+        {
+            // 1. Delete all Client Logs from Server
+            await _apiClient.DeleteAllClientLogsAsync();
+
+            // 2. Delete Environment Public Key from Server
+            await _apiClient.DeleteEnvironmentPublicKeyAsync();
+
+            // 3. Find and delete all EnvironmentLogKey assets (Title == "EnvironmentLogKey")
+            if (_decryptedAssets != null)
+            {
+                var keysToDelete = _decryptedAssets.Where(a => a.Title == "EnvironmentLogKey").ToList();
+                int deletedCount = 0;
+                foreach (var keyAsset in keysToDelete)
+                {
+                    if (keyAsset.TransientAssetId.HasValue)
+                    {
+                        try
+                        {
+                            await _apiClient.DeleteAssetAsync(keyAsset.TransientAssetId.Value, forceAdmin: true);
+                            deletedCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            Program.LogDebug($"Fehler beim Löschen des Key-Assets {keyAsset.TransientAssetId.Value}: {ex.Message}");
+                        }
+                    }
+                }
+            }
+
+            var dialog = new ConfirmationDialog("Log-System wurde erfolgreich zurückgesetzt. Client-Logs, Server-Public-Key und Log-Key-Assets wurden gelöscht.");
+            await dialog.ShowDialogAsync(this);
+        }
+        catch (Exception ex)
+        {
+            var dialog = new ConfirmationDialog($"Fehler beim Zurücksetzen des Log-Systems: {ex.Message}");
+            await dialog.ShowDialogAsync(this);
+        }
+    }
 }
 
 public class AdminUserViewModel
