@@ -32,6 +32,45 @@ Write-Host "`n[3/7] Kompiliere Client (Desktop & Extension Bridge)..." -Foregrou
 if (Test-Path $PublishClientPath) { Remove-Item -Path "$PublishClientPath\*" -Exclude "ezkpm_build.lock" -Recurse -Force -ErrorAction SilentlyContinue }
 dotnet publish "$RepoPath\EZKPM.Client.Desktop\EZKPM.Client.Desktop.csproj" -c Release -o $PublishClientPath -p:BuildDate=$BuildDate
 
+$ExtensionDir = "$RepoPath\EZKPM.BrowserExtension"
+$ExtensionPem = "$RepoPath\EZKPM.BrowserExtension.pem"
+$ExtensionCrx = "$RepoPath\EZKPM.BrowserExtension.crx"
+
+Write-Host "`n[3b/7] Pruefe Browser-Extension auf Aenderungen..." -ForegroundColor Yellow
+$needsCrx = $true
+if (Test-Path $ExtensionCrx) {
+    $crxDate = (Get-Item $ExtensionCrx).LastWriteTime
+    $newerExtFiles = Get-ChildItem -Path $ExtensionDir -Recurse | Where-Object { $_.LastWriteTime -gt $crxDate }
+    if (-not $newerExtFiles) {
+        $needsCrx = $false
+    }
+}
+
+if ($needsCrx) {
+    Write-Host "      Aenderungen erkannt, packe EZKPM.BrowserExtension.crx..." -ForegroundColor Yellow
+    if (Test-Path $ExtensionCrx) { Remove-Item -Force $ExtensionCrx }
+    
+    $edgePath = "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
+    $chromePath = "${env:ProgramFiles}\Google\Chrome\Application\chrome.exe"
+    
+    $browserPath = $null
+    if (Test-Path $edgePath) { $browserPath = $edgePath }
+    elseif (Test-Path $chromePath) { $browserPath = $chromePath }
+    
+    if ($browserPath) {
+        Start-Process -FilePath $browserPath -ArgumentList "--pack-extension=`"$ExtensionDir`"", "--pack-extension-key=`"$ExtensionPem`"" -Wait -NoNewWindow -PassThru | Out-Null
+        if (Test-Path $ExtensionCrx) {
+            Write-Host "      Erfolgreich gepackt: $ExtensionCrx" -ForegroundColor Green
+        } else {
+            Write-Host "      Fehler beim Packen der Extension!" -ForegroundColor Red
+        }
+    } else {
+        Write-Host "      Kein Edge oder Chrome gefunden, ueberspringe packen." -ForegroundColor Red
+    }
+} else {
+    Write-Host "      Keine Aenderungen in der Browser-Extension, ueberspringe packen." -ForegroundColor Gray
+}
+
 if (!(Test-Path $UpdatesDir)) { New-Item -ItemType Directory -Force -Path $UpdatesDir | Out-Null }
 $zipPath = "$UpdatesDir\ClientUpdate.zip"
 

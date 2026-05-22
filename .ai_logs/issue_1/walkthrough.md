@@ -1,0 +1,5 @@
+1. Analyzed `VaultController.DeleteAsset` and observed that when hard deleting an asset, the code attempts to detach existing `AuditLogs` by setting their `AssetId = null`, then removes the asset.
+2. EF Core or SQLite can sometimes fail with a 500 Internal Server Error (e.g., `DbUpdateException` due to `FOREIGN KEY` constraint violations) if the `UPDATE AuditLogs SET AssetId = NULL` statement and the `DELETE FROM VaultAssets` statement are batched, and the database evaluates the `RESTRICT` constraint before the update is applied, or if EF Core orders the statements incorrectly in the batch.
+3. Fixed this by splitting the operation: First, set `AssetId = null` on all related `AuditLogs` and call `await _db.SaveChangesAsync()`. This guarantees the logs are fully detached at the database level. Then, execute `_db.VaultAssets.Remove(asset)` and call `await _db.SaveChangesAsync()` again.
+4. Applied the same robust two-step detachment and deletion to `CleanOrphanedAssets`.
+5. Improved the error message in `EzkpmDbContext.EnforceImmutability` to explicitly list the modified properties if an `InvalidOperationException` is thrown, avoiding silent 500s without context.
