@@ -93,22 +93,22 @@ try {
 
 Write-Host "`n[7/8] Verteile Client-Dateien an Netzlaufwerk/Freigabe..." -ForegroundColor Yellow
 Write-Host "      Kopiere Client nach T:\Kh\EZKPM_Client\ (wartet bei gesperrten Dateien)..." -ForegroundColor Yellow
-if (!(Test-Path "T:\Kh\EZKPM_Client")) { New-Item -ItemType Directory -Force -Path "T:\Kh\EZKPM_Client" | Out-Null }
+if (!(Test-Path "\\fileshare\transfer\Kh\EZKPM_Client")) { New-Item -ItemType Directory -Force -Path "\\fileshare\transfer\Kh\EZKPM_Client" | Out-Null }
 
 # Re-create lock files to instantly kill any Native Messaging hosts running from the network share
 New-Item -ItemType File -Force -Path "$PublishClientPath\ezkpm_build.lock" | Out-Null
-New-Item -ItemType File -Force -Path "T:\Kh\EZKPM_Client\ezkpm_build.lock" | Out-Null
+New-Item -ItemType File -Force -Path "\\fileshare\transfer\Kh\EZKPM_Client\ezkpm_build.lock" | Out-Null
 Start-Sleep -Seconds 2
 
 try {
     # /R:1000 = Retry up to 1000 times (approx. 83 minutes)
     # /W:5 = Wait 5 seconds between retries
     # /XD * = Ignore no directories, mirror completely
-    robocopy $PublishClientPath "T:\Kh\EZKPM_Client" /MIR /R:1000 /W:5 | Out-Null
+    robocopy $PublishClientPath "\\fileshare\transfer\Kh\EZKPM_Client" /MIR /R:1000 /W:5 | Out-Null
 } catch {
 } finally {
     Remove-Item -Path "$PublishClientPath\ezkpm_build.lock" -Force -ErrorAction SilentlyContinue
-    Remove-Item -Path "T:\Kh\EZKPM_Client\ezkpm_build.lock" -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "\\fileshare\transfer\Kh\EZKPM_Client\ezkpm_build.lock" -Force -ErrorAction SilentlyContinue
 }
 
 #Write-Host "`n[8/8] Starte lokalen Desktop-Client..." -ForegroundColor Yellow
