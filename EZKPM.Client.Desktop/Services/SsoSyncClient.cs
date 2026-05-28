@@ -28,7 +28,15 @@ namespace EZKPM.Client.Desktop.Services
             var hubUrl = $"{serverUrl.TrimEnd('/')}/hubs/sync?sid={Uri.EscapeDataString(userSid)}";
 
             _connection = new HubConnectionBuilder()
-                .WithUrl(hubUrl)
+                .WithUrl(hubUrl, options => {
+                    options.HttpMessageHandlerFactory = handler => {
+                        if (handler is System.Net.Http.HttpClientHandler clientHandler)
+                        {
+                            clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true;
+                        }
+                        return handler;
+                    };
+                })
                 .WithAutomaticReconnect()
                 .Build();
 

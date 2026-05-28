@@ -110,7 +110,7 @@ public partial class AssetEditorWindow : Window
         }
         else
         {
-            var handler = new HttpClientHandler {  };
+            var handler = new HttpClientHandler { ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true };
             var httpClient = new HttpClient(handler) { BaseAddress = new Uri(EZKPM.Client.Desktop.Services.ConfigurationManager.CurrentConfig.ServerUrl) };
             _apiClient = new VaultApiClient(httpClient);
         }
